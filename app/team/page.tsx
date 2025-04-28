@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Search, Bell, ChevronDown, Plus, Mail, MoreVertical, Shield, Code, Bug, User } from "lucide-react";
+import { Search, Bell, ChevronDown, Plus, Mail, MoreVertical, Shield, Code, Bug, User, Clock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -141,51 +141,66 @@ export default function TeamPage() {
             </div>
 
             {/* Team Members List */}
-            <div className="space-y-4">
+            <div className="grid gap-6 md:grid-cols-2">
               {filteredMembers.map((member) => (
                 <div
                   key={member.id}
-                  className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden"
+                  className={`relative group bg-white rounded-2xl border border-gray-100 shadow-md overflow-hidden transition-transform hover:shadow-lg hover:-translate-y-1 ${
+                    member.role === "Admin"
+                      ? "border-l-4 border-blue-500"
+                      : member.role === "Developer"
+                      ? "border-l-4 border-green-500"
+                      : "border-l-4 border-amber-500"
+                  }`}
                 >
-                  <div className="p-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start gap-4">
-                        <div className="h-12 w-12 rounded-full overflow-hidden">
-                          <Image
-                            src={member.avatar}
-                            alt={member.name}
-                            width={48}
-                            height={48}
-                            className="object-cover"
-                          />
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className="font-medium">{member.name}</h3>
-                            <div className="flex items-center gap-1 text-xs text-gray-500">
-                              {getRoleIcon(member.role)}
-                              <span>{member.role}</span>
-                            </div>
-                          </div>
-                          <p className="text-sm text-gray-600 mb-2">{member.email}</p>
-                          <div className="flex items-center gap-4 text-xs text-gray-500">
-                            <span>{member.bugsSubmitted} bugs submitted</span>
-                            <span>•</span>
-                            <span>{member.bugsAssigned} bugs assigned</span>
-                            <span>•</span>
-                            <span>Last active {member.lastActive}</span>
-                          </div>
-                        </div>
+                  {/* More options button */}
+                  <button className="absolute top-3 right-3 p-2 hover:bg-gray-100 rounded-full z-10">
+                    <MoreVertical className="h-5 w-5 text-gray-400" />
+                  </button>
+                  <div className="p-6 flex flex-col gap-2">
+                    <div className="flex items-center gap-4 mb-2">
+                      <div className="h-16 w-16 rounded-full overflow-hidden border-2 border-gray-200 shadow-sm">
+                        <Image
+                          src={member.avatar}
+                          alt={member.name}
+                          width={64}
+                          height={64}
+                          className="object-cover"
+                        />
                       </div>
-                      <button className="p-2 hover:bg-gray-100 rounded-full">
-                        <MoreVertical className="h-4 w-4 text-gray-500" />
-                      </button>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="text-lg font-semibold line-clamp-1">{member.name}</h3>
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${
+                            member.role === "Admin"
+                              ? "bg-blue-100 text-blue-700"
+                              : member.role === "Developer"
+                              ? "bg-green-100 text-green-700"
+                              : "bg-amber-100 text-amber-700"
+                          }`}>
+                            {getRoleIcon(member.role)}
+                            {member.role}
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-500 mb-1 line-clamp-1">{member.email}</p>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-3 text-xs text-gray-500 mt-2">
+                      <span className="inline-flex items-center gap-1 bg-gray-50 rounded px-2 py-1">
+                        <Bug className="h-3 w-3 text-amber-500" /> {member.bugsSubmitted} bugs submitted
+                      </span>
+                      <span className="inline-flex items-center gap-1 bg-gray-50 rounded px-2 py-1">
+                        <Shield className="h-3 w-3 text-blue-400" /> {member.bugsAssigned} bugs assigned
+                      </span>
+                      <span className="inline-flex items-center gap-1 bg-gray-50 rounded px-2 py-1">
+                        <Clock className="h-3 w-3 text-gray-400" /> Last active {member.lastActive}
+                      </span>
                     </div>
                   </div>
                 </div>
               ))}
               {filteredMembers.length === 0 && (
-                <div className="text-center py-12">
+                <div className="text-center py-12 col-span-2">
                   <p className="text-gray-500">No team members found.</p>
                 </div>
               )}

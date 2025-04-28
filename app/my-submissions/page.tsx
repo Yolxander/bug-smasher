@@ -168,82 +168,89 @@ export default function MySubmissionsPage() {
             </div>
 
             {/* Submissions List */}
-            <div className="space-y-4">
+            <div className="grid gap-6 md:grid-cols-2">
               {filteredSubmissions.map((submission) => (
                 <div
                   key={submission.id}
-                  className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden"
+                  className={`relative group bg-white rounded-2xl border border-gray-100 shadow-md overflow-hidden transition-transform hover:shadow-lg hover:-translate-y-1 ${
+                    submission.status === "Open"
+                      ? "border-l-4 border-red-400"
+                      : submission.status === "In Progress"
+                      ? "border-l-4 border-yellow-400"
+                      : "border-l-4 border-green-400"
+                  }`}
                 >
-                  <div className="p-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <h3 className="font-medium">{submission.title}</h3>
-                          <span
-                            className={`px-2 py-1 rounded text-xs font-semibold ${
-                              submission.status === "Open"
-                                ? "bg-red-100 text-red-700"
-                                : submission.status === "In Progress"
-                                ? "bg-yellow-100 text-yellow-700"
-                                : "bg-green-100 text-green-700"
-                            }`}
-                          >
-                            {submission.status}
-                          </span>
-                          <span
-                            className={`px-2 py-1 rounded text-xs font-semibold ${
-                              submission.priority === "High"
-                                ? "bg-red-100 text-red-700"
-                                : submission.priority === "Medium"
-                                ? "bg-yellow-100 text-yellow-700"
-                                : "bg-green-100 text-green-700"
-                            }`}
-                          >
-                            {submission.priority}
-                          </span>
-                        </div>
-                        <p className="text-sm text-gray-600 mb-2">{submission.description}</p>
-                        <div className="flex items-center gap-4 text-xs text-gray-500">
-                          <span>{submission.date}</span>
-                          <span>•</span>
-                          <span>{submission.device}</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {submission.canEdit && (
-                          <>
-                            <button
-                              onClick={() => handleEdit(submission.id)}
-                              className="p-2 hover:bg-gray-100 rounded-full"
-                            >
-                              <Edit2 className="h-4 w-4 text-gray-500" />
-                            </button>
-                            <button
-                              onClick={() => handleDelete(submission.id)}
-                              className="p-2 hover:bg-gray-100 rounded-full"
-                            >
-                              <Trash2 className="h-4 w-4 text-gray-500" />
-                            </button>
-                          </>
-                        )}
-                      </div>
+                  {/* Edit/Delete buttons */}
+                  {submission.canEdit && (
+                    <div className="absolute top-3 right-3 flex gap-1 z-10">
+                      <button
+                        onClick={() => handleEdit(submission.id)}
+                        className="p-2 hover:bg-gray-100 rounded-full"
+                        title="Edit"
+                      >
+                        <Edit2 className="h-4 w-4 text-gray-500" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(submission.id)}
+                        className="p-2 hover:bg-gray-100 rounded-full"
+                        title="Delete"
+                      >
+                        <Trash2 className="h-4 w-4 text-gray-500" />
+                      </button>
+                    </div>
+                  )}
+                  <div className="p-5 pb-4 flex flex-col gap-2">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="text-lg font-semibold flex-1 line-clamp-1">{submission.title}</h3>
+                    </div>
+                    <div className="flex gap-2 mb-2">
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${
+                        submission.status === "Open"
+                          ? "bg-red-100 text-red-700"
+                          : submission.status === "In Progress"
+                          ? "bg-yellow-100 text-yellow-700"
+                          : "bg-green-100 text-green-700"
+                      }`}>
+                        {submission.status === "Open" && <AlertCircle className="h-3 w-3" />}
+                        {submission.status === "In Progress" && <Clock className="h-3 w-3" />}
+                        {submission.status === "Resolved" && <Check className="h-3 w-3" />}
+                        {submission.status}
+                      </span>
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${
+                        submission.priority === "High"
+                          ? "bg-red-100 text-red-700"
+                          : submission.priority === "Medium"
+                          ? "bg-yellow-100 text-yellow-700"
+                          : "bg-green-100 text-green-700"
+                      }`}>
+                        {submission.priority === "High" && <span className="inline-block w-2 h-2 bg-red-500 rounded-full" />}
+                        {submission.priority === "Medium" && <span className="inline-block w-2 h-2 bg-yellow-500 rounded-full" />}
+                        {submission.priority === "Low" && <span className="inline-block w-2 h-2 bg-green-500 rounded-full" />}
+                        {submission.priority}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-600 mb-1 line-clamp-2">{submission.description}</p>
+                    <div className="flex items-center gap-3 text-xs text-gray-400">
+                      <span>{submission.date}</span>
+                      <span>•</span>
+                      <span>{submission.device}</span>
                     </div>
                   </div>
                   {submission.screenshot && (
-                    <div className="border-t border-gray-100 p-4">
+                    <div className="bg-gray-50 border-t border-gray-100 p-4 flex items-center justify-center">
                       <Image
                         src={submission.screenshot}
                         alt="Screenshot"
-                        width={320}
-                        height={180}
-                        className="rounded shadow"
+                        width={220}
+                        height={120}
+                        className="rounded shadow max-h-28 object-contain"
                       />
                     </div>
                   )}
                 </div>
               ))}
               {filteredSubmissions.length === 0 && (
-                <div className="text-center py-12">
+                <div className="text-center py-12 col-span-2">
                   <p className="text-gray-500">No submissions found.</p>
                 </div>
               )}

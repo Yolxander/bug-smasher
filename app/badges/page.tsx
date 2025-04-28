@@ -27,7 +27,8 @@ const badges = [
     color: "bg-yellow-100 text-yellow-800",
     progress: 8,
     total: 10,
-    category: "achievement"
+    category: "achievement",
+    unlocked: false,
   },
   {
     id: 2,
@@ -35,9 +36,10 @@ const badges = [
     description: "Assigned to 20 or more bugs",
     icon: "🏆",
     color: "bg-blue-100 text-blue-800",
-    progress: 15,
+    progress: 20,
     total: 20,
-    category: "achievement"
+    category: "achievement",
+    unlocked: true,
   },
   {
     id: 3,
@@ -47,7 +49,8 @@ const badges = [
     color: "bg-red-100 text-red-800",
     progress: 1,
     total: 1,
-    category: "special"
+    category: "special",
+    unlocked: true,
   },
   {
     id: 4,
@@ -57,20 +60,24 @@ const badges = [
     color: "bg-green-100 text-green-800",
     progress: 3,
     total: 5,
-    category: "collaboration"
-  }
+    category: "collaboration",
+    unlocked: false,
+  },
 ];
 
 export default function BadgesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
 
-  const filteredBadges = badges.filter(badge => {
-    const matchesSearch = badge.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         badge.description.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesCategory = selectedCategory === "all" || badge.category === selectedCategory
-    return matchesSearch && matchesCategory
+  const filteredBadges = badges.filter((badge) => {
+    const matchesSearch =
+      badge.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      badge.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = selectedCategory === "all" || badge.category === selectedCategory;
+    return matchesSearch && matchesCategory;
   });
+
+  const unlockedCount = badges.filter((b) => b.unlocked).length;
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -82,7 +89,6 @@ export default function BadgesPage() {
           {/* Header */}
           <header className="flex items-center justify-between border-b border-gray-100 bg-white p-4">
             <div className="relative w-[400px]">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
               <input
                 type="search"
                 placeholder="Search badges..."
@@ -90,93 +96,77 @@ export default function BadgesPage() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="h-10 w-full rounded-full bg-gray-50 pl-10 pr-4 text-sm outline-none border border-gray-200 shadow-sm"
               />
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
             </div>
             <div className="flex items-center gap-4">
-              <Button variant="ghost" size="icon">
-                <Bell className="h-5 w-5" />
-              </Button>
-              <Avatar>
-                <AvatarImage src="https://github.com/shadcn.png" />
-                <AvatarFallback>CN</AvatarFallback>
-              </Avatar>
+              <span className="text-lg font-semibold text-amber-500">
+                {unlockedCount} / {badges.length} Badges Unlocked
+              </span>
+              <span className="hidden md:inline text-sm text-gray-400 italic">“Every bug you smash is a step to mastery!”</span>
             </div>
           </header>
-
           {/* Main content area */}
           <div className="p-8">
-            <div className="mb-6 flex items-center justify-between">
+            <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div>
-                <h1 className="text-2xl font-bold">Badges</h1>
-                <p className="text-gray-500">Track your achievements and progress</p>
+                <h1 className="text-2xl font-bold flex items-center gap-2">Badges <span className="text-amber-400 text-2xl">🏅</span></h1>
+                <p className="text-gray-500">Collect badges by smashing bugs, collaborating, and helping your team!</p>
               </div>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                Create Badge
-              </Button>
+              <div className="flex gap-2">
+                <span className="inline-block bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-xs font-semibold animate-pulse">New badges coming soon!</span>
+              </div>
             </div>
-
-            <div className="grid gap-6">
-              {/* Search and Filter */}
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex flex-col gap-4 md:flex-row md:items-center">
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {filteredBadges.map((badge) => (
+                <div
+                  key={badge.id}
+                  className={`relative group rounded-2xl border border-gray-100 shadow-md p-6 flex flex-col gap-3 transition-transform hover:scale-[1.03] hover:shadow-lg bg-white ${
+                    badge.unlocked ? "" : "opacity-60 grayscale"
+                  }`}
+                >
+                  {/* Confetti for unlocked badges */}
+                  {badge.unlocked && (
+                    <span className="absolute -top-3 -right-3 animate-bounce text-2xl">🎉</span>
+                  )}
+                  <div className="flex items-center gap-4">
+                    <div className={`flex h-14 w-14 items-center justify-center rounded-full text-3xl text-center text-shadow ${badge.color} shadow-md border-2 border-white`}>{badge.icon}</div>
                     <div className="flex-1">
-                      <div className="relative">
-                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-                        <Input
-                          placeholder="Search badges..."
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                          className="pl-8"
-                        />
-                      </div>
+                      <h3 className="font-bold text-lg flex items-center gap-1">
+                        {badge.name}
+                        {badge.unlocked && <span className="ml-1 text-green-500 text-base">✔</span>}
+                      </h3>
+                      <p className="text-xs text-gray-500">{badge.description}</p>
                     </div>
-                    <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                      <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="Filter by category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Categories</SelectItem>
-                        <SelectItem value="achievement">Achievements</SelectItem>
-                        <SelectItem value="special">Special</SelectItem>
-                        <SelectItem value="collaboration">Collaboration</SelectItem>
-                      </SelectContent>
-                    </Select>
                   </div>
-                </CardContent>
-              </Card>
-
-              {/* Badges Grid */}
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {filteredBadges.map((badge) => (
-                  <Card key={badge.id}>
-                    <CardContent className="pt-6">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-4">
-                          <div className={`flex h-12 w-12 items-center justify-center rounded-full ${badge.color}`}>
-                            <span className="text-2xl">{badge.icon}</span>
-                          </div>
-                          <div>
-                            <h3 className="font-semibold">{badge.name}</h3>
-                            <p className="text-sm text-gray-500">{badge.description}</p>
-                          </div>
-                        </div>
-                        <Badge variant="secondary">
-                          {badge.progress}/{badge.total}
-                        </Badge>
-                      </div>
-                      <div className="mt-4">
-                        <div className="h-2 w-full rounded-full bg-gray-100">
-                          <div
-                            className="h-2 rounded-full bg-blue-500"
-                            style={{ width: `${(badge.progress / badge.total) * 100}%` }}
-                          />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                  <div className="flex items-center gap-2 mt-2">
+                    <div className="flex-1 h-2 rounded-full bg-gray-100 overflow-hidden">
+                      <div
+                        className={`h-2 rounded-full ${badge.unlocked ? "bg-green-400" : "bg-blue-400"}`}
+                        style={{ width: `${(badge.progress / badge.total) * 100}%` }}
+                      />
+                    </div>
+                    <span className="text-xs font-semibold text-gray-500">
+                      {badge.progress}/{badge.total}
+                    </span>
+                  </div>
+                  {/* Motivational progress text */}
+                  {!badge.unlocked && (
+                    <div className="text-xs text-amber-500 font-medium mt-1 animate-pulse">
+                      {badge.total - badge.progress} to go!
+                    </div>
+                  )}
+                  {badge.unlocked && (
+                    <div className="text-xs text-green-500 font-medium mt-1 animate-bounce">
+                      Unlocked!
+                    </div>
+                  )}
+                </div>
+              ))}
+              {filteredBadges.length === 0 && (
+                <div className="text-center py-12 col-span-2">
+                  <p className="text-gray-500">No badges found.</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
