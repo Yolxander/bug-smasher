@@ -41,12 +41,15 @@ export default function Chatbot() {
     setCurrentFlow(flow);
     let botResponse = "";
     let options: string[] | undefined;
+    let flowLabel = "";
     
     switch (flow) {
       case "report":
+        flowLabel = "Report a Bug";
         botResponse = "Let's report a bug! What's a short title for it?";
         break;
       case "help":
+        flowLabel = "Get Help";
         botResponse = "What can I help you with?";
         options = [
           "How to submit a bug",
@@ -56,22 +59,35 @@ export default function Chatbot() {
         ];
         break;
       case "track":
+        flowLabel = "Track Submissions";
         botResponse = "Want to check on a bug you submitted? What was the title (or keyword)?";
         break;
       case "badges":
+        flowLabel = "View Badges";
         botResponse = "Curious about your badges? Let's take a look!";
         break;
       case "feedback":
+        flowLabel = "Submit Feedback";
         botResponse = "Got an idea or feedback for Bug Smasher? What's your feedback?";
         break;
     }
 
+    // Add the user's selection as a message
     setMessages(prev => [...prev, {
-      type: "bot",
-      content: botResponse,
+      type: "user",
+      content: flowLabel,
       timestamp: new Date(),
-      options,
     }]);
+
+    // Add the bot's response
+    setTimeout(() => {
+      setMessages(prev => [...prev, {
+        type: "bot",
+        content: botResponse,
+        timestamp: new Date(),
+        options,
+      }]);
+    }, 500);
   };
 
   const handleOptionClick = (option: string) => {
@@ -148,7 +164,7 @@ export default function Chatbot() {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-6 bg-amber-400 text-white p-4 rounded-full shadow-lg hover:bg-amber-500 transition-colors"
+          className="fixed bottom-6 right-6 bg-black text-[#FFD700] p-4 rounded-full shadow-lg hover:bg-gray-900 hover:text-yellow-400 transition-colors border-2 border-[#FFD700]"
         >
           <MessageSquare className="w-6 h-6" />
         </button>
