@@ -10,6 +10,8 @@ export default function SettingsPage() {
       email: true,
       inApp: true,
       dailyDigest: false,
+      asana: false,
+      teams: false,
     },
     appearance: {
       theme: "system",
@@ -261,6 +263,60 @@ export default function SettingsPage() {
                           <div
                             className={`w-4 h-4 rounded-full bg-white transform transition ${
                               settings.notifications.inApp ? "translate-x-6" : "translate-x-1"
+                            }`}
+                          />
+                        </button>
+                      </div>
+                      <div className="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200">
+                        <div>
+                          <h4 className="font-medium text-gray-900">Daily Digest</h4>
+                          <p className="text-sm text-gray-500">Receive a daily summary of bug reports and updates</p>
+                        </div>
+                        <button
+                          onClick={() => handleSettingChange("notifications", "dailyDigest", !settings.notifications.dailyDigest)}
+                          className={`w-12 h-6 rounded-full transition ${
+                            settings.notifications.dailyDigest ? "bg-amber-400" : "bg-gray-200"
+                          }`}
+                        >
+                          <div
+                            className={`w-4 h-4 rounded-full bg-white transform transition ${
+                              settings.notifications.dailyDigest ? "translate-x-6" : "translate-x-1"
+                            }`}
+                          />
+                        </button>
+                      </div>
+                      <div className="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200">
+                        <div>
+                          <h4 className="font-medium text-gray-900">Asana Notifications</h4>
+                          <p className="text-sm text-gray-500">Get updates in your Asana workspace</p>
+                        </div>
+                        <button
+                          onClick={() => handleSettingChange("notifications", "asana", !settings.notifications.asana)}
+                          className={`w-12 h-6 rounded-full transition ${
+                            settings.notifications.asana ? "bg-amber-400" : "bg-gray-200"
+                          }`}
+                        >
+                          <div
+                            className={`w-4 h-4 rounded-full bg-white transform transition ${
+                              settings.notifications.asana ? "translate-x-6" : "translate-x-1"
+                            }`}
+                          />
+                        </button>
+                      </div>
+                      <div className="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200">
+                        <div>
+                          <h4 className="font-medium text-gray-900">Microsoft Teams</h4>
+                          <p className="text-sm text-gray-500">Receive notifications in your Teams channels</p>
+                        </div>
+                        <button
+                          onClick={() => handleSettingChange("notifications", "teams", !settings.notifications.teams)}
+                          className={`w-12 h-6 rounded-full transition ${
+                            settings.notifications.teams ? "bg-amber-400" : "bg-gray-200"
+                          }`}
+                        >
+                          <div
+                            className={`w-4 h-4 rounded-full bg-white transform transition ${
+                              settings.notifications.teams ? "translate-x-6" : "translate-x-1"
                             }`}
                           />
                         </button>
