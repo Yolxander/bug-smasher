@@ -2,173 +2,107 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Search, Bell, ChevronDown, BookOpen, Code, Bug, Settings, Users } from "lucide-react";
+import { Search, Bell, ChevronDown, BookOpen, Code, Bug, Settings, Users, ArrowRight, ArrowLeft } from "lucide-react";
 import { DashboardSidebar } from "@/components/DashboardSidebar";
 
 export default function DocsPage() {
   const [activeSection, setActiveSection] = useState("getting-started");
+  const [currentStep, setCurrentStep] = useState(0);
 
   const sections = [
     {
       id: "getting-started",
       title: "Getting Started",
       icon: <BookOpen className="h-5 w-5" />,
-      content: (
-        <div className="space-y-6">
-          <div className="bg-black rounded-2xl p-6 shadow border border-gray-800">
-            <h3 className="text-xl font-bold bg-amber-400 text-black inline-block px-4 py-2 rounded-lg mb-4">Installation</h3>
-            <div className="prose max-w-none text-white">
-              <p className="mb-4">To get started with Bug Smasher, follow these simple steps:</p>
-              <ol className="list-decimal pl-6 space-y-2">
-                <li>Download the Bug Smasher extension from your browser's extension store</li>
-                <li>Click "Add to Browser" to install the extension</li>
-                <li>Pin the extension to your toolbar for easy access</li>
-                <li>Sign in with your Bug Smasher account or create a new one</li>
-              </ol>
-            </div>
-          </div>
-
-          <div className="bg-black rounded-2xl p-6 shadow border border-gray-800">
-            <h3 className="text-xl font-bold bg-amber-400 text-black inline-block px-4 py-2 rounded-lg mb-4">Initial Setup</h3>
-            <div className="prose max-w-none text-white">
-              <p className="mb-4">After installation, you'll need to configure your workspace:</p>
-              <ul className="list-disc pl-6 space-y-2">
-                <li>Connect your project repositories</li>
-                <li>Set up your team members and roles</li>
-                <li>Configure notification preferences</li>
-                <li>Customize your bug report templates</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      ),
+      steps: [
+        {
+          title: "Welcome to Bug Smasher!",
+          description: "Let's get you set up! Start by creating your account using your email or GitHub. This will be your home base for all bug tracking activities. Don't worry, it's quick and secure!",
+        },
+        {
+          title: "Customize Your Workspace",
+          description: "Make Bug Smasher work for you! Set up your project preferences, choose your notification settings, and invite your team members. We'll help you organize everything just the way you like it.",
+        },
+        {
+          title: "Take a Tour",
+          description: "Ready to explore? We'll show you around the dashboard, introduce you to key features, and help you find everything you need. It's like having a personal guide to bug tracking!",
+        },
+      ],
     },
     {
-      id: "submitting-bugs",
-      title: "Submitting Bugs",
+      id: "bug-reports",
+      title: "Bug Reports",
       icon: <Bug className="h-5 w-5" />,
-      content: (
-        <div className="space-y-6">
-          <div className="bg-black rounded-2xl p-6 shadow border border-gray-800">
-            <h3 className="text-xl font-bold bg-amber-400 text-black inline-block px-4 py-2 rounded-lg mb-4">Effective Bug Reporting</h3>
-            <div className="prose max-w-none text-white">
-              <p className="mb-4">Follow these guidelines to submit high-quality bug reports:</p>
-              <ul className="list-disc pl-6 space-y-2">
-                <li>Provide a clear, descriptive title</li>
-                <li>Include detailed steps to reproduce</li>
-                <li>Add screenshots or screen recordings</li>
-                <li>Specify expected vs. actual behavior</li>
-                <li>Include relevant environment details</li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="bg-black rounded-2xl p-6 shadow border border-gray-800">
-            <h3 className="text-xl font-bold bg-amber-400 text-black inline-block px-4 py-2 rounded-lg mb-4">Bug Report Template</h3>
-            <div className="prose max-w-none">
-              <pre className="bg-gray-900 p-4 rounded-lg text-sm text-gray-300">
-                {`Title: [Clear, descriptive title]
-
-Description:
-[Detailed description of the issue]
-
-Steps to Reproduce:
-1. [Step 1]
-2. [Step 2]
-3. [Step 3]
-
-Expected Behavior:
-[What should happen]
-
-Actual Behavior:
-[What actually happens]
-
-Environment:
-- Browser: [Browser name and version]
-- OS: [Operating system]
-- Device: [Device type]
-
-Additional Context:
-[Any other relevant information]`}
-              </pre>
-            </div>
-          </div>
-        </div>
-      ),
+      steps: [
+        {
+          title: "Let's Report a Bug",
+          description: "Found something that needs fixing? Our friendly bug report form makes it easy! Just describe what you found, add some screenshots, and we'll help you provide all the details developers need to fix it.",
+        },
+        {
+          title: "Stay in the Loop",
+          description: "Keep track of your bug's journey! You'll get updates when the status changes, when developers add comments, or when it's time to test the fix. We'll make sure you never miss a beat.",
+        },
+        {
+          title: "Manage Your Reports",
+          description: "Your bugs, your way! Edit details, add more information, or close resolved issues. You can even organize them into categories or add tags to make them easier to find later.",
+        },
+      ],
     },
     {
-      id: "qa-best-practices",
-      title: "QA Best Practices",
+      id: "analytics",
+      title: "Analytics",
+      icon: <Settings className="h-5 w-5" />,
+      steps: [
+        {
+          title: "Discover Insights",
+          description: "See the big picture! Our analytics dashboard shows you trends, patterns, and important metrics about your bugs. It's like having a crystal ball for your project's health!",
+        },
+        {
+          title: "Create Custom Reports",
+          description: "Need specific information? Create reports that show exactly what you're looking for. Filter by date, priority, status, or any other criteria. We'll help you make sense of all that data!",
+        },
+        {
+          title: "Share Your Findings",
+          description: "Got something important to share? Export your reports in different formats and share them with your team. Whether it's a quick update or a detailed analysis, we've got you covered!",
+        },
+      ],
+    },
+    {
+      id: "team",
+      title: "Team",
       icon: <Users className="h-5 w-5" />,
-      content: (
-        <div className="space-y-6">
-          <div className="bg-black rounded-2xl p-6 shadow border border-gray-800">
-            <h3 className="text-xl font-bold bg-amber-400 text-black inline-block px-4 py-2 rounded-lg mb-4">Testing Guidelines</h3>
-            <div className="prose max-w-none text-white">
-              <p className="mb-4">Follow these best practices for effective QA testing:</p>
-              <ul className="list-disc pl-6 space-y-2">
-                <li>Test across multiple browsers and devices</li>
-                <li>Verify both positive and negative test cases</li>
-                <li>Document all test scenarios and results</li>
-                <li>Use consistent naming conventions</li>
-                <li>Prioritize critical path testing</li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="bg-black rounded-2xl p-6 shadow border border-gray-800">
-            <h3 className="text-xl font-bold bg-amber-400 text-black inline-block px-4 py-2 rounded-lg mb-4">Bug Triage Process</h3>
-            <div className="prose max-w-none text-white">
-              <p className="mb-4">Our recommended bug triage workflow:</p>
-              <ol className="list-decimal pl-6 space-y-2">
-                <li>Initial assessment and categorization</li>
-                <li>Priority assignment based on impact</li>
-                <li>Assignment to appropriate team member</li>
-                <li>Regular status updates and tracking</li>
-                <li>Verification and closure process</li>
-              </ol>
-            </div>
-          </div>
-        </div>
-      ),
-    },
-    {
-      id: "integrations",
-      title: "Integrations",
-      icon: <Code className="h-5 w-5" />,
-      content: (
-        <div className="space-y-6">
-          <div className="bg-black rounded-2xl p-6 shadow border border-gray-800">
-            <h3 className="text-xl font-bold bg-amber-400 text-black inline-block px-4 py-2 rounded-lg mb-4">Available Integrations</h3>
-            <div className="prose max-w-none text-white">
-              <p className="mb-4">Bug Smasher integrates with popular development tools:</p>
-              <ul className="list-disc pl-6 space-y-2">
-                <li>GitHub/GitLab repositories</li>
-                <li>Jira and Trello project management</li>
-                <li>Slack and Microsoft Teams notifications</li>
-                <li>CI/CD pipeline integration</li>
-                <li>Custom webhook support</li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="bg-black rounded-2xl p-6 shadow border border-gray-800">
-            <h3 className="text-xl font-bold bg-amber-400 text-black inline-block px-4 py-2 rounded-lg mb-4">Setup Instructions</h3>
-            <div className="prose max-w-none text-white">
-              <p className="mb-4">To set up integrations:</p>
-              <ol className="list-decimal pl-6 space-y-2">
-                <li>Navigate to Settings → Integrations</li>
-                <li>Select the service you want to connect</li>
-                <li>Follow the authentication process</li>
-                <li>Configure integration settings</li>
-                <li>Test the connection</li>
-              </ol>
-            </div>
-          </div>
-        </div>
-      ),
+      steps: [
+        {
+          title: "Build Your Dream Team",
+          description: "Teamwork makes the dream work! Invite your colleagues, assign roles, and set up your team structure. Everyone will know exactly what they're responsible for and how they can help.",
+        },
+        {
+          title: "Set the Rules",
+          description: "Keep everything running smoothly! Configure who can do what, set up approval workflows, and make sure everyone has the right level of access. It's all about working together effectively!",
+        },
+        {
+          title: "Celebrate Success",
+          description: "Watch your team shine! Track everyone's contributions, celebrate milestones, and see how your team is making a difference. We'll help you keep the momentum going!",
+        },
+      ],
     },
   ];
+
+  const currentSection = sections.find((section) => section.id === activeSection);
+  const totalSteps = currentSection?.steps.length || 0;
+  const currentStepData = currentSection?.steps[currentStep];
+
+  const handleNext = () => {
+    if (currentStep < totalSteps - 1) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
+
+  const handlePrevious = () => {
+    if (currentStep > 0) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -206,7 +140,7 @@ Additional Context:
               </div>
             </div>
           </header>
-          <div className="p-8 max-w-7xl mx-auto ">
+          <div className="p-8 max-w-7xl mx-auto">
             <div className="mb-8 text-center">
               <h1 className="text-3xl font-extrabold text-black mb-2 flex items-center justify-center gap-2">
                 Guide
@@ -220,7 +154,10 @@ Additional Context:
                   {sections.map((section) => (
                     <button
                       key={section.id}
-                      onClick={() => setActiveSection(section.id)}
+                      onClick={() => {
+                        setActiveSection(section.id);
+                        setCurrentStep(0);
+                      }}
                       className={`w-[50%] flex items-center gap-3 px-4 py-2 text-sm font-medium rounded-lg transition ${
                         activeSection === section.id
                           ? "bg-amber-400 text-black"
@@ -234,8 +171,49 @@ Additional Context:
                 </nav>
               </div>
 
-              <div className=" w-[55%]">
-                {sections.find((section) => section.id === activeSection)?.content}
+              <div className="w-[55%]">
+                <div className="bg-black rounded-2xl p-6 shadow border border-gray-800">
+                  <h3 className="text-xl font-bold bg-amber-400 text-black inline-block px-4 py-2 rounded-lg mb-4">
+                    {currentSection?.title}
+                  </h3>
+                  <div className="prose max-w-none text-white">
+                    <div className="flex items-center gap-4">
+                      <div className="w-8 h-8 rounded-full bg-amber-400 flex items-center justify-center text-black font-bold">
+                        {currentStep + 1}
+                      </div>
+                      <div>
+                        <p className="font-semibold">{currentStepData?.title}</p>
+                        <p className="text-gray-400">{currentStepData?.description}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex justify-between mt-6">
+                    <button
+                      onClick={handlePrevious}
+                      disabled={currentStep === 0}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg transition ${
+                        currentStep === 0
+                          ? "bg-gray-800 text-gray-400 cursor-not-allowed"
+                          : "bg-amber-400 text-black hover:bg-amber-500"
+                      }`}
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                      Previous
+                    </button>
+                    <button
+                      onClick={handleNext}
+                      disabled={currentStep === totalSteps - 1}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg transition ${
+                        currentStep === totalSteps - 1
+                          ? "bg-gray-800 text-gray-400 cursor-not-allowed"
+                          : "bg-amber-400 text-black hover:bg-amber-500"
+                      }`}
+                    >
+                      Next
+                      <ArrowRight className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
