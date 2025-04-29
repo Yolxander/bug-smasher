@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Search, Bell, ChevronDown } from "lucide-react";
 import { DashboardSidebar } from "@/components/DashboardSidebar";
+import { StepIndicator } from "../components/StepIndicator";
 
 function getMockDevice() {
   return "Chrome on MacBook Pro";
@@ -28,20 +29,36 @@ export default function SubmitBugPage() {
   const [priority, setPriority] = useState("Medium");
   const [status, setStatus] = useState("Open");
   const [dueDate, setDueDate] = useState("");
-  const [subtasks, setSubtasks] = useState([
-    { text: "Steps to reproduce", done: false },
-    { text: "Expected behavior", done: false },
-    { text: "Actual behavior", done: false },
-  ]);
-  const [newSubtask, setNewSubtask] = useState("");
   const [screenshot, setScreenshot] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [notifications, setNotifications] = useState(false);
+  const [currentStep, setCurrentStep] = useState(1);
+  const totalSteps = 5;
+
+  const steps = [
+    "Basic Information",
+    "Priority & Due Date",
+    "Screenshot",
+    "Project & Assignee",
+    "Review"
+  ];
 
   // Pre-filled fields
   const url = getMockUrl();
   const device = getMockDevice();
   const timestamp = getMockTimestamp();
+
+  const nextStep = () => {
+    if (currentStep < totalSteps) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
+
+  const prevStep = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
 
   const handleScreenshot = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -60,28 +77,163 @@ export default function SubmitBugPage() {
     // Here you would send the bug report to your backend
   };
 
-  const handleSubtaskChange = (idx: number) => {
-    setSubtasks((prev) =>
-      prev.map((s, i) => (i === idx ? { ...s, done: !s.done } : s))
-    );
-  };
-
-  const handleAddSubtask = () => {
-    if (newSubtask.trim()) {
-      setSubtasks([...subtasks, { text: newSubtask, done: false }]);
-      setNewSubtask("");
+  const renderStepContent = () => {
+    switch (currentStep) {
+      case 1:
+        return (
+          <div className="flex flex-col gap-6">
+            <div>
+              <label className="block text-lg font-bold text-gray-800 mb-1">Bug Title</label>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                required
+                className="w-full text-xl font-semibold mb-2 bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-200 focus:outline-none transition"
+                placeholder="Give your bug a short, clear title..."
+              />
+            </div>
+            <div>
+              <label className="block text-lg font-bold text-gray-800 mb-1">Description</label>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                required
+                className="w-full min-h-[100px] bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 text-base focus:ring-2 focus:ring-emerald-200 focus:outline-none transition"
+                placeholder="Describe what happened, what you expected, and any other details..."
+              />
+            </div>
+          </div>
+        );
+      case 2:
+        return (
+          <div className="flex flex-col gap-6">
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex-1">
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Priority</label>
+                <select
+                  value={priority}
+                  onChange={(e) => setPriority(e.target.value)}
+                  className="w-full rounded border border-gray-200 px-3 py-2 text-base bg-gray-50 font-medium focus:ring-2 focus:ring-emerald-200 focus:outline-none"
+                >
+                  <option value="Low">Low</option>
+                  <option value="Medium">Medium</option>
+                  <option value="High">High</option>
+                </select>
+              </div>
+              <div className="flex-1">
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Due Date</label>
+                <input
+                  type="date"
+                  value={dueDate}
+                  onChange={e => setDueDate(e.target.value)}
+                  className="w-full rounded border border-gray-200 px-3 py-2 text-base bg-gray-50 font-medium focus:ring-2 focus:ring-emerald-200 focus:outline-none"
+                />
+              </div>
+            </div>
+          </div>
+        );
+      case 3:
+        return (
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1">Screenshot / Attachment</label>
+            <label className="block w-full border-2 border-dashed border-emerald-200 rounded-xl p-6 text-center cursor-pointer bg-gray-50 hover:bg-emerald-50 transition">
+              <input type="file" accept="image/*" onChange={handleScreenshot} className="hidden" />
+              <div className="flex flex-col items-center justify-center gap-2">
+                <svg width="32" height="32" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24" className="mx-auto text-emerald-400">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 16V4m0 0-4 4m4-4 4 4M20 16.5V19a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 19v-2.5A2.5 2.5 0 0 1 6.5 14h11a2.5 2.5 0 0 1 2.5 2.5Z"/>
+                </svg>
+                <span className="text-xs text-emerald-700">Upload a file or drag and drop<br/>PNG, JPG, GIF up to 3MB</span>
+                {screenshot && (
+                  <div className="mt-2 flex flex-col items-center">
+                    <Image src={screenshot} alt="Screenshot preview" width={120} height={80} className="rounded shadow" />
+                    <span className="text-xs text-gray-400 mt-1">Screenshot.png</span>
+                  </div>
+                )}
+              </div>
+            </label>
+          </div>
+        );
+      case 4:
+        return (
+          <div className="flex flex-col gap-6">
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex-1">
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Project</label>
+                <select className="w-full rounded border border-gray-200 px-3 py-2 text-base bg-gray-50 font-medium focus:ring-2 focus:ring-emerald-200 focus:outline-none">
+                  <option>{mockProject}</option>
+                </select>
+              </div>
+              <div className="flex-1">
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Assignee</label>
+                <div className="flex flex-col gap-2">
+                  {mockAssignees.map((a) => (
+                    <div key={a.name} className="flex items-center gap-2">
+                      <Image src={a.avatar} alt={a.name} width={24} height={24} className="rounded-full" />
+                      <span className="text-sm text-gray-700">{a.name}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      case 5:
+        return (
+          <div className="flex flex-col gap-6">
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <h3 className="font-bold text-lg mb-4">Review Your Bug Report</h3>
+              <div className="grid gap-4">
+                <div>
+                  <div className="text-sm font-semibold">Title</div>
+                  <div className="text-gray-700">{title}</div>
+                </div>
+                <div>
+                  <div className="text-sm font-semibold">Description</div>
+                  <div className="text-gray-700">{description}</div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <div className="text-sm font-semibold">Priority</div>
+                    <div className="text-gray-700">{priority}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold">Due Date</div>
+                    <div className="text-gray-700">{dueDate}</div>
+                  </div>
+                </div>
+                {screenshot && (
+                  <div>
+                    <div className="text-sm font-semibold">Screenshot</div>
+                    <div className="mt-2">
+                      <Image src={screenshot} alt="Screenshot preview" width={200} height={150} className="rounded shadow" />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={notifications}
+                onChange={() => setNotifications(!notifications)}
+                className="accent-emerald-500"
+                id="subscribe"
+              />
+              <label htmlFor="subscribe" className="text-sm text-gray-700">Notify me about updates to this bug</label>
+            </div>
+          </div>
+        );
+      default:
+        return null;
     }
   };
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      {/* Main container with rounded corners and shadow */}
       <div className="flex w-full max-w-[1400px] mx-auto my-4 bg-white rounded-3xl shadow-sm overflow-hidden">
-        {/* Sidebar */}
         <DashboardSidebar activePage="/submit" />
-        {/* Main content */}
         <div className="flex-1 overflow-auto bg-gray-50">
-          {/* Header */}
           <header className="flex items-center justify-between border-b border-gray-100 bg-white p-4">
             <div className="relative w-[400px]">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
@@ -113,134 +265,62 @@ export default function SubmitBugPage() {
               </div>
             </div>
           </header>
-          {/* Submit Bug Form Content */}
           <div className="p-8 max-w-6xl mx-auto">
-            <h1 className="text-2xl font-bold mb-6">Submit a Bug</h1>
+            <div className="mb-8 text-center">
+              <h1 className="text-xl font-extrabold text-emerald-600 mb-2 flex items-center justify-center gap-2">
+                Submit new Bug
+              </h1>
+      
+            </div>
             {submitted ? (
-              <div className="bg-green-50 border border-green-200 text-green-700 rounded-lg p-6 text-center">
-                <h2 className="text-xl font-semibold mb-2">Thank you for your report!</h2>
-                <p>Your bug has been submitted and will be reviewed by the QA team.</p>
+              <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-2xl p-8 text-center shadow-md animate-in fade-in zoom-in-95">
+                <h2 className="text-2xl font-bold mb-2 flex items-center justify-center gap-2">🎉 Bug Submitted!</h2>
+                <p className="mb-2">Thank you for making the product better. Our QA team will review your report soon.</p>
+                <Link href="/my-submissions" className="inline-block mt-4 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-6 py-2 rounded-full shadow transition">View My Submissions</Link>
               </div>
             ) : (
-              <form className="flex flex-col md:flex-row gap-8" onSubmit={handleSubmit}>
-                {/* Left: Main bug form */}
-                <div className="flex-1 bg-gray-50 rounded-2xl p-6 shadow border border-gray-100">
-                  <input
-                    type="text"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    required
-                    className="w-full text-2xl font-semibold mb-2 bg-transparent border-none focus:ring-0 focus:outline-none"
-                    placeholder="Enter your bug title ..."
-                  />
-                  <textarea
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    required
-                    className="w-full min-h-[80px] mb-4 bg-transparent border-none focus:ring-0 focus:outline-none text-base"
-                    placeholder="Enter description"
-                  />
-                  <div className="mb-4 text-xs text-gray-400">Markdown formatting</div>
-                  {/* Subtasks */}
-                  <div className="mb-6">
-                    <div className="font-medium mb-2 text-gray-700">Subtasks</div>
-                    <div className="space-y-2">
-                      {subtasks.map((sub, idx) => (
-                        <div key={idx} className="flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            checked={sub.done}
-                            onChange={() => handleSubtaskChange(idx)}
-                            className="accent-emerald-500"
-                          />
-                          <span className={sub.done ? "line-through text-gray-400" : ""}>{sub.text}</span>
-                        </div>
-                      ))}
+              <form className="flex flex-col gap-8" onSubmit={handleSubmit}>
+                <StepIndicator currentStep={currentStep} totalSteps={totalSteps} steps={steps} />
+                <div className="bg-white rounded-2xl p-8 shadow border border-gray-100">
+                  {renderStepContent()}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
+                    <div>
+                      <div className="text-xs text-gray-400 mb-1">Current URL</div>
+                      <div className="text-xs text-gray-700 bg-gray-50 rounded px-2 py-1">{url}</div>
                     </div>
-                    <div className="flex items-center gap-2 mt-2">
-                      <input
-                        type="text"
-                        value={newSubtask}
-                        onChange={(e) => setNewSubtask(e.target.value)}
-                        placeholder="Add another subtask"
-                        className="flex-1 rounded border border-gray-200 px-2 py-1 text-xs"
-                      />
-                      <button type="button" onClick={handleAddSubtask} className="text-emerald-600 text-xs font-medium">Add</button>
+                    <div>
+                      <div className="text-xs text-gray-400 mb-1">Browser/Device</div>
+                      <div className="text-xs text-gray-700 bg-gray-50 rounded px-2 py-1">{device}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-gray-400 mb-1">Timestamp</div>
+                      <div className="text-xs text-gray-700 bg-gray-50 rounded px-2 py-1">{timestamp}</div>
                     </div>
                   </div>
-                  {/* Attachments */}
-                  <div className="mb-4">
-                    <div className="font-medium mb-2 text-gray-700">Attachments</div>
-                    <label className="block w-full border-2 border-dashed border-gray-200 rounded-xl p-6 text-center cursor-pointer bg-white hover:bg-gray-50 transition">
-                      <input type="file" accept="image/*" onChange={handleScreenshot} className="hidden" />
-                      <div className="flex flex-col items-center justify-center gap-2">
-                        <svg width="32" height="32" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24" className="mx-auto text-gray-400"><path strokeLinecap="round" strokeLinejoin="round" d="M12 16V4m0 0-4 4m4-4 4 4M20 16.5V19a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 19v-2.5A2.5 2.5 0 0 1 6.5 14h11a2.5 2.5 0 0 1 2.5 2.5Z"/></svg>
-                        <span className="text-xs text-gray-500">Upload a file or drag and drop<br/>PNG, JPG, GIF up to 3MB</span>
-                        {screenshot && (
-                          <div className="mt-2 flex flex-col items-center">
-                            <Image src={screenshot} alt="Screenshot preview" width={120} height={80} className="rounded shadow" />
-                            <span className="text-xs text-gray-400 mt-1">Screenshot.png</span>
-                          </div>
-                        )}
-                      </div>
-                    </label>
-                  </div>
-                  <div className="flex gap-2 mt-4">
-                    <button type="button" className="text-gray-400 text-sm">Cancel</button>
-                    <button type="submit" className="text-emerald-600 text-sm font-medium">Save bug</button>
-                  </div>
-                </div>
-                {/* Right: Settings panel */}
-                <div className="w-full md:w-[340px] flex-shrink-0 bg-white rounded-2xl p-6 shadow border border-gray-100 h-fit">
-                  <div className="mb-6">
-                    <div className="text-xs text-gray-400 mb-1">Project</div>
-                    <select className="w-full rounded border border-gray-200 px-3 py-2 text-sm bg-gray-50 font-medium">
-                      <option>{mockProject}</option>
-                    </select>
-                    <button className="text-xs text-emerald-600 mt-1">Add new project</button>
-                  </div>
-                  <div className="mb-6">
-                    <div className="text-xs text-gray-400 mb-1">Assignee</div>
-                    <div className="flex flex-col gap-2">
-                      {mockAssignees.map((a) => (
-                        <div key={a.name} className="flex items-center gap-2">
-                          <Image src={a.avatar} alt={a.name} width={24} height={24} className="rounded-full" />
-                          <span className="text-sm text-gray-700">{a.name}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="mb-6">
-                    <div className="text-xs text-gray-400 mb-1">Status</div>
-                    <span className="inline-block bg-orange-100 text-orange-700 px-2 py-1 rounded text-xs font-medium">In progress</span>
-                  </div>
-                  <div className="mb-6">
-                    <div className="text-xs text-gray-400 mb-1">Priority</div>
-                    <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${priority === "Low" ? "bg-emerald-100 text-emerald-700" : priority === "Medium" ? "bg-yellow-100 text-yellow-700" : "bg-red-100 text-red-700"}`}>{priority}</span>
-                  </div>
-                  <div className="mb-6">
-                    <div className="text-xs text-gray-400 mb-1">Due date</div>
-                    <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} className="w-full rounded border border-gray-200 px-3 py-2 text-sm bg-gray-50" />
-                  </div>
-                  <div className="mb-6">
-                    <div className="text-xs text-gray-400 mb-1">Notifications</div>
-                    <label className="flex items-center gap-2 cursor-pointer select-none">
-                      <input type="checkbox" checked={notifications} onChange={() => setNotifications(!notifications)} className="accent-emerald-500" />
-                      <span className="text-sm">Subscribe</span>
-                    </label>
-                    <div className="text-xs text-gray-400 mt-1">You're not receiving notifications from this thread.</div>
-                  </div>
-                  <div className="mb-6">
-                    <div className="text-xs text-gray-400 mb-1">Current URL</div>
-                    <div className="text-xs text-gray-700 bg-gray-50 rounded px-2 py-1">{url}</div>
-                  </div>
-                  <div className="mb-6">
-                    <div className="text-xs text-gray-400 mb-1">Browser/Device</div>
-                    <div className="text-xs text-gray-700 bg-gray-50 rounded px-2 py-1">{device}</div>
-                  </div>
-                  <div className="mb-6">
-                    <div className="text-xs text-gray-400 mb-1">Timestamp</div>
-                    <div className="text-xs text-gray-700 bg-gray-50 rounded px-2 py-1">{timestamp}</div>
+                  <div className="flex justify-between mt-8">
+                    <button
+                      type="button"
+                      onClick={prevStep}
+                      className={`text-gray-600 font-medium px-6 py-2 rounded-full hover:bg-gray-100 transition ${currentStep === 1 ? 'invisible' : ''}`}
+                    >
+                      Previous
+                    </button>
+                    {currentStep === totalSteps ? (
+                      <button
+                        type="submit"
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-6 py-2 rounded-full shadow transition"
+                      >
+                        Submit Bug 🚀
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={nextStep}
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-6 py-2 rounded-full shadow transition"
+                      >
+                        Next Step
+                      </button>
+                    )}
                   </div>
                 </div>
               </form>

@@ -62,8 +62,8 @@ function getIcon(icon: string) {
 export function DashboardSidebar({ activePage }: { activePage: string }) {
   return (
     <div className="w-[232px] flex flex-col rounded-l-3xl shadow-md border-r border-gray-100">
-      <div className="p-6">
-        <h1 className="text-2xl font-bold">Bug Smasher</h1>
+      <div className="p-6 flex justify-start rounded-lg">
+        <Image src="/logo.png" alt="Bug Smasher Logo" width={60} height={60} className="mx-auto rounded-lg" />
       </div>
       <nav className="flex-1 px-3 py-2 space-y-1">
         {navItems.map((item, index) => (
