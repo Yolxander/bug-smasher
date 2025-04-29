@@ -7,6 +7,7 @@ interface Message {
   type: "bot" | "user";
   content: string;
   timestamp: Date;
+  options?: string[];
 }
 
 type FlowType = "report" | "help" | "track" | "badges" | "feedback" | null;
@@ -39,13 +40,20 @@ export default function Chatbot() {
   const handleFlowSelection = (flow: FlowType) => {
     setCurrentFlow(flow);
     let botResponse = "";
+    let options: string[] | undefined;
     
     switch (flow) {
       case "report":
         botResponse = "Let's report a bug! What's a short title for it?";
         break;
       case "help":
-        botResponse = "What can I help you with? Choose from:\n1. How to submit a bug\n2. How to track my submissions\n3. What happens after submitting a bug\n4. How to earn badges";
+        botResponse = "What can I help you with?";
+        options = [
+          "How to submit a bug",
+          "How to track my submissions",
+          "What happens after submitting a bug",
+          "How to earn badges"
+        ];
         break;
       case "track":
         botResponse = "Want to check on a bug you submitted? What was the title (or keyword)?";
@@ -62,39 +70,40 @@ export default function Chatbot() {
       type: "bot",
       content: botResponse,
       timestamp: new Date(),
+      options,
     }]);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inputValue.trim()) return;
-
+  const handleOptionClick = (option: string) => {
     const newMessage: Message = {
       type: "user",
-      content: inputValue,
+      content: option,
       timestamp: new Date(),
     };
 
     setMessages((prev) => [...prev, newMessage]);
-    setInputValue("");
 
     // Simulate bot response
     setTimeout(() => {
       let botResponse = "";
+      let nextOptions: string[] | undefined;
+
       switch (currentFlow) {
         case "report":
           switch (currentStep) {
             case 0:
-              setBugTitle(inputValue);
+              setBugTitle(option);
               botResponse = "Great! Now, please describe what happened (and what you expected).";
               break;
             case 1:
-              setBugDescription(inputValue);
-              botResponse = "What's the priority of this bug? (Low / Medium / High)";
+              setBugDescription(option);
+              botResponse = "What's the priority of this bug?";
+              nextOptions = ["Low", "Medium", "High"];
               break;
             case 2:
-              setBugPriority(inputValue.toLowerCase() as "low" | "medium" | "high");
-              botResponse = "Would you like to attach a screenshot? (Upload or Skip)";
+              setBugPriority(option.toLowerCase() as "low" | "medium" | "high");
+              botResponse = "Would you like to attach a screenshot?";
+              nextOptions = ["Upload", "Skip"];
               break;
             case 3:
               botResponse = "Perfect! I'm submitting your bug report now. Thanks for helping improve Bug Smasher!";
@@ -103,6 +112,9 @@ export default function Chatbot() {
               }, 2000);
               break;
           }
+          break;
+        case "help":
+          // Add help flow responses here
           break;
         // Add other flow cases here
       }
@@ -114,12 +126,21 @@ export default function Chatbot() {
             type: "bot",
             content: botResponse,
             timestamp: new Date(),
+            options: nextOptions,
           },
         ]);
       }
 
       setCurrentStep((prev) => prev + 1);
     }, 1000);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inputValue.trim()) return;
+
+    handleOptionClick(inputValue);
+    setInputValue("");
   };
 
   return (
@@ -162,6 +183,19 @@ export default function Chatbot() {
                 >
                   {message.content}
                 </div>
+                {message.options && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {message.options.map((option, optionIndex) => (
+                      <button
+                        key={optionIndex}
+                        onClick={() => handleOptionClick(option)}
+                        className="px-3 py-1 bg-amber-100 text-amber-800 rounded-full hover:bg-amber-200 transition-colors text-sm"
+                      >
+                        {option}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
             {!currentFlow && (
