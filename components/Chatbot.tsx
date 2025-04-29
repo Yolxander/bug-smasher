@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { MessageSquare, X, Send, Image as ImageIcon } from "lucide-react";
+import { MessageSquare, X, Send, Image as ImageIcon, RotateCcw } from "lucide-react";
 
 interface Message {
   type: "bot" | "user";
@@ -13,14 +13,14 @@ interface Message {
 type FlowType = "report" | "help" | "track" | "badges" | "feedback" | null;
 
 export default function Chatbot() {
+  const initialMessage = {
+    type: "bot" as const,
+    content: "Hi there! I'm your Bug Smasher Assistant. What would you like to do?",
+    timestamp: new Date(),
+  };
+
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      type: "bot",
-      content: "Hi there! I'm your Bug Smasher Assistant. What would you like to do?",
-      timestamp: new Date(),
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([initialMessage]);
   const [currentFlow, setCurrentFlow] = useState<FlowType>(null);
   const [currentStep, setCurrentStep] = useState(0);
   const [bugTitle, setBugTitle] = useState("");
@@ -28,6 +28,16 @@ export default function Chatbot() {
   const [bugPriority, setBugPriority] = useState<"low" | "medium" | "high" | "">("");
   const [inputValue, setInputValue] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const resetChat = () => {
+    setMessages([initialMessage]);
+    setCurrentFlow(null);
+    setCurrentStep(0);
+    setBugTitle("");
+    setBugDescription("");
+    setBugPriority("");
+    setInputValue("");
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -174,12 +184,21 @@ export default function Chatbot() {
         <div className="fixed bottom-6 right-6 w-96 bg-white rounded-lg shadow-xl border border-gray-200 flex flex-col">
           <div className="p-4 border-b border-gray-200 flex justify-between items-center">
             <h3 className="font-semibold text-gray-900">Bug Smasher Assistant</h3>
-            <button
-              onClick={() => setIsOpen(false)}
-              className="text-gray-400 hover:text-gray-600"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={resetChat}
+                className="text-gray-400 hover:text-amber-600 transition-colors"
+                title="Reset chat"
+              >
+                <RotateCcw className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => setIsOpen(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </div>
 
           <div className="flex-1 p-4 overflow-y-auto max-h-96">
