@@ -56,6 +56,7 @@ export default function Chatbot() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [tempImage, setTempImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [highlightedOption, setHighlightedOption] = useState<string | null>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -182,6 +183,7 @@ export default function Chatbot() {
               break;
             case 4:
               setBugData(prev => ({ ...prev, actualBehavior: option }));
+              const { device: detectedDevice } = detectDeviceInfo();
               botResponse = "5️⃣ Let's collect information about your environment.\n\nWhat device are you using?";
               nextOptions = [
                 "iPhone 12",
@@ -194,9 +196,11 @@ export default function Chatbot() {
                 "iPad",
                 "Other"
               ];
+              setHighlightedOption(detectedDevice);
               break;
             case 5:
               setBugData(prev => ({ ...prev, device: option }));
+              const { browser: detectedBrowser } = detectDeviceInfo();
               botResponse = "Which browser are you using?";
               nextOptions = [
                 "Chrome",
@@ -207,9 +211,11 @@ export default function Chatbot() {
                 "Brave",
                 "Other"
               ];
+              setHighlightedOption(detectedBrowser);
               break;
             case 6:
               setBugData(prev => ({ ...prev, browser: option }));
+              const { os: detectedOS } = detectDeviceInfo();
               botResponse = "What operating system are you using?";
               nextOptions = [
                 "iOS",
@@ -220,6 +226,7 @@ export default function Chatbot() {
                 "Linux",
                 "Other"
               ];
+              setHighlightedOption(detectedOS);
               break;
             case 7:
               setBugData(prev => ({ ...prev, os: option }));
@@ -435,6 +442,56 @@ export default function Chatbot() {
     }
   };
 
+  const detectDeviceInfo = () => {
+    const userAgent = navigator.userAgent;
+    let device = "Other";
+    let browser = "Other";
+    let os = "Other";
+
+    // Detect device
+    if (/iPhone|iPad|iPod/i.test(userAgent)) {
+      device = "iPhone 12"; // Default to iPhone 12 for iOS devices
+    } else if (/Macintosh/i.test(userAgent)) {
+      device = "MacBook Pro"; // Default to MacBook Pro for Macs
+    } else if (/Windows/i.test(userAgent)) {
+      device = "Windows PC";
+    } else if (/Android/i.test(userAgent)) {
+      device = "Android Phone";
+    }
+
+    // Detect browser
+    if (/Chrome/i.test(userAgent) && !/Edge/i.test(userAgent)) {
+      browser = "Chrome";
+    } else if (/Safari/i.test(userAgent) && !/Chrome/i.test(userAgent)) {
+      browser = "Safari";
+    } else if (/Firefox/i.test(userAgent)) {
+      browser = "Firefox";
+    } else if (/Edge/i.test(userAgent)) {
+      browser = "Edge";
+    } else if (/Opera|OPR/i.test(userAgent)) {
+      browser = "Opera";
+    } else if (/Brave/i.test(userAgent)) {
+      browser = "Brave";
+    }
+
+    // Detect OS
+    if (/iPhone|iPad|iPod/i.test(userAgent)) {
+      os = "iOS";
+    } else if (/Macintosh/i.test(userAgent)) {
+      os = "macOS";
+    } else if (/Windows 10/i.test(userAgent)) {
+      os = "Windows 10";
+    } else if (/Windows 11/i.test(userAgent)) {
+      os = "Windows 11";
+    } else if (/Android/i.test(userAgent)) {
+      os = "Android";
+    } else if (/Linux/i.test(userAgent)) {
+      os = "Linux";
+    }
+
+    return { device, browser, os };
+  };
+
   return (
     <div className="fixed bottom-4 right-4 z-50">
       {!isOpen ? (
@@ -506,7 +563,11 @@ export default function Chatbot() {
                         <button
                           key={optionIndex}
                           onClick={() => handleOptionClick(option)}
-                          className="px-3 py-1 bg-amber-100 text-amber-800 rounded-full hover:bg-amber-200 transition-colors text-sm"
+                          className={`px-3 py-1 rounded-full transition-colors text-sm ${
+                            option === highlightedOption
+                              ? "bg-amber-500 text-white hover:bg-amber-600"
+                              : "bg-amber-100 text-amber-800 hover:bg-amber-200"
+                          }`}
                         >
                           {option}
                         </button>
