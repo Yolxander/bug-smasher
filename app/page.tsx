@@ -5,9 +5,60 @@ import { DashboardSidebar } from "@/components/DashboardSidebar"
 import Image from 'next/image'
 import Link from 'next/link'
 import { Search, Bell, ChevronDown, Bug, CheckCircle, Clock, AlertTriangle } from "lucide-react"
+import { getSubmissions } from './actions/submissions'
+import { useEffect, useState } from 'react'
+import { Submission } from './actions/submissions'
 
 export default function HomePage() {
   const { user } = useAuth()
+  const [submissions, setSubmissions] = useState<Submission[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchSubmissions = async () => {
+      try {
+        console.log('Starting to fetch submissions...');
+        const data = await getSubmissions()
+        console.log('Received submissions in page:', data);
+        setSubmissions(data)
+      } catch (error) {
+        console.error('Error fetching submissions:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchSubmissions()
+  }, [])
+
+  // Calculate status counts
+  const statusCounts = submissions.reduce((acc, submission) => {
+    acc[submission.status] = (acc[submission.status] || 0) + 1
+    return acc
+  }, {} as Record<string, number>)
+
+  console.log('Current submissions state:', submissions);
+  console.log('Status counts:', statusCounts);
+
+  // Get recent submissions (last 2)
+  const recentSubmissions = submissions
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 2)
+
+  console.log('Recent submissions:', recentSubmissions);
+
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'open':
+        return 'bg-red-100 text-red-800'
+      case 'in progress':
+        return 'bg-yellow-100 text-yellow-800'
+      case 'resolved':
+        return 'bg-green-100 text-green-800'
+      default:
+        return 'bg-gray-100 text-gray-800'
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -108,7 +159,7 @@ export default function HomePage() {
                     <AlertTriangle className="h-8 w-8 text-red-500 mr-3" />
                     <h3 className="text-xl font-semibold">Open Issues</h3>
                   </div>
-                  <p className="text-3xl font-bold text-gray-900">12</p>
+                  <p className="text-3xl font-bold text-gray-900">{statusCounts['Open'] || 0}</p>
                   <p className="text-sm text-gray-500 mt-2">Needs attention</p>
                 </div>
                 <div className="bg-white p-6 rounded-xl shadow-sm">
@@ -116,7 +167,7 @@ export default function HomePage() {
                     <Clock className="h-8 w-8 text-yellow-500 mr-3" />
                     <h3 className="text-xl font-semibold">In Progress</h3>
                   </div>
-                  <p className="text-3xl font-bold text-gray-900">8</p>
+                  <p className="text-3xl font-bold text-gray-900">{statusCounts['In Progress'] || 0}</p>
                   <p className="text-sm text-gray-500 mt-2">Being worked on</p>
                 </div>
                 <div className="bg-white p-6 rounded-xl shadow-sm">
@@ -124,7 +175,7 @@ export default function HomePage() {
                     <CheckCircle className="h-8 w-8 text-green-500 mr-3" />
                     <h3 className="text-xl font-semibold">Resolved</h3>
                   </div>
-                  <p className="text-3xl font-bold text-gray-900">45</p>
+                  <p className="text-3xl font-bold text-gray-900">{statusCounts['Resolved'] || 0}</p>
                   <p className="text-sm text-gray-500 mt-2">This month</p>
                 </div>
               </div>
@@ -135,22 +186,26 @@ export default function HomePage() {
               <div>
                 <h2 className="text-2xl font-bold mb-4">Your Recent Reports</h2>
                 <div className="bg-white rounded-xl shadow-sm divide-y">
-                  <div className="p-4">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-semibold">Login Button Not Working</h3>
-                      <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Open</span>
-                    </div>
-                    <p className="text-sm text-gray-500 mt-1">The login button doesn't respond when clicked on the mobile app.</p>
-                    <p className="text-xs text-gray-400 mt-2">Reported 2 days ago</p>
-                  </div>
-                  <div className="p-4">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-semibold">Page Loading Error</h3>
-                      <span className="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">In Progress</span>
-                    </div>
-                    <p className="text-sm text-gray-500 mt-1">Getting a blank screen when trying to view profile settings.</p>
-                    <p className="text-xs text-gray-400 mt-2">Reported 5 days ago</p>
-                  </div>
+                  {loading ? (
+                    <div className="p-4 text-center text-gray-500">Loading...</div>
+                  ) : recentSubmissions.length > 0 ? (
+                    recentSubmissions.map((submission) => (
+                      <div key={submission.id} className="p-4">
+                        <div className="flex items-center justify-between">
+                          <h3 className="font-semibold">{submission.title}</h3>
+                          <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(submission.status)}`}>
+                            {submission.status}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-500 mt-1">{submission.description}</p>
+                        <p className="text-xs text-gray-400 mt-2">
+                          Reported {new Date(submission.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="p-4 text-center text-gray-500">No recent reports</div>
+                  )}
                 </div>
               </div>
               <div>
