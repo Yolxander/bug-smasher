@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
@@ -12,19 +12,11 @@ import { toast } from "@/components/ui/use-toast";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { signIn, user, loading } = useAuth();
+  const { signIn } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-
-  // Redirect if user is already logged in
-  useEffect(() => {
-    if (!loading && user) {
-      console.log('User is already logged in, redirecting to home...');
-      router.push("/");
-    }
-  }, [user, loading, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,7 +25,8 @@ export default function LoginPage() {
     try {
       console.log('Attempting login for:', email);
       await signIn(email, password);
-      // Don't redirect here, the useEffect will handle it
+      console.log('Login successful, redirecting...');
+      router.push("/");
     } catch (error) {
       console.error("Login failed:", error);
       toast({
@@ -45,15 +38,6 @@ export default function LoginPage() {
       setIsLoading(false);
     }
   };
-
-  // Show loading state while checking auth
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#FFD700]"></div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen flex">
