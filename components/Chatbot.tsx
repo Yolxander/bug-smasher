@@ -182,15 +182,44 @@ export default function Chatbot() {
               break;
             case 4:
               setBugData(prev => ({ ...prev, actualBehavior: option }));
-              botResponse = "5️⃣ Let's collect information about your environment.\n\nWhat device are you using? (e.g., iPhone 12, MacBook Pro, etc.)";
+              botResponse = "5️⃣ Let's collect information about your environment.\n\nWhat device are you using?";
+              nextOptions = [
+                "iPhone 12",
+                "iPhone 13",
+                "iPhone 14",
+                "MacBook Pro",
+                "MacBook Air",
+                "Windows PC",
+                "Android Phone",
+                "iPad",
+                "Other"
+              ];
               break;
             case 5:
               setBugData(prev => ({ ...prev, device: option }));
-              botResponse = "Which browser are you using? (e.g., Chrome 120, Safari 17, Firefox 123)";
+              botResponse = "Which browser are you using?";
+              nextOptions = [
+                "Chrome",
+                "Safari",
+                "Firefox",
+                "Edge",
+                "Opera",
+                "Brave",
+                "Other"
+              ];
               break;
             case 6:
               setBugData(prev => ({ ...prev, browser: option }));
-              botResponse = "What operating system are you using? (e.g., iOS 17, macOS Sonoma, Windows 11)";
+              botResponse = "What operating system are you using?";
+              nextOptions = [
+                "iOS",
+                "macOS",
+                "Windows 10",
+                "Windows 11",
+                "Android",
+                "Linux",
+                "Other"
+              ];
               break;
             case 7:
               setBugData(prev => ({ ...prev, os: option }));
