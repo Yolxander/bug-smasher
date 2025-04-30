@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Bell, ChevronDown, ArrowLeft } from "lucide-react";
@@ -32,6 +32,48 @@ export default function SubmitBugPage() {
     },
     url: typeof window !== "undefined" ? window.location.href : "https://staging.bugsmasher.com/projects/123"
   });
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      // Detect device type
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      const device = isMobile ? "Mobile" : "Desktop";
+
+      // Detect operating system
+      const os = (() => {
+        const userAgent = window.navigator.userAgent;
+        const platform = window.navigator.platform;
+        const macosPlatforms = ['Macintosh', 'MacIntel', 'MacPPC', 'Mac68K'];
+        const windowsPlatforms = ['Win32', 'Win64', 'Windows', 'WinCE'];
+        const iosPlatforms = ['iPhone', 'iPad', 'iPod'];
+
+        if (macosPlatforms.indexOf(platform) !== -1) return 'macOS';
+        if (iosPlatforms.indexOf(platform) !== -1) return 'iOS';
+        if (windowsPlatforms.indexOf(platform) !== -1) return 'Windows';
+        if (/Android/.test(userAgent)) return 'Android';
+        if (/Linux/.test(platform)) return 'Linux';
+        return 'Unknown';
+      })();
+
+      // Detect browser
+      const browser = (() => {
+        const userAgent = navigator.userAgent;
+        if (userAgent.match(/chrome|chromium|crios/i)) return 'Chrome';
+        if (userAgent.match(/firefox|fxios/i)) return 'Firefox';
+        if (userAgent.match(/safari/i)) return 'Safari';
+        if (userAgent.match(/opr\//i)) return 'Opera';
+        if (userAgent.match(/edg/i)) return 'Edge';
+        return 'Unknown';
+      })();
+
+      setFormData(prev => ({
+        ...prev,
+        device,
+        os,
+        browser
+      }));
+    }
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -80,9 +122,6 @@ export default function SubmitBugPage() {
     const currentIndex = steps.findIndex(step => step.id === currentStep);
     if (currentIndex < steps.length - 1) {
       setCurrentStep(steps[currentIndex + 1].id);
-    } else {
-      // If we're on the last step, submit the form
-      handleSubmit(new Event('submit') as any);
     }
   };
 

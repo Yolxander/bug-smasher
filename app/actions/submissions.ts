@@ -4,6 +4,12 @@ export type Submission = {
   id: string;
   title: string;
   description: string;
+  stepsToReproduce: string;
+  expectedBehavior: string;
+  actualBehavior: string;
+  device: string;
+  browser: string;
+  os: string;
   status: string;
   priority: string;
   assignee: {
@@ -16,7 +22,6 @@ export type Submission = {
   };
   createdAt: string;
   updatedAt: string;
-  device: string;
   url: string;
   screenshot: string;
 };
@@ -27,15 +32,36 @@ export async function getSubmissions(): Promise<Submission[]> {
     const { data, error } = await supabase
       .from('submissions')
       .select('*')
-      .order('createdAt', { ascending: false });
+      .order('created_at', { ascending: false });
 
     if (error) {
       console.error('Supabase error:', error);
       throw error;
     }
 
-    console.log('Fetched submissions:', data);
-    return data || [];
+    // Map database fields to TypeScript type
+    const mappedData = data?.map(item => ({
+      id: item.id,
+      title: item.title,
+      description: item.description,
+      stepsToReproduce: item.steps_to_reproduce,
+      expectedBehavior: item.expected_behavior,
+      actualBehavior: item.actual_behavior,
+      device: item.device,
+      browser: item.browser,
+      os: item.os,
+      status: item.status,
+      priority: item.priority,
+      assignee: item.assignee,
+      project: item.project,
+      url: item.url,
+      screenshot: item.screenshot,
+      createdAt: item.created_at,
+      updatedAt: item.updated_at
+    })) || [];
+
+    console.log('Fetched submissions:', mappedData);
+    return mappedData;
   } catch (error) {
     console.error('Error reading submissions:', error);
     return [];
@@ -51,7 +77,28 @@ export async function getSubmissionById(id: string): Promise<Submission | null> 
       .single();
 
     if (error) throw error;
-    return data;
+    if (!data) return null;
+
+    // Map database fields to TypeScript type
+    return {
+      id: data.id,
+      title: data.title,
+      description: data.description,
+      stepsToReproduce: data.steps_to_reproduce,
+      expectedBehavior: data.expected_behavior,
+      actualBehavior: data.actual_behavior,
+      device: data.device,
+      browser: data.browser,
+      os: data.os,
+      status: data.status,
+      priority: data.priority,
+      assignee: data.assignee,
+      project: data.project,
+      url: data.url,
+      screenshot: data.screenshot,
+      createdAt: data.created_at,
+      updatedAt: data.updated_at
+    };
   } catch (error) {
     console.error('Error reading submission:', error);
     return null;
@@ -63,9 +110,22 @@ export async function createSubmission(submission: Omit<Submission, 'id' | 'crea
     const { data, error } = await supabase
       .from('submissions')
       .insert([{
-        ...submission,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        title: submission.title,
+        description: submission.description,
+        steps_to_reproduce: submission.stepsToReproduce,
+        expected_behavior: submission.expectedBehavior,
+        actual_behavior: submission.actualBehavior,
+        device: submission.device,
+        browser: submission.browser,
+        os: submission.os,
+        status: submission.status,
+        priority: submission.priority,
+        assignee: submission.assignee,
+        project: submission.project,
+        url: submission.url,
+        screenshot: submission.screenshot,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       }])
       .select()
       .single();
@@ -83,15 +143,49 @@ export async function updateSubmission(id: string, submission: Partial<Submissio
     const { data, error } = await supabase
       .from('submissions')
       .update({
-        ...submission,
-        updatedAt: new Date().toISOString(),
+        title: submission.title,
+        description: submission.description,
+        steps_to_reproduce: submission.stepsToReproduce,
+        expected_behavior: submission.expectedBehavior,
+        actual_behavior: submission.actualBehavior,
+        device: submission.device,
+        browser: submission.browser,
+        os: submission.os,
+        status: submission.status,
+        priority: submission.priority,
+        assignee: submission.assignee,
+        project: submission.project,
+        url: submission.url,
+        screenshot: submission.screenshot,
+        updated_at: new Date().toISOString()
       })
       .eq('id', id)
       .select()
       .single();
 
     if (error) throw error;
-    return data;
+    if (!data) return null;
+
+    // Map database fields to TypeScript type
+    return {
+      id: data.id,
+      title: data.title,
+      description: data.description,
+      stepsToReproduce: data.steps_to_reproduce,
+      expectedBehavior: data.expected_behavior,
+      actualBehavior: data.actual_behavior,
+      device: data.device,
+      browser: data.browser,
+      os: data.os,
+      status: data.status,
+      priority: data.priority,
+      assignee: data.assignee,
+      project: data.project,
+      url: data.url,
+      screenshot: data.screenshot,
+      createdAt: data.created_at,
+      updatedAt: data.updated_at
+    };
   } catch (error) {
     console.error('Error updating submission:', error);
     return null;

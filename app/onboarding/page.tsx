@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -74,6 +74,21 @@ export default function OnboardingPage() {
   const { user } = useAuth()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [step, setStep] = useState(1) // 1: Welcome, 2: Features, 3: Team, 4: Profile
+
+  useEffect(() => {
+    // Hide chatbot widget
+    const chatbotWidget = document.getElementById('chatbot-widget')
+    if (chatbotWidget) {
+      chatbotWidget.style.display = 'none'
+    }
+
+    // Cleanup function to show widget when component unmounts
+    return () => {
+      if (chatbotWidget) {
+        chatbotWidget.style.display = 'block'
+      }
+    }
+  }, [])
 
   const form = useForm<z.infer<typeof onboardingSchema>>({
     resolver: zodResolver(onboardingSchema),
@@ -356,13 +371,6 @@ export default function OnboardingPage() {
         backgroundRepeat: 'no-repeat'
       }}
     >
-      {/* Hide chatbot widget */}
-      <style jsx global>{`
-        #chatbot-widget {
-          display: none !important;
-        }
-      `}</style>
-
       {/* Dark overlay */}
       <div className="absolute inset-0 bg-black bg-opacity-75" />
       
