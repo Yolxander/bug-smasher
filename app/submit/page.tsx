@@ -8,7 +8,7 @@ import { StepIndicator } from "../components/StepIndicator";
 import { createSubmission } from "../actions/submissions";
 
 export default function SubmitBugPage() {
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState("details");
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
@@ -66,7 +66,7 @@ export default function SubmitBugPage() {
         },
         url: typeof window !== "undefined" ? window.location.href : "https://staging.bugsmasher.com/projects/123"
       });
-      setCurrentStep(1);
+      setCurrentStep("details");
       // Show success message or redirect
     } catch (error) {
       console.error('Error submitting bug:', error);
@@ -77,16 +77,39 @@ export default function SubmitBugPage() {
   };
 
   const nextStep = () => {
-    if (currentStep < 3) {
-      setCurrentStep(currentStep + 1);
+    const currentIndex = steps.findIndex(step => step.id === currentStep);
+    if (currentIndex < steps.length - 1) {
+      setCurrentStep(steps[currentIndex + 1].id);
+    } else {
+      // If we're on the last step, submit the form
+      handleSubmit(new Event('submit') as any);
     }
   };
 
   const prevStep = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
+    const currentIndex = steps.findIndex(step => step.id === currentStep);
+    if (currentIndex > 0) {
+      setCurrentStep(steps[currentIndex - 1].id);
     }
   };
+
+  const steps = [
+    {
+      id: "details",
+      name: "Bug Details",
+      description: "Describe the bug you encountered",
+    },
+    {
+      id: "reproduction",
+      name: "Reproduction Steps",
+      description: "How to reproduce the issue",
+    },
+    {
+      id: "environment",
+      name: "Environment",
+      description: "Device and browser information",
+    },
+  ];
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -144,14 +167,14 @@ export default function SubmitBugPage() {
                 <p className="text-gray-500 mb-6">Please provide detailed information about the bug you've encountered.</p>
                 
                 <StepIndicator
-                  currentStep={currentStep}
-                  totalSteps={3}
-                  steps={["Basic Info", "Details", "Review"]}
+                  currentStep={steps.findIndex(step => step.id === currentStep) + 1}
+                  totalSteps={steps.length}
+                  steps={steps.map(step => step.name)}
                 />
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-6">
-                {currentStep === 1 && (
+                {currentStep === "details" && (
                   <div className="bg-white rounded-xl shadow-sm p-6 space-y-6">
                     <div>
                       <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
@@ -203,7 +226,7 @@ export default function SubmitBugPage() {
                   </div>
                 )}
 
-                {currentStep === 2 && (
+                {currentStep === "reproduction" && (
                   <div className="bg-white rounded-xl shadow-sm p-6 space-y-6">
                     <div>
                       <label htmlFor="expectedBehavior" className="block text-sm font-medium text-gray-700 mb-1">
@@ -262,7 +285,7 @@ export default function SubmitBugPage() {
                   </div>
                 )}
 
-                {currentStep === 3 && (
+                {currentStep === "environment" && (
                   <div className="bg-white rounded-xl shadow-sm p-6 space-y-6">
                     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                       <div>
@@ -338,29 +361,20 @@ export default function SubmitBugPage() {
                   <button
                     type="button"
                     onClick={prevStep}
-                    disabled={currentStep === 1}
+                    disabled={currentStep === "details"}
                     className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Previous
                   </button>
 
-                  {currentStep < 3 ? (
-                    <button
-                      type="button"
-                      onClick={nextStep}
-                      className="px-4 py-2 text-sm font-medium text-white bg-black border border-transparent rounded-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black"
-                    >
-                      Next
-                    </button>
-                  ) : (
-                    <button
-                      type="submit"
-                      disabled={loading}
-                      className="px-4 py-2 text-sm font-medium text-white bg-black border border-transparent rounded-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {loading ? "Submitting..." : "Submit Bug Report"}
-                    </button>
-                  )}
+                  <button
+                    type={currentStep === "environment" ? "submit" : "button"}
+                    onClick={currentStep === "environment" ? undefined : nextStep}
+                    disabled={loading}
+                    className="px-4 py-2 text-sm font-medium text-white bg-black border border-transparent rounded-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {loading ? "Submitting..." : currentStep === "environment" ? "Submit Bug Report" : "Next"}
+                  </button>
                 </div>
               </form>
             </div>

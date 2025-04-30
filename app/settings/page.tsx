@@ -38,15 +38,15 @@ const settingsSections: SettingsSection[] = [
         description: "Update your name, email, and profile picture",
         type: "link",
         action: "#",
-      },
-      {
+    },
+    {
         id: 2,
         name: "Password",
         description: "Change your password",
         type: "link",
         action: "#",
-      },
-      {
+    },
+    {
         id: 3,
         name: "Two-Factor Authentication",
         description: "Enable or disable 2FA for additional security",
@@ -54,8 +54,8 @@ const settingsSections: SettingsSection[] = [
         value: true,
       },
     ],
-  },
-  {
+    },
+    {
     id: 2,
     title: "Notification Preferences",
     icon: <BellRing className="h-5 w-5 text-green-500" />,
@@ -161,7 +161,7 @@ export default function SettingsPage() {
               ...section,
               settings: section.settings.map((setting) =>
                 setting.id === settingId ? { ...setting, value } : setting
-              ),
+        ),
             }
           : section
       )
@@ -249,7 +249,7 @@ export default function SettingsPage() {
                                     : "bg-gray-200"
                                 } relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2`}
                                 onClick={() => handleToggle(section.id, setting.id)}
-                              >
+                          >
                                 <span
                                   className={`${
                                     setting.value
