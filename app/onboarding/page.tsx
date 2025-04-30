@@ -27,20 +27,20 @@ const onboardingSchema = z.object({
 const teamMembers = [
   {
     name: "Robin",
-    role: "Product Lead",
-    image: "/team/robin.png",
+    role: "Good worker",
+    image: "/people/robin-final.png",
     bio: "Leading product strategy and vision"
   },
   {
     name: "Pedro",
-    role: "Tech Lead",
-    image: "/team/pedro.png",
+    role: "Product Lead",
+    image: "/people/pedro-final.png",
     bio: "Architecting robust solutions"
   },
   {
     name: "Yolxi",
     role: "Design Lead",
-    image: "/team/yolxi.png",
+    image: "/people/yolxi-final.png",
     bio: "Crafting beautiful experiences"
   }
 ]
