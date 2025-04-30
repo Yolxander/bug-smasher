@@ -59,18 +59,21 @@ export default function HomePage() {
           </header>
 
           <main className="flex-1 p-8">
-            {/* Hero Section */}
+            {/* Updated Hero Section */}
             <div className="flex justify-between mb-8">
-              <div className="bg-indigo-100 rounded-2xl p-8 flex-1 mr-4">
+              <div className="bg-black rounded-2xl p-8 flex-1 mr-4">
                 <div className="max-w-md flex justify-between items-start">
                   <div>
-                    <h2 className="text-2xl font-bold mb-2">Welcome to Bug Smasher</h2>
-                    <p className="text-gray-700 mb-4">Report bugs easily and help improve our software. No technical knowledge required - just tell us what's not working!</p>
-                    <Link href="/submit" className="bg-indigo-600 text-white px-6 py-2 rounded-full font-medium hover:bg-indigo-700">
+                    <h2 className="text-2xl font-bold mb-2 text-amber-400">Welcome to Bug Smasher</h2>
+                    <p className="text-white mb-4 opacity-90">Report bugs easily and help improve our software. No technical knowledge required - just tell us what's not working!</p>
+                    <Link 
+                      href="/submit" 
+                      className="bg-amber-400 text-black px-6 py-2 rounded-full font-medium hover:bg-amber-300 transition-colors"
+                    >
                       Report a Bug
                     </Link>
                   </div>
-                  <Bug className="h-32 w-32 text-indigo-500 ml-4" />
+                  <Bug className="h-32 w-32 text-amber-400 ml-4" />
                 </div>
               </div>
               
