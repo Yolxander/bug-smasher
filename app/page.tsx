@@ -2,7 +2,9 @@
 
 import { useAuth } from '@/lib/auth-context'
 import { DashboardSidebar } from "@/components/DashboardSidebar"
-import { Search, Bell, ChevronDown, ArrowUp, ArrowDown, Users, FileText } from "lucide-react"
+import Image from 'next/image'
+import Link from 'next/link'
+import { Search, Bell, ChevronDown, Bug, CheckCircle, Clock, AlertTriangle } from "lucide-react"
 
 export default function HomePage() {
   const { user } = useAuth()
@@ -17,166 +19,168 @@ export default function HomePage() {
               <div className="flex justify-between h-16">
                 <div className="flex">
                   <div className="flex-shrink-0 flex items-center">
-                    <h1 className="text-xl font-semibold">Bug Report Dashboard</h1>
+                    <h1 className="text-xl font-semibold">Bug Smasher Dashboard</h1>
                   </div>
                 </div>
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
-                    <button
-                      type="button"
+                    <Link
+                      href="/submit"
                       className="relative inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                     >
-                      New Report
-                    </button>
+                      Report New Bug
+                    </Link>
                   </div>
-                  <div className="ml-3 relative">
-                    <div>
-                      <button
-                        type="button"
-                        className="max-w-xs bg-white flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                        id="user-menu-button"
-                      >
-                        <span className="sr-only">Open user menu</span>
-                        <img
-                          className="h-8 w-8 rounded-full"
-                          src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
-                          alt=""
-                        />
-                      </button>
+                  <div className="ml-4 flex items-center md:ml-6">
+                    <button className="p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none">
+                      <Bell className="h-6 w-6" />
+                    </button>
+                    <div className="ml-3 relative">
+                      <div className="flex items-center">
+                        <button
+                          type="button"
+                          className="max-w-xs bg-white rounded-full flex items-center text-sm focus:outline-none"
+                          id="user-menu-button"
+                        >
+                          <span className="sr-only">Open user menu</span>
+                          <img
+                            className="h-8 w-8 rounded-full"
+                            src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
+                            alt=""
+                          />
+                          <ChevronDown className="ml-1 h-4 w-4 text-gray-400" />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
           </header>
-          <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-            {/* Stats */}
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {/* Total Reports */}
-              <div className="bg-white overflow-hidden shadow rounded-lg">
-                <div className="p-5">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0">
-                      <FileText className="h-6 w-6 text-gray-400" />
-                    </div>
-                    <div className="ml-5 w-0 flex-1">
-                      <dl>
-                        <dt className="text-sm font-medium text-gray-500 truncate">Total Reports</dt>
-                        <dd className="flex items-baseline">
-                          <div className="text-2xl font-semibold text-gray-900">24</div>
-                          <div className="ml-2 flex items-baseline text-sm font-semibold text-green-600">
-                            <ArrowUp className="self-center flex-shrink-0 h-5 w-5 text-green-500" />
-                            <span className="sr-only">Increased by</span>
-                            12%
-                          </div>
-                        </dd>
-                      </dl>
-                    </div>
+
+          <main className="flex-1 p-8">
+            {/* Hero Section */}
+            <div className="flex justify-between mb-8">
+              <div className="bg-indigo-100 rounded-2xl p-8 flex-1 mr-4">
+                <div className="max-w-md flex justify-between items-start">
+                  <div>
+                    <h2 className="text-2xl font-bold mb-2">Welcome to Bug Smasher</h2>
+                    <p className="text-gray-700 mb-4">Report bugs easily and help improve our software. No technical knowledge required - just tell us what's not working!</p>
+                    <Link href="/submit" className="bg-indigo-600 text-white px-6 py-2 rounded-full font-medium hover:bg-indigo-700">
+                      Report a Bug
+                    </Link>
                   </div>
+                  <Bug className="h-32 w-32 text-indigo-500 ml-4" />
                 </div>
               </div>
-
-              {/* Active Users */}
-              <div className="bg-white overflow-hidden shadow rounded-lg">
-                <div className="p-5">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0">
-                      <Users className="h-6 w-6 text-gray-400" />
-                    </div>
-                    <div className="ml-5 w-0 flex-1">
-                      <dl>
-                        <dt className="text-sm font-medium text-gray-500 truncate">Active Users</dt>
-                        <dd className="flex items-baseline">
-                          <div className="text-2xl font-semibold text-gray-900">8</div>
-                          <div className="ml-2 flex items-baseline text-sm font-semibold text-red-600">
-                            <ArrowDown className="self-center flex-shrink-0 h-5 w-5 text-red-500" />
-                            <span className="sr-only">Decreased by</span>
-                            3%
-                          </div>
-                        </dd>
-                      </dl>
-                    </div>
-                  </div>
-                </div>
+              
+              <div className="bg-white shadow-lg rounded-2xl p-6 w-[400px]">
+                <h3 className="text-lg font-semibold mb-4">Quick Tips</h3>
+                <ul className="space-y-3">
+                  <li className="flex items-center text-sm text-gray-600">
+                    <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
+                    Take a screenshot if possible
+                  </li>
+                  <li className="flex items-center text-sm text-gray-600">
+                    <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
+                    Describe what you were trying to do
+                  </li>
+                  <li className="flex items-center text-sm text-gray-600">
+                    <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
+                    Tell us what you expected to happen
+                  </li>
+                </ul>
               </div>
+            </div>
 
-              {/* Pending Reports */}
-              <div className="bg-white overflow-hidden shadow rounded-lg">
-                <div className="p-5">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0">
-                      <FileText className="h-6 w-6 text-gray-400" />
-                    </div>
-                    <div className="ml-5 w-0 flex-1">
-                      <dl>
-                        <dt className="text-sm font-medium text-gray-500 truncate">Pending Reports</dt>
-                        <dd className="flex items-baseline">
-                          <div className="text-2xl font-semibold text-gray-900">5</div>
-                          <div className="ml-2 flex items-baseline text-sm font-semibold text-green-600">
-                            <ArrowUp className="self-center flex-shrink-0 h-5 w-5 text-green-500" />
-                            <span className="sr-only">Increased by</span>
-                            2
-                          </div>
-                        </dd>
-                      </dl>
-                    </div>
+            {/* Status Overview */}
+            <div className="mb-8">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold">Bug Report Status</h2>
+                <Link href="/bugs" className="text-indigo-600 hover:text-indigo-800">View All Reports</Link>
+              </div>
+              <div className="grid grid-cols-3 gap-6">
+                <div className="bg-white p-6 rounded-xl shadow-sm">
+                  <div className="flex items-center mb-4">
+                    <AlertTriangle className="h-8 w-8 text-red-500 mr-3" />
+                    <h3 className="text-xl font-semibold">Open Issues</h3>
                   </div>
+                  <p className="text-3xl font-bold text-gray-900">12</p>
+                  <p className="text-sm text-gray-500 mt-2">Needs attention</p>
+                </div>
+                <div className="bg-white p-6 rounded-xl shadow-sm">
+                  <div className="flex items-center mb-4">
+                    <Clock className="h-8 w-8 text-yellow-500 mr-3" />
+                    <h3 className="text-xl font-semibold">In Progress</h3>
+                  </div>
+                  <p className="text-3xl font-bold text-gray-900">8</p>
+                  <p className="text-sm text-gray-500 mt-2">Being worked on</p>
+                </div>
+                <div className="bg-white p-6 rounded-xl shadow-sm">
+                  <div className="flex items-center mb-4">
+                    <CheckCircle className="h-8 w-8 text-green-500 mr-3" />
+                    <h3 className="text-xl font-semibold">Resolved</h3>
+                  </div>
+                  <p className="text-3xl font-bold text-gray-900">45</p>
+                  <p className="text-sm text-gray-500 mt-2">This month</p>
                 </div>
               </div>
             </div>
 
             {/* Recent Reports */}
-            <div className="mt-8">
-              <div className="bg-white shadow overflow-hidden sm:rounded-md">
-                <div className="px-4 py-5 sm:px-6">
-                  <h3 className="text-lg leading-6 font-medium text-gray-900">Recent Reports</h3>
+            <div className="grid grid-cols-2 gap-8">
+              <div>
+                <h2 className="text-2xl font-bold mb-4">Your Recent Reports</h2>
+                <div className="bg-white rounded-xl shadow-sm divide-y">
+                  <div className="p-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-semibold">Login Button Not Working</h3>
+                      <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Open</span>
+                    </div>
+                    <p className="text-sm text-gray-500 mt-1">The login button doesn't respond when clicked on the mobile app.</p>
+                    <p className="text-xs text-gray-400 mt-2">Reported 2 days ago</p>
+                  </div>
+                  <div className="p-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-semibold">Page Loading Error</h3>
+                      <span className="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">In Progress</span>
+                    </div>
+                    <p className="text-sm text-gray-500 mt-1">Getting a blank screen when trying to view profile settings.</p>
+                    <p className="text-xs text-gray-400 mt-2">Reported 5 days ago</p>
+                  </div>
                 </div>
-                <ul className="divide-y divide-gray-200">
-                  <li>
-                    <div className="px-4 py-4 sm:px-6">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium text-indigo-600 truncate">Login Page Bug</p>
-                        <div className="ml-2 flex-shrink-0 flex">
-                          <p className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                            Open
-                          </p>
-                        </div>
-                      </div>
-                      <div className="mt-2 sm:flex sm:justify-between">
-                        <div className="sm:flex">
-                          <p className="flex items-center text-sm text-gray-500">
-                            Reported by John Doe
-                          </p>
-                        </div>
-                        <div className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
-                          <p>2 days ago</p>
-                        </div>
-                      </div>
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold mb-4">Help & Resources</h2>
+                <div className="bg-white rounded-xl shadow-sm p-6 space-y-4">
+                  <div className="flex items-center p-3 bg-gray-50 rounded-lg">
+                    <div className="flex-shrink-0 mr-4">
+                      <Image src="/guide-icon.png" alt="Guide" width={40} height={40} className="rounded" />
                     </div>
-                  </li>
-                  <li>
-                    <div className="px-4 py-4 sm:px-6">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium text-indigo-600 truncate">Mobile Responsiveness Issue</p>
-                        <div className="ml-2 flex-shrink-0 flex">
-                          <p className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                            In Progress
-                          </p>
-                        </div>
-                      </div>
-                      <div className="mt-2 sm:flex sm:justify-between">
-                        <div className="sm:flex">
-                          <p className="flex items-center text-sm text-gray-500">
-                            Reported by Jane Smith
-                          </p>
-                        </div>
-                        <div className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
-                          <p>5 days ago</p>
-                        </div>
-                      </div>
+                    <div>
+                      <h3 className="font-semibold">Bug Reporting Guide</h3>
+                      <p className="text-sm text-gray-500">Learn how to write effective bug reports</p>
                     </div>
-                  </li>
-                </ul>
+                  </div>
+                  <div className="flex items-center p-3 bg-gray-50 rounded-lg">
+                    <div className="flex-shrink-0 mr-4">
+                      <Image src="/video-icon.png" alt="Video" width={40} height={40} className="rounded" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold">Video Tutorials</h3>
+                      <p className="text-sm text-gray-500">Watch how to capture and report issues</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center p-3 bg-gray-50 rounded-lg">
+                    <div className="flex-shrink-0 mr-4">
+                      <Image src="/faq-icon.png" alt="FAQ" width={40} height={40} className="rounded" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold">Common Questions</h3>
+                      <p className="text-sm text-gray-500">Find answers to frequently asked questions</p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </main>
@@ -185,3 +189,4 @@ export default function HomePage() {
     </div>
   )
 }
+
