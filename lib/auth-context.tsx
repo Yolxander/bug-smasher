@@ -83,8 +83,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return
         }
 
-        console.log('Profile exists and onboarding completed, redirecting to dashboard')
-        router.push('/dashboard')
+        console.log('Profile exists and onboarding completed, redirecting to home')
+        router.push('/')
       }
     } catch (error) {
       console.error('Error in handleProfileCheck:', error)

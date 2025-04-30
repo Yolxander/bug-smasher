@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "@/components/ui/use-toast"
 import Image from "next/image"
-import { ArrowRight, Bug, Target, Users, Zap } from "lucide-react"
+import { ArrowRight, ArrowLeft, Bug, Target, Users, Zap } from "lucide-react"
 
 const onboardingSchema = z.object({
   full_name: z.string().min(2, { message: "Name must be at least 2 characters" }),
@@ -29,17 +29,17 @@ const teamMembers = [
     name: "Robin",
     role: "Good worker",
     image: "/people/robin-final.png",
-    bio: "Leading product strategy and vision"
+    bio: "Good worker"
   },
   {
     name: "Pedro",
     role: "Product Lead",
     image: "/people/pedro-final.png",
-    bio: "Architecting robust solutions"
+    bio: "Leading product strategy and vision"
   },
   {
     name: "Yolxi",
-    role: "Design Lead",
+    role: "Designer and Developer",
     image: "/people/yolxi-final.png",
     bio: "Crafting beautiful experiences"
   }
@@ -92,7 +92,7 @@ export default function OnboardingPage() {
         title: "Profile completed",
         description: "Your profile has been updated successfully",
       })
-      router.push("/dashboard")
+      router.push("/")
     } catch (error) {
       console.error("Error completing onboarding:", error)
       toast({
@@ -107,6 +107,10 @@ export default function OnboardingPage() {
 
   const nextStep = () => {
     setStep(prev => prev + 1)
+  }
+
+  const prevStep = () => {
+    setStep(prev => prev - 1)
   }
 
   const renderStep = () => {
@@ -152,22 +156,30 @@ export default function OnboardingPage() {
               {features.map((feature, index) => (
                 <div 
                   key={index}
-                  className="bg-gray-800 p-6 rounded-xl border border-gray-700"
+                  className="bg-[#FFF8CC] p-6 rounded-xl border border-amber-200 hover:shadow-lg transition-shadow"
                 >
-                  <div className="mb-4">{feature.icon}</div>
-                  <h3 className="text-xl font-semibold text-white mb-2">
+                  <div className="mb-4 text-amber-400">{feature.icon}</div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
                     {feature.title}
                   </h3>
-                  <p className="text-gray-400">{feature.description}</p>
+                  <p className="text-gray-700">{feature.description}</p>
                 </div>
               ))}
             </div>
-            <Button 
-              onClick={nextStep}
-              className="bg-amber-400 hover:bg-amber-500 text-black font-semibold px-8 py-2 rounded-lg transition-colors w-full"
-            >
-              Meet the Team <ArrowRight className="ml-2 w-4 h-4" />
-            </Button>
+            <div className="flex justify-between">
+              <Button 
+                onClick={prevStep}
+                className="bg-gray-800 hover:bg-gray-700 text-white font-semibold px-8 py-2 rounded-lg transition-colors"
+              >
+                <ArrowLeft className="mr-2 w-4 h-4" /> Back
+              </Button>
+              <Button 
+                onClick={nextStep}
+                className="bg-amber-400 hover:bg-amber-500 text-black font-semibold px-8 py-2 rounded-lg transition-colors"
+              >
+                Meet the Team <ArrowRight className="ml-2 w-4 h-4" />
+              </Button>
+            </div>
           </div>
         )
 
@@ -186,29 +198,37 @@ export default function OnboardingPage() {
               {teamMembers.map((member, index) => (
                 <div 
                   key={index}
-                  className="bg-gray-800 p-6 rounded-xl border border-gray-700 text-center"
+                  className="bg-[#FFF8CC] p-6 rounded-xl border border-amber-200 text-center hover:shadow-lg transition-shadow"
                 >
                   <Image
                     src={member.image}
                     alt={member.name}
                     width={120}
                     height={120}
-                    className="mx-auto rounded-full mb-4"
+                    className="mx-auto rounded-full mb-4 border-4 border-amber-400"
                   />
-                  <h3 className="text-xl font-semibold text-white mb-1">
+                  <h3 className="text-xl font-semibold text-gray-900 mb-1">
                     {member.name}
                   </h3>
-                  <p className="text-amber-400 mb-2">{member.role}</p>
-                  <p className="text-gray-400">{member.bio}</p>
+                  <p className="text-amber-600 mb-2">{member.role}</p>
+                  <p className="text-gray-700">{member.bio}</p>
                 </div>
               ))}
             </div>
-            <Button 
-              onClick={nextStep}
-              className="bg-amber-400 hover:bg-amber-500 text-black font-semibold px-8 py-2 rounded-lg transition-colors w-full"
-            >
-              Complete Your Profile <ArrowRight className="ml-2 w-4 h-4" />
-            </Button>
+            <div className="flex justify-between">
+              <Button 
+                onClick={prevStep}
+                className="bg-gray-800 hover:bg-gray-700 text-white font-semibold px-8 py-2 rounded-lg transition-colors"
+              >
+                <ArrowLeft className="mr-2 w-4 h-4" /> Back
+              </Button>
+              <Button 
+                onClick={nextStep}
+                className="bg-amber-400 hover:bg-amber-500 text-black font-semibold px-8 py-2 rounded-lg transition-colors"
+              >
+                Complete Your Profile <ArrowRight className="ml-2 w-4 h-4" />
+              </Button>
+            </div>
           </div>
         )
 
@@ -224,7 +244,7 @@ export default function OnboardingPage() {
               </p>
             </div>
 
-            <div className="bg-gray-800 rounded-xl shadow-xl p-6 border border-gray-700">
+            <div className="bg-[#FFF8CC] rounded-xl shadow-xl p-6 border border-amber-200">
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                   <FormField
@@ -232,15 +252,15 @@ export default function OnboardingPage() {
                     name="full_name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-gray-300">Full Name</FormLabel>
+                        <FormLabel className="text-gray-900 font-medium">Full Name</FormLabel>
                         <FormControl>
                           <Input 
                             placeholder="Enter your full name" 
                             {...field}
-                            className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-500 focus:border-amber-400 focus:ring-amber-400"
+                            className="bg-white border-amber-200 text-gray-900 placeholder:text-gray-500 focus:border-amber-400 focus:ring-amber-400"
                           />
                         </FormControl>
-                        <FormMessage className="text-red-400" />
+                        <FormMessage className="text-red-600" />
                       </FormItem>
                     )}
                   />
@@ -250,21 +270,21 @@ export default function OnboardingPage() {
                     name="role"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-gray-300">Role</FormLabel>
+                        <FormLabel className="text-gray-900 font-medium">Role</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
-                            <SelectTrigger className="bg-gray-700 border-gray-600 text-white focus:border-amber-400 focus:ring-amber-400">
+                            <SelectTrigger className="bg-white border-amber-200 text-gray-900 focus:border-amber-400 focus:ring-amber-400">
                               <SelectValue placeholder="Select your role" />
                             </SelectTrigger>
                           </FormControl>
-                          <SelectContent className="bg-gray-700 border-gray-600">
-                            <SelectItem value="developer" className="text-white hover:bg-gray-600">Developer</SelectItem>
-                            <SelectItem value="qa" className="text-white hover:bg-gray-600">QA Engineer</SelectItem>
-                            <SelectItem value="product_manager" className="text-white hover:bg-gray-600">Product Manager</SelectItem>
-                            <SelectItem value="designer" className="text-white hover:bg-gray-600">Designer</SelectItem>
+                          <SelectContent className="bg-white border-amber-200">
+                            <SelectItem value="developer" className="text-gray-900 hover:bg-amber-50">Developer</SelectItem>
+                            <SelectItem value="qa" className="text-gray-900 hover:bg-amber-50">QA Engineer</SelectItem>
+                            <SelectItem value="product_manager" className="text-gray-900 hover:bg-amber-50">Product Manager</SelectItem>
+                            <SelectItem value="designer" className="text-gray-900 hover:bg-amber-50">Designer</SelectItem>
                           </SelectContent>
                         </Select>
-                        <FormMessage className="text-red-400" />
+                        <FormMessage className="text-red-600" />
                       </FormItem>
                     )}
                   />
@@ -274,26 +294,35 @@ export default function OnboardingPage() {
                     name="bio"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-gray-300">Bio</FormLabel>
+                        <FormLabel className="text-gray-900 font-medium">Bio</FormLabel>
                         <FormControl>
                           <Textarea
                             placeholder="Tell us about yourself and your experience"
-                            className="min-h-[100px] bg-gray-700 border-gray-600 text-white placeholder:text-gray-500 focus:border-amber-400 focus:ring-amber-400"
+                            className="min-h-[100px] bg-white border-amber-200 text-gray-900 placeholder:text-gray-500 focus:border-amber-400 focus:ring-amber-400"
                             {...field}
                           />
                         </FormControl>
-                        <FormMessage className="text-red-400" />
+                        <FormMessage className="text-red-600" />
                       </FormItem>
                     )}
                   />
 
-                  <Button 
-                    type="submit" 
-                    className="w-full bg-amber-400 hover:bg-amber-500 text-black font-semibold py-2 px-4 rounded-lg transition-colors"
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? "Saving..." : "Complete Profile"}
-                  </Button>
+                  <div className="flex justify-between">
+                    <Button 
+                      type="button"
+                      onClick={prevStep}
+                      className="bg-gray-800 hover:bg-gray-700 text-white font-semibold px-8 py-2 rounded-lg transition-colors"
+                    >
+                      <ArrowLeft className="mr-2 w-4 h-4" /> Back
+                    </Button>
+                    <Button 
+                      type="submit" 
+                      className="bg-amber-400 hover:bg-amber-500 text-black font-semibold px-8 py-2 rounded-lg transition-colors"
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? "Saving..." : "Complete Profile"}
+                    </Button>
+                  </div>
                 </form>
               </Form>
             </div>
