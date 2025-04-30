@@ -10,7 +10,7 @@ import { ChatbotWrapper } from "@/components/ChatbotWrapper"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Bug Report Form",
+  title: "Bug Report",
   description: "Submit bug reports for our products",
 }
 

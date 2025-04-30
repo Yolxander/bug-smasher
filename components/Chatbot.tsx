@@ -118,23 +118,63 @@ export default function Chatbot() {
           switch (currentStep) {
             case 0:
               setBugTitle(option);
-              botResponse = "Great! Now, please describe what happened (and what you expected).";
+              botResponse = "1️⃣ Now, let's describe the bug in detail.\n\nPlease provide a detailed description of what's happening. Include any error messages you see.";
               break;
             case 1:
               setBugDescription(option);
-              botResponse = "What's the priority of this bug?";
-              nextOptions = ["Low", "Medium", "High"];
+              botResponse = "2️⃣ Let's document how to reproduce the bug.\n\nWhat are the exact steps to reproduce this bug? Please list them in order, one step per line.";
               break;
             case 2:
               setBugPriority(option.toLowerCase() as "low" | "medium" | "high");
-              botResponse = "Would you like to attach a screenshot?";
-              nextOptions = ["Upload", "Skip"];
+              botResponse = "3️⃣ Let's describe what should happen.\n\nWhat should happen when following these steps? (Expected behavior)";
               break;
             case 3:
-              botResponse = "Perfect! I'm submitting your bug report now. Thanks for helping improve Bug Smasher!";
-              setTimeout(() => {
-                setIsOpen(false);
-              }, 2000);
+              botResponse = "4️⃣ Now, let's describe what actually happens.\n\nWhat actually happens instead? (Actual behavior)";
+              break;
+            case 4:
+              botResponse = "5️⃣ Let's collect information about your environment.\n\nWhat device are you using? (e.g., iPhone 12, MacBook Pro, etc.)";
+              break;
+            case 5:
+              botResponse = "Which browser are you using? (e.g., Chrome 120, Safari 17, Firefox 123)";
+              break;
+            case 6:
+              botResponse = "What operating system are you using? (e.g., iOS 17, macOS Sonoma, Windows 11)";
+              break;
+            case 7:
+              botResponse = "6️⃣ Let's set the priority.\n\nHow would you rate the priority of this bug?\n\nOptions:\n- Low: Minor issue, doesn't affect core functionality\n- Medium: Affects some users but has workarounds\n- High: Affects many users or core functionality\n- Critical: System is down or data is at risk";
+              nextOptions = ["Low", "Medium", "High", "Critical"];
+              break;
+            case 8:
+              botResponse = "7️⃣ Finally, let's add a screenshot (optional).\n\nWould you like to attach a screenshot?";
+              nextOptions = ["Upload", "Skip"];
+              break;
+            case 9:
+              botResponse = "Let me summarize what we've collected:\n\n" +
+                `Title: ${bugTitle}\n` +
+                `Description: ${bugDescription}\n` +
+                `Steps to Reproduce: ${messages[messages.length - 2].content}\n` +
+                `Expected Behavior: ${messages[messages.length - 4].content}\n` +
+                `Actual Behavior: ${messages[messages.length - 3].content}\n` +
+                `Device: ${messages[messages.length - 6].content}\n` +
+                `Browser: ${messages[messages.length - 5].content}\n` +
+                `OS: ${messages[messages.length - 4].content}\n` +
+                `Priority: ${option}\n` +
+                `Screenshot: ${option === "Skip" ? "None" : "Attached"}\n\n` +
+                "Would you like to submit this bug report?";
+              nextOptions = ["Yes", "No"];
+              break;
+            case 10:
+              if (option === "Yes") {
+                botResponse = "✅ Great! I've submitted your bug report. You can view it in the dashboard.";
+                setTimeout(() => {
+                  setIsOpen(false);
+                }, 2000);
+              } else {
+                botResponse = "Bug report cancelled. You can start over if you'd like.";
+                setTimeout(() => {
+                  resetChat();
+                }, 2000);
+              }
               break;
           }
           break;
@@ -254,24 +294,6 @@ export default function Chatbot() {
                   className="p-3 bg-amber-100 text-amber-800 rounded-lg hover:bg-amber-200 transition-colors"
                 >
                   Get Help
-                </button>
-                <button
-                  onClick={() => handleFlowSelection("track")}
-                  className="p-3 bg-amber-100 text-amber-800 rounded-lg hover:bg-amber-200 transition-colors"
-                >
-                  Track Submissions
-                </button>
-                <button
-                  onClick={() => handleFlowSelection("badges")}
-                  className="p-3 bg-amber-100 text-amber-800 rounded-lg hover:bg-amber-200 transition-colors"
-                >
-                  View Badges
-                </button>
-                <button
-                  onClick={() => handleFlowSelection("feedback")}
-                  className="p-3 bg-amber-100 text-amber-800 rounded-lg hover:bg-amber-200 transition-colors"
-                >
-                  Submit Feedback
                 </button>
               </div>
             )}
