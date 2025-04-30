@@ -1,724 +1,296 @@
 "use client";
 import React, { useState } from "react";
-import { Bell, Mail, Shield, Palette, Layout, Key, Users, Save, Plus, Trash2, Edit2, User } from "lucide-react";
+import Link from "next/link";
+import { Bell, ChevronDown, Settings, User, Lock, BellRing, Palette, Globe } from "lucide-react";
 import { DashboardSidebar } from "@/components/DashboardSidebar";
 
+type SettingType = "toggle" | "select" | "link";
+
+interface Setting {
+  id: number;
+  name: string;
+  description: string;
+  type: SettingType;
+  value?: boolean | string;
+  options?: string[];
+  action?: string;
+}
+
+interface SettingsSection {
+  id: number;
+  title: string;
+  icon: React.ReactNode;
+  description: string;
+  settings: Setting[];
+}
+
+// Mock data for settings sections
+const settingsSections: SettingsSection[] = [
+  {
+    id: 1,
+    title: "Account Settings",
+    icon: <User className="h-5 w-5 text-blue-500" />,
+    description: "Manage your account information and preferences",
+    settings: [
+      {
+        id: 1,
+        name: "Profile Information",
+        description: "Update your name, email, and profile picture",
+        type: "link",
+        action: "#",
+      },
+      {
+        id: 2,
+        name: "Password",
+        description: "Change your password",
+        type: "link",
+        action: "#",
+      },
+      {
+        id: 3,
+        name: "Two-Factor Authentication",
+        description: "Enable or disable 2FA for additional security",
+        type: "toggle",
+        value: true,
+      },
+    ],
+  },
+  {
+    id: 2,
+    title: "Notification Preferences",
+    icon: <BellRing className="h-5 w-5 text-green-500" />,
+    description: "Configure how and when you receive notifications",
+    settings: [
+      {
+        id: 4,
+        name: "Email Notifications",
+        description: "Receive updates via email",
+        type: "toggle",
+        value: true,
+      },
+      {
+        id: 5,
+        name: "Push Notifications",
+        description: "Receive push notifications in your browser",
+        type: "toggle",
+        value: false,
+      },
+      {
+        id: 6,
+        name: "Notification Frequency",
+        description: "Set how often you want to receive updates",
+        type: "select",
+        value: "daily",
+        options: ["immediate", "daily", "weekly"],
+      },
+    ],
+  },
+  {
+    id: 3,
+    title: "Appearance",
+    icon: <Palette className="h-5 w-5 text-purple-500" />,
+    description: "Customize the look and feel of the application",
+    settings: [
+      {
+        id: 7,
+        name: "Theme",
+        description: "Choose between light and dark mode",
+        type: "select",
+        value: "light",
+        options: ["light", "dark", "system"],
+      },
+      {
+        id: 8,
+        name: "Language",
+        description: "Select your preferred language",
+        type: "select",
+        value: "en",
+        options: ["en", "es", "fr", "de"],
+      },
+    ],
+  },
+  {
+    id: 4,
+    title: "Privacy & Security",
+    icon: <Lock className="h-5 w-5 text-red-500" />,
+    description: "Manage your privacy and security settings",
+    settings: [
+      {
+        id: 9,
+        name: "Data Collection",
+        description: "Control what data we collect about your usage",
+        type: "toggle",
+        value: true,
+      },
+      {
+        id: 10,
+        name: "Cookie Preferences",
+        description: "Manage your cookie settings",
+        type: "link",
+        action: "#",
+      },
+    ],
+  },
+];
+
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState("notifications");
-  const [settings, setSettings] = useState({
-    notifications: {
-      email: true,
-      inApp: true,
-      dailyDigest: false,
-      asana: false,
-      teams: false,
-    },
-    appearance: {
-      theme: "system",
-      layout: "default",
-    },
-    admin: {
-      defaultTags: ["bug", "feature", "enhancement"],
-      autoAssign: [
-        { condition: "priority:high", assignTo: "QA Lead" },
-        { condition: "type:bug", assignTo: "Development Team" },
-      ],
-    },
-    integrations: {
-      asanaKey: "••••••••••••••••",
-      slackWebhook: "••••••••••••••••",
-    },
-  });
+  const [settings, setSettings] = useState<SettingsSection[]>(settingsSections);
 
-  const [editingTag, setEditingTag] = useState<string | null>(null);
-  const [newTag, setNewTag] = useState("");
-  const [editingRule, setEditingRule] = useState<number | null>(null);
-  const [newRule, setNewRule] = useState({
-    condition: "",
-    conditionType: "priority",
-    conditionValue: "",
-    assignTo: "",
-    assignToType: "role",
-  });
-
-  const tabs = [
-    {
-      id: "notifications",
-      title: "Notifications",
-      icon: <Bell className="h-5 w-5" />,
-    },
-    {
-      id: "appearance",
-      title: "Appearance",
-      icon: <Palette className="h-5 w-5" />,
-    },
-    {
-      id: "admin",
-      title: "Admin Settings",
-      icon: <Shield className="h-5 w-5" />,
-    },
-    {
-      id: "integrations",
-      title: "Integrations",
-      icon: <Key className="h-5 w-5" />,
-    },
-  ];
-
-  const conditionTypes = [
-    { value: "priority", label: "Priority" },
-    { value: "type", label: "Type" },
-    { value: "status", label: "Status" },
-    { value: "label", label: "Label" },
-  ];
-
-  const conditionValues = {
-    priority: ["low", "medium", "high", "critical"],
-    type: ["bug", "feature", "enhancement", "task"],
-    status: ["open", "in-progress", "review", "resolved"],
-    label: [],
+  const handleToggle = (sectionId: number, settingId: number) => {
+    setSettings((prev) =>
+      prev.map((section) =>
+        section.id === sectionId
+          ? {
+              ...section,
+              settings: section.settings.map((setting) =>
+                setting.id === settingId
+                  ? { ...setting, value: !setting.value }
+                  : setting
+              ),
+            }
+          : section
+      )
+    );
   };
 
-  const assignToTypes = [
-    { value: "role", label: "Role" },
-    { value: "user", label: "User" },
-    { value: "team", label: "Team" },
-  ];
-
-  const assignToOptions = {
-    role: [
-      { value: "QA Lead", label: "QA Lead" },
-      { value: "Development Team", label: "Development Team" },
-      { value: "Product Manager", label: "Product Manager" },
-      { value: "Design Team", label: "Design Team" },
-    ],
-    user: [
-      { value: "john.doe", label: "John Doe" },
-      { value: "jane.smith", label: "Jane Smith" },
-      { value: "mike.johnson", label: "Mike Johnson" },
-      { value: "sarah.williams", label: "Sarah Williams" },
-    ],
-    team: [
-      { value: "frontend", label: "Frontend Team" },
-      { value: "backend", label: "Backend Team" },
-      { value: "qa", label: "QA Team" },
-      { value: "design", label: "Design Team" },
-    ],
-  };
-
-  const handleSettingChange = (category: string, setting: string, value: any) => {
-    setSettings(prev => ({
-      ...prev,
-      [category]: {
-        ...prev[category as keyof typeof prev],
-        [setting]: value,
-      },
-    }));
-  };
-
-  const handleAddTag = () => {
-    if (newTag.trim()) {
-      setSettings(prev => ({
-        ...prev,
-        admin: {
-          ...prev.admin,
-          defaultTags: [...prev.admin.defaultTags, newTag.trim()],
-        },
-      }));
-      setNewTag("");
-    }
-  };
-
-  const handleDeleteTag = (tag: string) => {
-    setSettings(prev => ({
-      ...prev,
-      admin: {
-        ...prev.admin,
-        defaultTags: prev.admin.defaultTags.filter(t => t !== tag),
-      },
-    }));
-  };
-
-  const handleEditTag = (oldTag: string, newTag: string) => {
-    setSettings(prev => ({
-      ...prev,
-      admin: {
-        ...prev.admin,
-        defaultTags: prev.admin.defaultTags.map(t => t === oldTag ? newTag : t),
-      },
-    }));
-    setEditingTag(null);
-  };
-
-  const handleAddRule = () => {
-    if (newRule.conditionType && newRule.conditionValue && newRule.assignTo) {
-      const formattedRule = {
-        condition: `${newRule.conditionType}:${newRule.conditionValue}`,
-        assignTo: `${newRule.assignToType}:${newRule.assignTo}`,
-        description: `If ${newRule.conditionType} is ${newRule.conditionValue}, assign to ${newRule.assignTo}`,
-      };
-      
-      setSettings(prev => ({
-        ...prev,
-        admin: {
-          ...prev.admin,
-          autoAssign: [...prev.admin.autoAssign, formattedRule],
-        },
-      }));
-      setNewRule({
-        condition: "",
-        conditionType: "priority",
-        conditionValue: "",
-        assignTo: "",
-        assignToType: "role",
-      });
-    }
-  };
-
-  const handleDeleteRule = (index: number) => {
-    setSettings(prev => ({
-      ...prev,
-      admin: {
-        ...prev.admin,
-        autoAssign: prev.admin.autoAssign.filter((_, i) => i !== index),
-      },
-    }));
-  };
-
-  const handleEditRule = (index: number, updatedRule: { condition: string; assignTo: string; description: string }) => {
-    setSettings(prev => ({
-      ...prev,
-      admin: {
-        ...prev.admin,
-        autoAssign: prev.admin.autoAssign.map((rule, i) => 
-          i === index ? updatedRule : rule
-        ),
-      },
-    }));
-    setEditingRule(null);
+  const handleSelect = (sectionId: number, settingId: number, value: string) => {
+    setSettings((prev) =>
+      prev.map((section) =>
+        section.id === sectionId
+          ? {
+              ...section,
+              settings: section.settings.map((setting) =>
+                setting.id === settingId ? { ...setting, value } : setting
+              ),
+            }
+          : section
+      )
+    );
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <div className="flex w-full max-w-[1400px] mx-auto my-4 bg-white rounded-3xl shadow-sm overflow-hidden">
-        <DashboardSidebar activePage="/settings" />
-        <div className="flex-1 overflow-auto bg-gray-50">
-          <div className="flex h-full">
-            {/* Settings Sidebar */}
-            <div className="w-64 bg-white border-r border-gray-200 p-4">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Settings</h2>
-              <nav className="space-y-1">
-                {tabs.map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition ${
-                      activeTab === tab.id
-                        ? "bg-amber-400 text-black"
-                        : "text-gray-600 hover:bg-gray-100"
-                    }`}
-                  >
-                    {tab.icon}
-                    {tab.title}
-                  </button>
-                ))}
-              </nav>
-            </div>
-
-            {/* Settings Content */}
-            <div className="flex-1 p-8">
-              <div className="max-w-3xl">
-                {activeTab === "notifications" && (
-                  <div className="space-y-6">
-                    <h3 className="text-xl font-semibold text-gray-900">Notification Settings</h3>
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200">
-                        <div>
-                          <h4 className="font-medium text-gray-900">Email Notifications</h4>
-                          <p className="text-sm text-gray-500">Receive email updates for bug status changes</p>
-                        </div>
+    <div className="min-h-screen bg-gray-50">
+      <div className="flex">
+        <DashboardSidebar activePage="settings" />
+        <div className="flex-1">
+          <header className="bg-white shadow-sm">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="flex justify-between h-16">
+                <div className="flex">
+                  <div className="flex-shrink-0 flex items-center">
+                    <h1 className="text-xl font-semibold">Settings</h1>
+                  </div>
+                </div>
+                <div className="flex items-center">
+                  <div className="ml-4 flex items-center md:ml-6">
+                    <button className="p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none">
+                      <Bell className="h-6 w-6" />
+                    </button>
+                    <div className="ml-3 relative">
+                      <div className="flex items-center">
                         <button
-                          onClick={() => handleSettingChange("notifications", "email", !settings.notifications.email)}
-                          className={`w-12 h-6 rounded-full transition ${
-                            settings.notifications.email ? "bg-amber-400" : "bg-gray-200"
-                          }`}
+                          type="button"
+                          className="max-w-xs bg-white rounded-full flex items-center text-sm focus:outline-none"
+                          id="user-menu-button"
                         >
-                          <div
-                            className={`w-4 h-4 rounded-full bg-white transform transition ${
-                              settings.notifications.email ? "translate-x-6" : "translate-x-1"
-                            }`}
+                          <span className="sr-only">Open user menu</span>
+                          <img
+                            className="h-8 w-8 rounded-full"
+                            src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
+                            alt=""
                           />
-                        </button>
-                      </div>
-                      <div className="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200">
-                        <div>
-                          <h4 className="font-medium text-gray-900">In-App Alerts</h4>
-                          <p className="text-sm text-gray-500">Get popup notifications for important updates</p>
-                        </div>
-                        <button
-                          onClick={() => handleSettingChange("notifications", "inApp", !settings.notifications.inApp)}
-                          className={`w-12 h-6 rounded-full transition ${
-                            settings.notifications.inApp ? "bg-amber-400" : "bg-gray-200"
-                          }`}
-                        >
-                          <div
-                            className={`w-4 h-4 rounded-full bg-white transform transition ${
-                              settings.notifications.inApp ? "translate-x-6" : "translate-x-1"
-                            }`}
-                          />
-                        </button>
-                      </div>
-                      <div className="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200">
-                        <div>
-                          <h4 className="font-medium text-gray-900">Daily Digest</h4>
-                          <p className="text-sm text-gray-500">Receive a daily summary of bug reports and updates</p>
-                        </div>
-                        <button
-                          onClick={() => handleSettingChange("notifications", "dailyDigest", !settings.notifications.dailyDigest)}
-                          className={`w-12 h-6 rounded-full transition ${
-                            settings.notifications.dailyDigest ? "bg-amber-400" : "bg-gray-200"
-                          }`}
-                        >
-                          <div
-                            className={`w-4 h-4 rounded-full bg-white transform transition ${
-                              settings.notifications.dailyDigest ? "translate-x-6" : "translate-x-1"
-                            }`}
-                          />
-                        </button>
-                      </div>
-                      <div className="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200">
-                        <div>
-                          <h4 className="font-medium text-gray-900">Asana Notifications</h4>
-                          <p className="text-sm text-gray-500">Get updates in your Asana workspace</p>
-                        </div>
-                        <button
-                          onClick={() => handleSettingChange("notifications", "asana", !settings.notifications.asana)}
-                          className={`w-12 h-6 rounded-full transition ${
-                            settings.notifications.asana ? "bg-amber-400" : "bg-gray-200"
-                          }`}
-                        >
-                          <div
-                            className={`w-4 h-4 rounded-full bg-white transform transition ${
-                              settings.notifications.asana ? "translate-x-6" : "translate-x-1"
-                            }`}
-                          />
-                        </button>
-                      </div>
-                      <div className="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200">
-                        <div>
-                          <h4 className="font-medium text-gray-900">Microsoft Teams</h4>
-                          <p className="text-sm text-gray-500">Receive notifications in your Teams channels</p>
-                        </div>
-                        <button
-                          onClick={() => handleSettingChange("notifications", "teams", !settings.notifications.teams)}
-                          className={`w-12 h-6 rounded-full transition ${
-                            settings.notifications.teams ? "bg-amber-400" : "bg-gray-200"
-                          }`}
-                        >
-                          <div
-                            className={`w-4 h-4 rounded-full bg-white transform transition ${
-                              settings.notifications.teams ? "translate-x-6" : "translate-x-1"
-                            }`}
-                          />
+                          <ChevronDown className="ml-1 h-4 w-4 text-gray-400" />
                         </button>
                       </div>
                     </div>
                   </div>
-                )}
-
-                {activeTab === "appearance" && (
-                  <div className="space-y-6">
-                    <h3 className="text-xl font-semibold text-gray-900">Appearance Settings</h3>
-                    <div className="space-y-4">
-                      <div className="p-4 bg-white rounded-lg border border-gray-200">
-                        <h4 className="font-medium text-gray-900 mb-2">Theme</h4>
-                        <select
-                          value={settings.appearance.theme}
-                          onChange={(e) => handleSettingChange("appearance", "theme", e.target.value)}
-                          className="w-full p-2 rounded-lg border border-gray-200 focus:border-amber-400 focus:ring-2 focus:ring-amber-100 outline-none"
-                        >
-                          <option value="light">Light</option>
-                          <option value="dark">Dark</option>
-                          <option value="system">System</option>
-                        </select>
-                      </div>
-                      <div className="p-4 bg-white rounded-lg border border-gray-200">
-                        <h4 className="font-medium text-gray-900 mb-2">Layout</h4>
-                        <select
-                          value={settings.appearance.layout}
-                          onChange={(e) => handleSettingChange("appearance", "layout", e.target.value)}
-                          className="w-full p-2 rounded-lg border border-gray-200 focus:border-amber-400 focus:ring-2 focus:ring-amber-100 outline-none"
-                        >
-                          <option value="default">Default</option>
-                          <option value="compact">Compact</option>
-                          <option value="spacious">Spacious</option>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {activeTab === "admin" && (
-                  <div className="space-y-6">
-                    <h3 className="text-xl font-semibold text-gray-900">Admin Settings</h3>
-                    <div className="space-y-4">
-                      <div className="p-4 bg-white rounded-lg border border-gray-200">
-                        <div className="flex items-center justify-between mb-4">
-                          <h4 className="font-medium text-gray-900">Default Tags</h4>
-                          <div className="flex gap-2">
-                            <input
-                              type="text"
-                              value={newTag}
-                              onChange={(e) => setNewTag(e.target.value)}
-                              placeholder="Add new tag"
-                              className="px-3 py-1 rounded-lg border border-gray-200 focus:border-amber-400 focus:ring-2 focus:ring-amber-100 outline-none"
-                            />
-                            <button
-                              onClick={handleAddTag}
-                              className="p-1 rounded-lg bg-amber-400 text-black hover:bg-amber-500 transition"
-                            >
-                              <Plus className="h-5 w-5" />
-                            </button>
-                          </div>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          {settings.admin.defaultTags.map((tag, index) => (
-                            <div key={index} className="flex items-center gap-1 px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm">
-                              {editingTag === tag ? (
-                                <input
-                                  type="text"
-                                  defaultValue={tag}
-                                  onBlur={(e) => handleEditTag(tag, e.target.value)}
-                                  onKeyDown={(e) => {
-                                    if (e.key === "Enter") {
-                                      handleEditTag(tag, e.currentTarget.value);
-                                    }
-                                  }}
-                                  className="bg-transparent outline-none"
-                                  autoFocus
-                                />
-                              ) : (
-                                <>
-                                  <span>{tag}</span>
-                                  <button
-                                    onClick={() => setEditingTag(tag)}
-                                    className="p-1 hover:text-amber-400"
-                                  >
-                                    <Edit2 className="h-3 w-3" />
-                                  </button>
-                                  <button
-                                    onClick={() => handleDeleteTag(tag)}
-                                    className="p-1 hover:text-red-500"
-                                  >
-                                    <Trash2 className="h-3 w-3" />
-                                  </button>
-                                </>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                      <div className="p-4 bg-white rounded-lg border border-gray-200">
-                        <div className="flex items-center justify-between mb-4">
-                          <div>
-                            <h4 className="font-medium text-gray-900">Auto-Assign Rules</h4>
-                            <p className="text-sm text-gray-500">Automatically assign bugs based on conditions</p>
-                          </div>
-                          <button
-                            onClick={handleAddRule}
-                            disabled={!newRule.conditionValue || !newRule.assignTo}
-                            className="flex items-center gap-1 px-3 py-1 rounded-lg bg-amber-400 text-black hover:bg-amber-500 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            <Plus className="h-4 w-4" />
-                            Add Rule
-                          </button>
-                        </div>
-
-                        {/* New Rule Form */}
-                        <div className="mb-6 p-4 bg-gray-50 rounded-lg space-y-4">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {/* Condition Section */}
-                            <div className="space-y-4">
-                              <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">When a bug has</label>
-                                <select
-                                  value={newRule.conditionType}
-                                  onChange={(e) => {
-                                    setNewRule(prev => ({
-                                      ...prev,
-                                      conditionType: e.target.value,
-                                      conditionValue: "",
-                                    }));
-                                  }}
-                                  className="w-full p-2 rounded-lg border border-gray-200 focus:border-amber-400 focus:ring-2 focus:ring-amber-100 outline-none"
-                                >
-                                  {conditionTypes.map(type => (
-                                    <option key={type.value} value={type.value}>
-                                      {type.label}
-                                    </option>
-                                  ))}
-                                </select>
-                              </div>
-                              <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">That is</label>
-                                <select
-                                  value={newRule.conditionValue}
-                                  onChange={(e) => setNewRule(prev => ({ ...prev, conditionValue: e.target.value }))}
-                                  className="w-full p-2 rounded-lg border border-gray-200 focus:border-amber-400 focus:ring-2 focus:ring-amber-100 outline-none"
-                                >
-                                  <option value="">Select a value</option>
-                                  {conditionValues[newRule.conditionType as keyof typeof conditionValues]?.map(value => (
-                                    <option key={value} value={value}>
-                                      {value.charAt(0).toUpperCase() + value.slice(1)}
-                                    </option>
-                                  ))}
-                                </select>
-                              </div>
-                            </div>
-
-                            {/* Assignment Section */}
-                            <div className="space-y-4">
-                              <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Assign to</label>
-                                <select
-                                  value={newRule.assignToType}
-                                  onChange={(e) => {
-                                    setNewRule(prev => ({
-                                      ...prev,
-                                      assignToType: e.target.value,
-                                      assignTo: "",
-                                    }));
-                                  }}
-                                  className="w-full p-2 rounded-lg border border-gray-200 focus:border-amber-400 focus:ring-2 focus:ring-amber-100 outline-none"
-                                >
-                                  {assignToTypes.map(type => (
-                                    <option key={type.value} value={type.value}>
-                                      {type.label}
-                                    </option>
-                                  ))}
-                                </select>
-                              </div>
-                              <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                                <div className="relative">
-                                  <select
-                                    value={newRule.assignTo}
-                                    onChange={(e) => setNewRule(prev => ({ ...prev, assignTo: e.target.value }))}
-                                    className="w-full p-2 rounded-lg border border-gray-200 focus:border-amber-400 focus:ring-2 focus:ring-amber-100 outline-none appearance-none"
-                                  >
-                                    <option value="">Select a {newRule.assignToType}</option>
-                                    {assignToOptions[newRule.assignToType as keyof typeof assignToOptions]?.map(option => (
-                                      <option key={option.value} value={option.value}>
-                                        {option.label}
-                                      </option>
-                                    ))}
-                                  </select>
-                                  {newRule.assignToType === "team" && (
-                                    <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
-                                      <Users className="h-4 w-4 text-gray-400" />
-                                    </div>
-                                  )}
-                                  {newRule.assignToType === "role" && (
-                                    <div className="absolute right-2 top-1/2 -translate-y-1/2">
-                                      <Shield className="h-4 w-4 text-gray-400" />
-                                    </div>
-                                  )}
-                                  {newRule.assignToType === "user" && (
-                                    <div className="absolute right-2 top-1/2 -translate-y-1/2">
-                                      <User className="h-4 w-4 text-gray-400" />
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Preview Section */}
-                          {newRule.conditionValue && newRule.assignTo && (
-                            <div className="mt-4 p-3 bg-white rounded-lg border border-gray-200">
-                              <p className="text-sm text-gray-600">
-                                <span className="font-medium">Preview:</span> When a bug has{" "}
-                                <span className="font-medium text-amber-600">{newRule.conditionType}</span> that is{" "}
-                                <span className="font-medium text-amber-600">{newRule.conditionValue}</span>, it will be assigned to{" "}
-                                <span className="font-medium text-amber-600">{newRule.assignToType}</span>{" "}
-                                <span className="font-medium text-amber-600">{newRule.assignTo}</span>
-                              </p>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Rules List */}
-                        <div className="space-y-2">
-                          {settings.admin.autoAssign.map((rule, index) => (
-                            <div key={index} className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
-                              {editingRule === index ? (
-                                <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
-                                  <div className="space-y-4">
-                                    <div>
-                                      <label className="block text-sm font-medium text-gray-700 mb-1">When a bug has</label>
-                                      <select
-                                        value={newRule.conditionType}
-                                        onChange={(e) => setNewRule(prev => ({ ...prev, conditionType: e.target.value }))}
-                                        className="w-full p-2 rounded-lg border border-gray-200 focus:border-amber-400 focus:ring-2 focus:ring-amber-100 outline-none"
-                                      >
-                                        {conditionTypes.map(type => (
-                                          <option key={type.value} value={type.value}>
-                                            {type.label}
-                                          </option>
-                                        ))}
-                                      </select>
-                                    </div>
-                                    <div>
-                                      <label className="block text-sm font-medium text-gray-700 mb-1">That is</label>
-                                      <select
-                                        value={newRule.conditionValue}
-                                        onChange={(e) => setNewRule(prev => ({ ...prev, conditionValue: e.target.value }))}
-                                        className="w-full p-2 rounded-lg border border-gray-200 focus:border-amber-400 focus:ring-2 focus:ring-amber-100 outline-none"
-                                      >
-                                        {conditionValues[newRule.conditionType as keyof typeof conditionValues]?.map(value => (
-                                          <option key={value} value={value}>
-                                            {value.charAt(0).toUpperCase() + value.slice(1)}
-                                          </option>
-                                        ))}
-                                      </select>
-                                    </div>
-                                  </div>
-                                  <div className="space-y-4">
-                                    <div>
-                                      <label className="block text-sm font-medium text-gray-700 mb-1">Assign to</label>
-                                      <select
-                                        value={newRule.assignToType}
-                                        onChange={(e) => setNewRule(prev => ({ ...prev, assignToType: e.target.value }))}
-                                        className="w-full p-2 rounded-lg border border-gray-200 focus:border-amber-400 focus:ring-2 focus:ring-amber-100 outline-none"
-                                      >
-                                        {assignToTypes.map(type => (
-                                          <option key={type.value} value={type.value}>
-                                            {type.label}
-                                          </option>
-                                        ))}
-                                      </select>
-                                    </div>
-                                    <div>
-                                      <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                                      <div className="relative">
-                                        <input
-                                          type="text"
-                                          value={newRule.assignTo}
-                                          onChange={(e) => setNewRule(prev => ({ ...prev, assignTo: e.target.value }))}
-                                          placeholder={`Enter ${newRule.assignToType} name`}
-                                          className="w-full p-2 rounded-lg border border-gray-200 focus:border-amber-400 focus:ring-2 focus:ring-amber-100 outline-none"
-                                        />
-                                        {newRule.assignToType === "team" && (
-                                          <div className="absolute right-2 top-1/2 -translate-y-1/2">
-                                            <Users className="h-4 w-4 text-gray-400" />
-                                          </div>
-                                        )}
-                                        {newRule.assignToType === "role" && (
-                                          <div className="absolute right-2 top-1/2 -translate-y-1/2">
-                                            <Shield className="h-4 w-4 text-gray-400" />
-                                          </div>
-                                        )}
-                                        {newRule.assignToType === "user" && (
-                                          <div className="absolute right-2 top-1/2 -translate-y-1/2">
-                                            <User className="h-4 w-4 text-gray-400" />
-                                          </div>
-                                        )}
-                                      </div>
-                                    </div>
-                                  </div>
-                                  <div className="col-span-2 flex justify-end gap-2">
-                                    <button
-                                      onClick={() => setEditingRule(null)}
-                                      className="px-3 py-1 text-gray-600 hover:text-gray-900"
-                                    >
-                                      Cancel
-                                    </button>
-                                    <button
-                                      onClick={() => handleEditRule(index, {
-                                        condition: `${newRule.conditionType}:${newRule.conditionValue}`,
-                                        assignTo: `${newRule.assignToType}:${newRule.assignTo}`,
-                                        description: `If ${newRule.conditionType} is ${newRule.conditionValue}, assign to ${newRule.assignTo}`,
-                                      })}
-                                      className="px-3 py-1 bg-amber-400 text-black rounded-lg hover:bg-amber-500"
-                                    >
-                                      Save
-                                    </button>
-                                  </div>
-                                </div>
-                              ) : (
-                                <>
-                                  <div className="flex-1">
-                                    <p className="text-sm text-gray-900">{rule.description}</p>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <button
-                                      onClick={() => {
-                                        setEditingRule(index);
-                                        const [conditionType, conditionValue] = rule.condition.split(':');
-                                        const [assignToType, assignTo] = rule.assignTo.split(':');
-                                        setNewRule({
-                                          condition: "",
-                                          conditionType,
-                                          conditionValue,
-                                          assignTo,
-                                          assignToType,
-                                        });
-                                      }}
-                                      className="p-1 hover:text-amber-400"
-                                    >
-                                      <Edit2 className="h-4 w-4" />
-                                    </button>
-                                    <button
-                                      onClick={() => handleDeleteRule(index)}
-                                      className="p-1 hover:text-red-500"
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                    </button>
-                                  </div>
-                                </>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {activeTab === "integrations" && (
-                  <div className="space-y-6">
-                    <h3 className="text-xl font-semibold text-gray-900">Integration Settings</h3>
-                    <div className="space-y-4">
-                      <div className="p-4 bg-white rounded-lg border border-gray-200">
-                        <h4 className="font-medium text-gray-900 mb-2">Asana API Key</h4>
-                        <input
-                          type="password"
-                          value={settings.integrations.asanaKey}
-                          onChange={(e) => handleSettingChange("integrations", "asanaKey", e.target.value)}
-                          className="w-full p-2 rounded-lg border border-gray-200 focus:border-amber-400 focus:ring-2 focus:ring-amber-100 outline-none"
-                        />
-                      </div>
-                      <div className="p-4 bg-white rounded-lg border border-gray-200">
-                        <h4 className="font-medium text-gray-900 mb-2">Slack Webhook URL</h4>
-                        <input
-                          type="password"
-                          value={settings.integrations.slackWebhook}
-                          onChange={(e) => handleSettingChange("integrations", "slackWebhook", e.target.value)}
-                          className="w-full p-2 rounded-lg border border-gray-200 focus:border-amber-400 focus:ring-2 focus:ring-amber-100 outline-none"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                <div className="mt-8">
-                  <button className="flex items-center gap-2 px-4 py-2 bg-amber-400 text-black rounded-lg hover:bg-amber-500 transition">
-                    <Save className="h-5 w-5" />
-                    Save Changes
-                  </button>
                 </div>
               </div>
             </div>
-          </div>
+          </header>
+
+          <main className="flex-1 p-8">
+            <div className="max-w-7xl mx-auto">
+              <div className="space-y-8">
+                {settings.map((section) => (
+                  <div key={section.id} className="bg-white rounded-xl shadow-sm p-6">
+                    <div className="flex items-center mb-4">
+                      <div className="flex-shrink-0 h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center">
+                        {section.icon}
+                      </div>
+                      <div className="ml-4">
+                        <h2 className="text-lg font-medium text-gray-900">
+                          {section.title}
+                        </h2>
+                        <p className="text-sm text-gray-500">{section.description}</p>
+                      </div>
+                    </div>
+                    <div className="space-y-4">
+                      {section.settings.map((setting) => (
+                        <div
+                          key={setting.id}
+                          className="flex items-center justify-between py-4 border-b border-gray-200 last:border-b-0"
+                        >
+                          <div>
+                            <h3 className="text-sm font-medium text-gray-900">
+                              {setting.name}
+                            </h3>
+                            <p className="text-sm text-gray-500">
+                              {setting.description}
+                            </p>
+                          </div>
+                          <div className="ml-4">
+                            {setting.type === "toggle" && (
+                              <button
+                                type="button"
+                                className={`${
+                                  setting.value
+                                    ? "bg-amber-400"
+                                    : "bg-gray-200"
+                                } relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2`}
+                                onClick={() => handleToggle(section.id, setting.id)}
+                              >
+                                <span
+                                  className={`${
+                                    setting.value
+                                      ? "translate-x-5"
+                                      : "translate-x-0"
+                                  } pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out`}
+                                />
+                              </button>
+                            )}
+                            {setting.type === "select" && setting.options && (
+                              <select
+                                className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-amber-500 focus:border-amber-500 sm:text-sm rounded-md"
+                                value={setting.value as string}
+                                onChange={(e) =>
+                                  handleSelect(section.id, setting.id, e.target.value)
+                                }
+                              >
+                                {setting.options.map((option) => (
+                                  <option key={option} value={option}>
+                                    {option.charAt(0).toUpperCase() + option.slice(1)}
+                                  </option>
+                                ))}
+                              </select>
+                            )}
+                            {setting.type === "link" && setting.action && (
+                              <Link
+                                href={setting.action}
+                                className="text-amber-600 hover:text-amber-500 text-sm font-medium"
+                              >
+                                Edit
+                              </Link>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </main>
         </div>
       </div>
     </div>

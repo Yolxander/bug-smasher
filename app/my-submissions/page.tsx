@@ -1,261 +1,272 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Search, Bell, ChevronDown, Edit2, Trash2, Check, Clock, AlertCircle } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Mail, MoreVertical } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, NavigationMenuTrigger } from "@/components/ui/navigation-menu";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Separator } from "@/components/ui/separator";
+import { Search, Bell, ChevronDown, Bug, CheckCircle, Clock, AlertTriangle } from "lucide-react";
 import { DashboardSidebar } from "@/components/DashboardSidebar";
-
-// Mock data for user's submissions
-const mockSubmissions = [
-  {
-    id: 1,
-    title: "Login button not responsive",
-    description: "The login button does not respond on click in Chrome.",
-    status: "Open",
-    priority: "High",
-    date: "2024-06-01",
-    device: "Chrome on Mac",
-    screenshot: "/placeholder.svg?height=48&width=80",
-    canEdit: true,
-  },
-  {
-    id: 2,
-    title: "Image upload fails",
-    description: "Uploading images on Safari returns a 500 error.",
-    status: "In Progress",
-    priority: "Medium",
-    date: "2024-06-02",
-    device: "Safari on iPhone",
-    screenshot: "/placeholder.svg?height=48&width=80",
-    canEdit: false,
-  },
-  {
-    id: 3,
-    title: "Dashboard graph not loading",
-    description: "Graphs fail to render for some users on Edge.",
-    status: "Resolved",
-    priority: "Low",
-    date: "2024-06-03",
-    device: "Edge on Windows",
-    screenshot: "/placeholder.svg?height=48&width=80",
-    canEdit: false,
-  },
-];
-
-const statusOptions = ["All", "Open", "In Progress", "Resolved"];
-const priorityOptions = ["All", "High", "Medium", "Low"];
+import { getSubmissions } from "../actions/submissions";
+import { Submission } from "../actions/submissions";
 
 export default function MySubmissionsPage() {
+  const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState("All");
   const [priority, setPriority] = useState("All");
   const [search, setSearch] = useState("");
-  const [editingBug, setEditingBug] = useState<number | null>(null);
+  const [selected, setSelected] = useState<string[]>([]);
 
-  const filteredSubmissions = mockSubmissions.filter((submission) => {
-    const matchesStatus = status === "All" || submission.status === status;
-    const matchesPriority = priority === "All" || submission.priority === priority;
+  useEffect(() => {
+    const fetchSubmissions = async () => {
+      try {
+        const data = await getSubmissions();
+        setSubmissions(data);
+      } catch (error) {
+        console.error('Error fetching submissions:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSubmissions();
+  }, []);
+
+  const statusOptions = ["All", "Open", "In Progress", "Resolved"];
+  const priorityOptions = ["All", "High", "Medium", "Low"];
+
+  const filteredBugs = submissions.filter((bug) => {
+    const matchesStatus = status === "All" || bug.status === status;
+    const matchesPriority = priority === "All" || bug.priority === priority;
     const matchesSearch =
-      submission.title.toLowerCase().includes(search.toLowerCase()) ||
-      submission.description.toLowerCase().includes(search.toLowerCase());
+      bug.title.toLowerCase().includes(search.toLowerCase()) ||
+      bug.description.toLowerCase().includes(search.toLowerCase());
     return matchesStatus && matchesPriority && matchesSearch;
   });
 
-  const handleEdit = (id: number) => {
-    setEditingBug(id);
+  const toggleSelect = (id: string) => {
+    setSelected((prev) =>
+      prev.includes(id) ? prev.filter((sid) => sid !== id) : [...prev, id]
+    );
   };
 
-  const handleDelete = (id: number) => {
-    // In a real app, this would call an API to delete the submission
-    console.log("Delete submission:", id);
+  const selectAll = () => {
+    if (selected.length === filteredBugs.length) {
+      setSelected([]);
+    } else {
+      setSelected(filteredBugs.map((bug) => bug.id));
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'open':
+        return 'bg-red-100 text-red-800'
+      case 'in progress':
+        return 'bg-yellow-100 text-yellow-800'
+      case 'resolved':
+        return 'bg-green-100 text-green-800'
+      default:
+        return 'bg-gray-100 text-gray-800'
+    }
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      {/* Main container with rounded corners and shadow */}
-      <div className="flex w-full max-w-[1400px] mx-auto my-4 bg-white rounded-3xl shadow-sm overflow-hidden">
-        {/* Sidebar */}
-        <DashboardSidebar activePage="/my-submissions" />
-
-        {/* Main content */}
-        <div className="flex-1 overflow-auto bg-gray-50">
-          {/* Header */}
-          <header className="flex items-center justify-between border-b border-gray-100 bg-white p-4">
-            <div className="relative w-[400px]">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-              <input
-                type="search"
-                placeholder="Search bugs, reports, or team..."
-                className="h-10 w-full rounded-full bg-gray-50 pl-10 pr-4 text-sm outline-none border border-gray-200 shadow-sm"
-              />
-            </div>
-            <div className="flex items-center gap-4">
-              <button className="rounded-full p-2 hover:bg-gray-100">
-                <Bell className="h-5 w-5 text-gray-600" />
-              </button>
-              <div className="flex items-center gap-2 bg-gray-50 rounded-full px-2 py-1">
-                <div className="h-8 w-8 rounded-full overflow-hidden">
-                  <Image
-                    src="/placeholder.svg?height=32&width=32"
-                    alt="You"
-                    width={32}
-                    height={32}
-                    className="object-cover"
-                  />
+    <div className="min-h-screen bg-gray-50">
+      <div className="flex">
+        <DashboardSidebar activePage="my-submissions" />
+        <div className="flex-1">
+          <header className="bg-white shadow-sm">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="flex justify-between h-16">
+                <div className="flex">
+                  <div className="flex-shrink-0 flex items-center">
+                    <h1 className="text-xl font-semibold">My Bug Reports</h1>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-medium">You</p>
-                  <p className="text-xs text-gray-500">QA Tester</p>
+                <div className="flex items-center">
+                  <div className="flex-shrink-0">
+                    <Link
+                      href="/submit"
+                      className="relative inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    >
+                      Report New Bug
+                    </Link>
+                  </div>
+                  <div className="ml-4 flex items-center md:ml-6">
+                    <button className="p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none">
+                      <Bell className="h-6 w-6" />
+                    </button>
+                    <div className="ml-3 relative">
+                      <div className="flex items-center">
+                        <button
+                          type="button"
+                          className="max-w-xs bg-white rounded-full flex items-center text-sm focus:outline-none"
+                          id="user-menu-button"
+                        >
+                          <span className="sr-only">Open user menu</span>
+                          <img
+                            className="h-8 w-8 rounded-full"
+                            src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
+                            alt=""
+                          />
+                          <ChevronDown className="ml-1 h-4 w-4 text-gray-400" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <ChevronDown className="h-4 w-4 text-gray-400" />
               </div>
             </div>
           </header>
-          {/* My Submissions Content */}
-          <div className="p-8 max-w-7xl mx-auto">
-            <div className="flex items-center justify-between mb-6">
-              <h1 className="text-2xl font-bold">My Submissions</h1>
-              <Link href="/submit" className="bg-black text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-900">
-                Submit New Bug
-              </Link>
-            </div>
 
+          <main className="flex-1 p-8">
             {/* Filters */}
-            <div className="flex flex-wrap gap-4 mb-6 items-end">
-              <input
-                type="text"
-                placeholder="Search submissions..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="rounded-md border border-gray-200 px-4 py-2 text-sm bg-white"
-              />
-              <div>
-                <label className="block text-xs mb-1">Status</label>
-                <select
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                  className="rounded-md border border-gray-200 px-3 py-2 text-sm bg-white"
+            <div className="mb-8 bg-white rounded-xl shadow-sm p-6">
+              <div className="flex flex-wrap gap-4 items-end">
+                <div className="flex-1 min-w-[200px]">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Search bugs..."
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      className="w-full rounded-md border border-gray-200 pl-10 pr-4 py-2 text-sm bg-gray-50 focus:ring-2 focus:ring-black focus:outline-none"
+                    />
+                  </div>
+                </div>
+                <div className="min-w-[200px]">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                  <select
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value)}
+                    className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm bg-gray-50 focus:ring-2 focus:ring-black focus:outline-none"
+                  >
+                    {statusOptions.map((opt) => (
+                      <option key={opt}>{opt}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="min-w-[200px]">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+                  <select
+                    value={priority}
+                    onChange={(e) => setPriority(e.target.value)}
+                    className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm bg-gray-50 focus:ring-2 focus:ring-black focus:outline-none"
+                  >
+                    {priorityOptions.map((opt) => (
+                      <option key={opt}>{opt}</option>
+                    ))}
+                  </select>
+                </div>
+                <button
+                  className="ml-auto bg-black text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2"
+                  disabled={selected.length === 0}
                 >
-                  {statusOptions.map((opt) => (
-                    <option key={opt}>{opt}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs mb-1">Priority</label>
-                <select
-                  value={priority}
-                  onChange={(e) => setPriority(e.target.value)}
-                  className="rounded-md border border-gray-200 px-3 py-2 text-sm bg-white"
-                >
-                  {priorityOptions.map((opt) => (
-                    <option key={opt}>{opt}</option>
-                  ))}
-                </select>
+                  Bulk Action
+                </button>
               </div>
             </div>
 
-            {/* Submissions List */}
-            <div className="grid gap-6 md:grid-cols-2">
-              {filteredSubmissions.map((submission) => (
-                <div
-                  key={submission.id}
-                  className={`relative group bg-white rounded-2xl border border-gray-100 shadow-md overflow-hidden transition-transform hover:shadow-lg hover:-translate-y-1 ${
-                    submission.status === "Open"
-                      ? "border-l-4 border-red-400"
-                      : submission.status === "In Progress"
-                      ? "border-l-4 border-yellow-400"
-                      : "border-l-4 border-green-400"
-                  }`}
-                >
-                  {/* Edit/Delete buttons */}
-                  {submission.canEdit && (
-                    <div className="absolute top-3 right-3 flex gap-1 z-10">
-                      <button
-                        onClick={() => handleEdit(submission.id)}
-                        className="p-2 hover:bg-gray-100 rounded-full"
-                        title="Edit"
-                      >
-                        <Edit2 className="h-4 w-4 text-gray-500" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(submission.id)}
-                        className="p-2 hover:bg-gray-100 rounded-full"
-                        title="Delete"
-                      >
-                        <Trash2 className="h-4 w-4 text-gray-500" />
-                      </button>
-                    </div>
-                  )}
-                  <div className="p-5 pb-4 flex flex-col gap-2">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="text-lg font-semibold flex-1 line-clamp-1">{submission.title}</h3>
-                    </div>
-                    <div className="flex gap-2 mb-2">
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${
-                        submission.status === "Open"
-                          ? "bg-red-100 text-red-700"
-                          : submission.status === "In Progress"
-                          ? "bg-yellow-100 text-yellow-700"
-                          : "bg-green-100 text-green-700"
-                      }`}>
-                        {submission.status === "Open" && <AlertCircle className="h-3 w-3" />}
-                        {submission.status === "In Progress" && <Clock className="h-3 w-3" />}
-                        {submission.status === "Resolved" && <Check className="h-3 w-3" />}
-                        {submission.status}
-                      </span>
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${
-                        submission.priority === "High"
-                          ? "bg-red-100 text-red-700"
-                          : submission.priority === "Medium"
-                          ? "bg-yellow-100 text-yellow-700"
-                          : "bg-green-100 text-green-700"
-                      }`}>
-                        {submission.priority === "High" && <span className="inline-block w-2 h-2 bg-red-500 rounded-full" />}
-                        {submission.priority === "Medium" && <span className="inline-block w-2 h-2 bg-yellow-500 rounded-full" />}
-                        {submission.priority === "Low" && <span className="inline-block w-2 h-2 bg-green-500 rounded-full" />}
-                        {submission.priority}
-                      </span>
-                    </div>
-                    <p className="text-sm text-gray-600 mb-1 line-clamp-2">{submission.description}</p>
-                    <div className="flex items-center gap-3 text-xs text-gray-400">
-                      <span>{submission.date}</span>
-                      <span>•</span>
-                      <span>{submission.device}</span>
-                    </div>
-                  </div>
-                  {submission.screenshot && (
-                    <div className="bg-gray-50 border-t border-gray-100 p-4 flex items-center justify-center">
-                      <Image
-                        src={submission.screenshot}
-                        alt="Screenshot"
-                        width={220}
-                        height={120}
-                        className="rounded shadow max-h-28 object-contain"
-                      />
-                    </div>
-                  )}
-                </div>
-              ))}
-              {filteredSubmissions.length === 0 && (
-                <div className="text-center py-12 col-span-2">
-                  <p className="text-gray-500">No submissions found.</p>
-                </div>
-              )}
+            {/* Bug Reports Table */}
+            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <input
+                          type="checkbox"
+                          checked={selected.length === filteredBugs.length && filteredBugs.length > 0}
+                          onChange={selectAll}
+                          className="rounded border-gray-300 text-black focus:ring-black"
+                        />
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Priority</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assignee</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Device</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Screenshot</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {loading ? (
+                      <tr>
+                        <td colSpan={8} className="px-6 py-4 text-center text-gray-500">
+                          Loading...
+                        </td>
+                      </tr>
+                    ) : filteredBugs.length === 0 ? (
+                      <tr>
+                        <td colSpan={8} className="px-6 py-4 text-center text-gray-500">
+                          No bugs found.
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredBugs.map((bug) => (
+                        <tr key={bug.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <input
+                              type="checkbox"
+                              checked={selected.includes(bug.id)}
+                              onChange={() => toggleSelect(bug.id)}
+                              className="rounded border-gray-300 text-black focus:ring-black"
+                            />
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="font-medium text-gray-900">{bug.title}</div>
+                            <div className="text-sm text-gray-500 line-clamp-1">{bug.description}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(bug.status)}`}>
+                              {bug.status}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(bug.priority)}`}>
+                              {bug.priority}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <img
+                                className="h-8 w-8 rounded-full"
+                                src={bug.assignee.avatar}
+                                alt={bug.assignee.name}
+                              />
+                              <div className="ml-2">
+                                <div className="text-sm font-medium text-gray-900">{bug.assignee.name}</div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {bug.device}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {new Date(bug.createdAt).toLocaleDateString()}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {bug.screenshot && (
+                              <Image
+                                src={bug.screenshot}
+                                alt="Screenshot"
+                                width={80}
+                                height={48}
+                                className="rounded shadow"
+                              />
+                            )}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
+          </main>
         </div>
       </div>
     </div>

@@ -1,114 +1,185 @@
 "use client";
 import React, { useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
-import { Search, ChevronDown, ChevronUp, HelpCircle, Image as ImageIcon, Edit, GitBranch } from "lucide-react";
+import { Bell, ChevronDown, ChevronRight, HelpCircle, Search } from "lucide-react";
 import { DashboardSidebar } from "@/components/DashboardSidebar";
+
+// Mock data for FAQ categories and questions
+const faqCategories = [
+  {
+    id: 1,
+    title: "Getting Started",
+    icon: <HelpCircle className="h-5 w-5 text-blue-500" />,
+    questions: [
+      {
+        id: 1,
+        question: "How do I create my first bug report?",
+        answer: "To create a bug report, click on the 'Submit' button in the navigation bar. Fill out the required fields including title, description, and steps to reproduce. You can also attach screenshots or files to provide more context.",
+      },
+      {
+        id: 2,
+        question: "What information should I include in a bug report?",
+        answer: "A good bug report should include: a clear title, detailed description of the issue, steps to reproduce, expected vs actual behavior, environment details (browser, OS, etc.), and any relevant screenshots or error messages.",
+      },
+    ],
+  },
+  {
+    id: 2,
+    title: "Bug Tracking",
+    icon: <HelpCircle className="h-5 w-5 text-green-500" />,
+    questions: [
+      {
+        id: 3,
+        question: "How do I track the status of my bug reports?",
+        answer: "You can view all your submitted bug reports in the 'My Submissions' section. Each report shows its current status, assignee, and any updates or comments. You'll also receive notifications when there are changes to your reports.",
+      },
+      {
+        id: 4,
+        question: "Can I edit a bug report after submission?",
+        answer: "Yes, you can edit your bug reports as long as they haven't been resolved. Click on the report in 'My Submissions' and use the edit button to make changes. All edits are tracked in the report's history.",
+      },
+    ],
+  },
+  {
+    id: 3,
+    title: "Team Collaboration",
+    icon: <HelpCircle className="h-5 w-5 text-purple-500" />,
+    questions: [
+      {
+        id: 5,
+        question: "How do I assign bugs to team members?",
+        answer: "Team leads and project managers can assign bugs to team members through the bug report interface. Click on the 'Assign' button and select the team member from the dropdown menu. You can also set priority levels and due dates.",
+      },
+      {
+        id: 6,
+        question: "How can I communicate with my team about bugs?",
+        answer: "Each bug report has a comments section where team members can discuss the issue. You can @mention team members to notify them, and all comments are tracked in the report's history. You can also use the built-in chat feature for real-time communication.",
+      },
+    ],
+  },
+];
 
 export default function FAQPage() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [expandedQuestion, setExpandedQuestion] = useState<string | null>(null);
+  const [expandedQuestions, setExpandedQuestions] = useState<number[]>([]);
 
-  const questions = [
-    {
-      id: "screenshot-attach",
-      category: "Screenshots & Attachments",
-      icon: <ImageIcon className="h-5 w-5" />,
-      question: "Why isn't my screenshot attaching?",
-      answer: "If your screenshot isn't attaching, try these steps:\n1. Check if the file size is under 5MB\n2. Make sure you're using a supported format (PNG, JPG, or GIF)\n3. Try refreshing the page and attaching again\n4. If using the screenshot tool, ensure you've granted browser permissions\nStill having trouble? Contact support and we'll help you out!",
-    },
-    {
-      id: "edit-bug",
-      category: "Editing & Updates",
-      icon: <Edit className="h-5 w-5" />,
-      question: "How do I edit a bug I submitted?",
-      answer: "Editing your bug is easy! Just go to your 'Submitted Bugs' section, find the bug you want to edit, and click the 'Edit' button. You can update any details, add more information, or attach additional files. Don't worry - we'll notify the team about your updates!",
-    },
-    {
-      id: "post-submit",
-      category: "General Questions",
-      icon: <HelpCircle className="h-5 w-5" />,
-      question: "What happens after I submit a bug?",
-      answer: "Once you submit a bug, our system automatically assigns it a unique ID and notifies the relevant team members. You'll receive updates via email or in-app notifications about any status changes, comments, or when it's time to test the fix. You can track the progress in your dashboard!",
-    },
-    {
-      id: "asana-integration",
-      category: "Integrations",
-      icon: <GitBranch className="h-5 w-5" />,
-      question: "How does Asana integration work?",
-      answer: "Our Asana integration makes bug tracking seamless! When you submit a bug, it automatically creates a corresponding task in your Asana project. Any updates in Bug Smasher sync to Asana, and vice versa. To set it up, just connect your Asana account in the Integrations settings!",
-    },
-  ];
+  const toggleQuestion = (questionId: number) => {
+    setExpandedQuestions((prev) =>
+      prev.includes(questionId)
+        ? prev.filter((id) => id !== questionId)
+        : [...prev, questionId]
+    );
+  };
 
-  const filteredQuestions = questions.filter(q => 
-    q.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    q.answer.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredCategories = faqCategories.map((category) => ({
+    ...category,
+    questions: category.questions.filter((q) =>
+      q.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      q.answer.toLowerCase().includes(searchQuery.toLowerCase())
+    ),
+  })).filter((category) => category.questions.length > 0);
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <div className="flex w-full max-w-[1400px] mx-auto my-4 bg-white rounded-3xl shadow-sm overflow-hidden">
-        <DashboardSidebar activePage="/faq" />
-        <div className="flex-1 overflow-auto bg-gray-50">
-          <div className="p-8 max-w-7xl mx-auto">
-            <div className="mb-8">
-              <h1 className="text-3xl font-extrabold text-black mb-2">Frequently Asked Questions</h1>
-              <p className="text-lg text-gray-700">Quick answers to common questions about Bug Smasher</p>
-            </div>
-
-            <div className="relative mb-8">
-              <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
-              <input
-                type="search"
-                placeholder="Search questions..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full h-12 pl-10 pr-4 rounded-xl bg-white border border-gray-200 focus:border-amber-400 focus:ring-2 focus:ring-amber-100 outline-none transition"
-              />
-            </div>
-
-            <div className="space-y-4">
-              {filteredQuestions.map((item) => (
-                <div
-                  key={item.id}
-                  className="bg-black rounded-xl overflow-hidden border border-gray-800"
-                >
-                  <button
-                    onClick={() => setExpandedQuestion(expandedQuestion === item.id ? null : item.id)}
-                    className="w-full flex items-center justify-between p-4 hover:bg-gray-900 transition"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="bg-amber-400 p-2 rounded-lg">
-                        {item.icon}
-                      </div>
-                      <div className="text-left">
-                        <p className="text-sm font-medium text-amber-400">{item.category}</p>
-                        <h3 className="text-lg font-semibold text-white">{item.question}</h3>
-                      </div>
-                    </div>
-                    {expandedQuestion === item.id ? (
-                      <ChevronUp className="h-5 w-5 text-amber-400" />
-                    ) : (
-                      <ChevronDown className="h-5 w-5 text-amber-400" />
-                    )}
-                  </button>
-                  {expandedQuestion === item.id && (
-                    <div className="p-4 pt-0">
-                      <div className="prose prose-invert max-w-none">
-                        <p className="whitespace-pre-line text-gray-300">{item.answer}</p>
-                      </div>
-                    </div>
-                  )}
+    <div className="min-h-screen bg-gray-50">
+      <div className="flex">
+        <DashboardSidebar activePage="faq" />
+        <div className="flex-1">
+          <header className="bg-white shadow-sm">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="flex justify-between h-16">
+                <div className="flex">
+                  <div className="flex-shrink-0 flex items-center">
+                    <h1 className="text-xl font-semibold">FAQ</h1>
+                  </div>
                 </div>
-              ))}
-            </div>
-
-            {filteredQuestions.length === 0 && (
-              <div className="text-center py-12">
-                <p className="text-gray-500">No questions found matching your search.</p>
+                <div className="flex items-center">
+                  <div className="ml-4 flex items-center md:ml-6">
+                    <button className="p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none">
+                      <Bell className="h-6 w-6" />
+                    </button>
+                    <div className="ml-3 relative">
+                      <div className="flex items-center">
+                        <button
+                          type="button"
+                          className="max-w-xs bg-white rounded-full flex items-center text-sm focus:outline-none"
+                          id="user-menu-button"
+                        >
+                          <span className="sr-only">Open user menu</span>
+                          <img
+                            className="h-8 w-8 rounded-full"
+                            src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
+                            alt=""
+                          />
+                          <ChevronDown className="ml-1 h-4 w-4 text-gray-400" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
-            )}
-          </div>
+            </div>
+          </header>
+
+          <main className="flex-1 p-8">
+            <div className="max-w-7xl mx-auto">
+              <div className="mb-8">
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Search className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    type="text"
+                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    placeholder="Search FAQ..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-8">
+                {filteredCategories.map((category) => (
+                  <div key={category.id} className="bg-white rounded-xl shadow-sm p-6">
+                    <div className="flex items-center mb-4">
+                      <div className="flex-shrink-0 h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center">
+                        {category.icon}
+                      </div>
+                      <h2 className="ml-4 text-lg font-medium text-gray-900">
+                        {category.title}
+                      </h2>
+                    </div>
+                    <div className="space-y-4">
+                      {category.questions.map((q) => (
+                        <div
+                          key={q.id}
+                          className="border-b border-gray-200 last:border-b-0 pb-4 last:pb-0"
+                        >
+                          <button
+                            className="flex items-center justify-between w-full text-left"
+                            onClick={() => toggleQuestion(q.id)}
+                          >
+                            <span className="text-base font-medium text-gray-900">
+                              {q.question}
+                            </span>
+                            <ChevronRight
+                              className={`h-5 w-5 text-gray-400 transform transition-transform ${
+                                expandedQuestions.includes(q.id) ? "rotate-90" : ""
+                              }`}
+                            />
+                          </button>
+                          {expandedQuestions.includes(q.id) && (
+                            <div className="mt-2 text-sm text-gray-600">
+                              {q.answer}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </main>
         </div>
       </div>
     </div>

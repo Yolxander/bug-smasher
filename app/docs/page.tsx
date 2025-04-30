@@ -1,222 +1,147 @@
 "use client";
-import React, { useState } from "react";
-import Image from "next/image";
+import React from "react";
 import Link from "next/link";
-import { Search, Bell, ChevronDown, BookOpen, Code, Bug, Settings, Users, ArrowRight, ArrowLeft } from "lucide-react";
+import { Bell, ChevronDown, Book, FileText, Code, Settings, HelpCircle } from "lucide-react";
 import { DashboardSidebar } from "@/components/DashboardSidebar";
 
+// Mock data for documentation sections
+const sections = [
+  {
+    id: 1,
+    title: "Getting Started",
+    description: "Learn the basics of our bug tracking system",
+    icon: <Book className="h-6 w-6 text-blue-500" />,
+    articles: [
+      { id: 1, title: "Introduction", link: "#" },
+      { id: 2, title: "Quick Start Guide", link: "#" },
+      { id: 3, title: "System Requirements", link: "#" },
+    ],
+  },
+  {
+    id: 2,
+    title: "Bug Reporting",
+    description: "How to effectively report and track bugs",
+    icon: <FileText className="h-6 w-6 text-green-500" />,
+    articles: [
+      { id: 4, title: "Creating Bug Reports", link: "#" },
+      { id: 5, title: "Bug Report Templates", link: "#" },
+      { id: 6, title: "Best Practices", link: "#" },
+    ],
+  },
+  {
+    id: 3,
+    title: "API Documentation",
+    description: "Technical documentation for developers",
+    icon: <Code className="h-6 w-6 text-purple-500" />,
+    articles: [
+      { id: 7, title: "API Overview", link: "#" },
+      { id: 8, title: "Authentication", link: "#" },
+      { id: 9, title: "Endpoints", link: "#" },
+    ],
+  },
+  {
+    id: 4,
+    title: "Administration",
+    description: "System configuration and management",
+    icon: <Settings className="h-6 w-6 text-amber-500" />,
+    articles: [
+      { id: 10, title: "User Management", link: "#" },
+      { id: 11, title: "Project Settings", link: "#" },
+      { id: 12, title: "System Configuration", link: "#" },
+    ],
+  },
+  {
+    id: 5,
+    title: "Troubleshooting",
+    description: "Common issues and solutions",
+    icon: <HelpCircle className="h-6 w-6 text-red-500" />,
+    articles: [
+      { id: 13, title: "Common Problems", link: "#" },
+      { id: 14, title: "Error Messages", link: "#" },
+      { id: 15, title: "Contact Support", link: "#" },
+    ],
+  },
+];
+
 export default function DocsPage() {
-  const [activeSection, setActiveSection] = useState("getting-started");
-  const [currentStep, setCurrentStep] = useState(0);
-
-  const sections = [
-    {
-      id: "getting-started",
-      title: "Getting Started",
-      icon: <BookOpen className="h-5 w-5" />,
-      steps: [
-        {
-          title: "Welcome to Bug Smasher!",
-          description: "Let's get you set up! Start by creating your account using your email or GitHub. This will be your home base for all bug tracking activities. Don't worry, it's quick and secure!",
-        },
-        {
-          title: "Customize Your Workspace",
-          description: "Make Bug Smasher work for you! Set up your project preferences, choose your notification settings, and invite your team members. We'll help you organize everything just the way you like it.",
-        },
-        {
-          title: "Take a Tour",
-          description: "Ready to explore? We'll show you around the dashboard, introduce you to key features, and help you find everything you need. It's like having a personal guide to bug tracking!",
-        },
-      ],
-    },
-    {
-      id: "bug-reports",
-      title: "Bug Reports",
-      icon: <Bug className="h-5 w-5" />,
-      steps: [
-        {
-          title: "Let's Report a Bug",
-          description: "Found something that needs fixing? Our friendly bug report form makes it easy! Just describe what you found, add some screenshots, and we'll help you provide all the details developers need to fix it.",
-        },
-        {
-          title: "Stay in the Loop",
-          description: "Keep track of your bug's journey! You'll get updates when the status changes, when developers add comments, or when it's time to test the fix. We'll make sure you never miss a beat.",
-        },
-        {
-          title: "Manage Your Reports",
-          description: "Your bugs, your way! Edit details, add more information, or close resolved issues. You can even organize them into categories or add tags to make them easier to find later.",
-        },
-      ],
-    },
-    {
-      id: "analytics",
-      title: "Analytics",
-      icon: <Settings className="h-5 w-5" />,
-      steps: [
-        {
-          title: "Discover Insights",
-          description: "See the big picture! Our analytics dashboard shows you trends, patterns, and important metrics about your bugs. It's like having a crystal ball for your project's health!",
-        },
-        {
-          title: "Create Custom Reports",
-          description: "Need specific information? Create reports that show exactly what you're looking for. Filter by date, priority, status, or any other criteria. We'll help you make sense of all that data!",
-        },
-        {
-          title: "Share Your Findings",
-          description: "Got something important to share? Export your reports in different formats and share them with your team. Whether it's a quick update or a detailed analysis, we've got you covered!",
-        },
-      ],
-    },
-    {
-      id: "team",
-      title: "Team",
-      icon: <Users className="h-5 w-5" />,
-      steps: [
-        {
-          title: "Build Your Dream Team",
-          description: "Teamwork makes the dream work! Invite your colleagues, assign roles, and set up your team structure. Everyone will know exactly what they're responsible for and how they can help.",
-        },
-        {
-          title: "Set the Rules",
-          description: "Keep everything running smoothly! Configure who can do what, set up approval workflows, and make sure everyone has the right level of access. It's all about working together effectively!",
-        },
-        {
-          title: "Celebrate Success",
-          description: "Watch your team shine! Track everyone's contributions, celebrate milestones, and see how your team is making a difference. We'll help you keep the momentum going!",
-        },
-      ],
-    },
-  ];
-
-  const currentSection = sections.find((section) => section.id === activeSection);
-  const totalSteps = currentSection?.steps.length || 0;
-  const currentStepData = currentSection?.steps[currentStep];
-
-  const handleNext = () => {
-    if (currentStep < totalSteps - 1) {
-      setCurrentStep(currentStep + 1);
-    }
-  };
-
-  const handlePrevious = () => {
-    if (currentStep > 0) {
-      setCurrentStep(currentStep - 1);
-    }
-  };
-
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <div className="flex w-full max-w-[1400px] mx-auto my-4 bg-white rounded-3xl shadow-sm overflow-hidden">
-        <DashboardSidebar activePage="/docs" />
-        <div className="flex-1 overflow-auto bg-gray-50">
-          <header className="flex items-center justify-between border-b border-gray-100 bg-white p-4">
-            <div className="relative w-[400px]">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-              <input
-                type="search"
-                placeholder="Search documentation..."
-                className="h-10 w-full rounded-full bg-gray-50 pl-10 pr-4 text-sm outline-none border border-gray-200 shadow-sm"
-              />
-            </div>
-            <div className="flex items-center gap-4">
-              <button className="rounded-full p-2 hover:bg-gray-100">
-                <Bell className="h-5 w-5 text-gray-600" />
-              </button>
-              <div className="flex items-center gap-2 bg-gray-50 rounded-full px-2 py-1">
-                <div className="h-8 w-8 rounded-full overflow-hidden">
-                  <Image
-                    src="/placeholder.svg?height=32&width=32"
-                    alt="You"
-                    width={32}
-                    height={32}
-                    className="object-cover"
-                  />
+    <div className="min-h-screen bg-gray-50">
+      <div className="flex">
+        <DashboardSidebar activePage="docs" />
+        <div className="flex-1">
+          <header className="bg-white shadow-sm">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="flex justify-between h-16">
+                <div className="flex">
+                  <div className="flex-shrink-0 flex items-center">
+                    <h1 className="text-xl font-semibold">Documentation</h1>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-medium">You</p>
-                  <p className="text-xs text-gray-500">QA Tester</p>
-                </div>
-                <ChevronDown className="h-4 w-4 text-gray-400" />
-              </div>
-            </div>
-          </header>
-          <div className="p-8 max-w-7xl mx-auto">
-            <div className="mb-8 text-center">
-              <h1 className="text-3xl font-extrabold text-black mb-2 flex items-center justify-center gap-2">
-                Guide
-              </h1>
-              <p className="text-lg text-gray-700 font-medium">Everything you need to know about Bug Smasher</p>
-            </div>
-
-            <div className="flex flex-col md:flex-row gap-8">
-              <div className="w-[45%]">
-                <nav className="sticky top-8 space-y-1">
-                  {sections.map((section) => (
-                    <button
-                      key={section.id}
-                      onClick={() => {
-                        setActiveSection(section.id);
-                        setCurrentStep(0);
-                      }}
-                      className={`w-[50%] flex items-center gap-3 px-4 py-2 text-sm font-medium rounded-lg transition ${
-                        activeSection === section.id
-                          ? "bg-amber-400 text-black"
-                          : "text-gray-600 hover:bg-gray-100"
-                      }`}
-                    >
-                      {section.icon}
-                      {section.title}
+                <div className="flex items-center">
+                  <div className="ml-4 flex items-center md:ml-6">
+                    <button className="p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none">
+                      <Bell className="h-6 w-6" />
                     </button>
-                  ))}
-                </nav>
-              </div>
-
-              <div className="w-[55%]">
-                <div className="bg-black rounded-2xl p-6 shadow border border-gray-800">
-                  <h3 className="text-xl font-bold bg-amber-400 text-black inline-block px-4 py-2 rounded-lg mb-4">
-                    {currentSection?.title}
-                  </h3>
-                  <div className="prose max-w-none text-white">
-                    <div className="flex items-center gap-4">
-                      <div className="w-8 h-8 rounded-full bg-amber-400 flex items-center justify-center text-black font-bold">
-                        {currentStep + 1}
-                      </div>
-                      <div>
-                        <p className="font-semibold">{currentStepData?.title}</p>
-                        <p className="text-gray-400">{currentStepData?.description}</p>
+                    <div className="ml-3 relative">
+                      <div className="flex items-center">
+                        <button
+                          type="button"
+                          className="max-w-xs bg-white rounded-full flex items-center text-sm focus:outline-none"
+                          id="user-menu-button"
+                        >
+                          <span className="sr-only">Open user menu</span>
+                          <img
+                            className="h-8 w-8 rounded-full"
+                            src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
+                            alt=""
+                          />
+                          <ChevronDown className="ml-1 h-4 w-4 text-gray-400" />
+                        </button>
                       </div>
                     </div>
                   </div>
-                  <div className="flex justify-between mt-6">
-                    <button
-                      onClick={handlePrevious}
-                      disabled={currentStep === 0}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-lg transition ${
-                        currentStep === 0
-                          ? "bg-gray-800 text-gray-400 cursor-not-allowed"
-                          : "bg-amber-400 text-black hover:bg-amber-500"
-                      }`}
-                    >
-                      <ArrowLeft className="h-4 w-4" />
-                      Previous
-                    </button>
-                    <button
-                      onClick={handleNext}
-                      disabled={currentStep === totalSteps - 1}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-lg transition ${
-                        currentStep === totalSteps - 1
-                          ? "bg-gray-800 text-gray-400 cursor-not-allowed"
-                          : "bg-amber-400 text-black hover:bg-amber-500"
-                      }`}
-                    >
-                      Next
-                      <ArrowRight className="h-4 w-4" />
-                    </button>
-                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          </header>
+
+          <main className="flex-1 p-8">
+            <div className="max-w-7xl mx-auto">
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {sections.map((section) => (
+                  <div
+                    key={section.id}
+                    className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow"
+                  >
+                    <div className="flex items-start">
+                      <div className="flex-shrink-0 h-12 w-12 rounded-full bg-gray-100 flex items-center justify-center">
+                        {section.icon}
+                      </div>
+                      <div className="ml-4">
+                        <h3 className="text-lg font-medium text-gray-900">{section.title}</h3>
+                        <p className="text-sm text-gray-500">{section.description}</p>
+                      </div>
+                    </div>
+                    <div className="mt-4">
+                      <ul className="space-y-2">
+                        {section.articles.map((article) => (
+                          <li key={article.id}>
+                            <Link
+                              href={article.link}
+                              className="text-sm text-gray-600 hover:text-gray-900 flex items-center"
+                            >
+                              <span className="mr-2">•</span>
+                              {article.title}
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </main>
         </div>
       </div>
     </div>
