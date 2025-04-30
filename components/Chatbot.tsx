@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
 import { Send, Bot, User, X, Loader2, MessageSquare, RotateCcw } from "lucide-react";
+import { createSubmission } from "@/app/actions/submissions";
 
 interface Message {
   type: "bot" | "user";
@@ -33,8 +34,18 @@ export default function Chatbot() {
     device: "",
     browser: "",
     os: "",
-    priority: "",
-    screenshot: "None"
+    priority: "Medium",
+    status: "Open",
+    screenshot: "",
+    assignee: {
+      name: "You",
+      avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
+    },
+    project: {
+      id: "1",
+      name: "Clever Project"
+    },
+    url: typeof window !== "undefined" ? window.location.href : "https://staging.bugsmasher.com/projects/123"
   });
 
   const [inputValue, setInputValue] = useState("");
@@ -61,8 +72,18 @@ export default function Chatbot() {
       device: "",
       browser: "",
       os: "",
-      priority: "",
-      screenshot: "None"
+      priority: "Medium",
+      status: "Open",
+      screenshot: "",
+      assignee: {
+        name: "You",
+        avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
+      },
+      project: {
+        id: "1",
+        name: "Clever Project"
+      },
+      url: typeof window !== "undefined" ? window.location.href : "https://staging.bugsmasher.com/projects/123"
     });
     setInputValue("");
   };
@@ -120,7 +141,7 @@ export default function Chatbot() {
     }, 500);
   };
 
-  const handleOptionClick = (option: string) => {
+  const handleOptionClick = async (option: string) => {
     const newMessage: Message = {
       type: "user",
       content: option,
@@ -130,7 +151,7 @@ export default function Chatbot() {
     setMessages((prev) => [...prev, newMessage]);
 
     // Simulate bot response
-    setTimeout(() => {
+    setTimeout(async () => {
       let botResponse = "";
       let nextOptions: string[] | undefined;
 
@@ -195,9 +216,79 @@ export default function Chatbot() {
               break;
             case 10:
               if (option === "Yes") {
-                botResponse = "✅ Great! I've submitted your bug report. You can view it in the dashboard.\n\nCan I help you with anything else?";
-                setCurrentFlow(null);
-                setCurrentStep(0);
+                console.log("Starting submission process...");
+                console.log("Bug data to submit:", bugData);
+                
+                // Create submission with collected data
+                const submissionData = {
+                  title: bugData.title,
+                  description: bugData.description,
+                  stepsToReproduce: bugData.stepsToReproduce,
+                  expectedBehavior: bugData.expectedBehavior,
+                  actualBehavior: bugData.actualBehavior,
+                  device: bugData.device,
+                  browser: bugData.browser,
+                  os: bugData.os,
+                  priority: bugData.priority,
+                  status: "Open",
+                  screenshot: bugData.screenshot,
+                  assignee: {
+                    name: "You",
+                    avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
+                  },
+                  project: {
+                    id: "1",
+                    name: "Clever Project"
+                  },
+                  url: typeof window !== "undefined" ? window.location.href : "https://staging.bugsmasher.com/projects/123"
+                };
+
+                console.log("Prepared submission data:", submissionData);
+
+                try {
+                  console.log("Calling createSubmission...");
+                  const result = await createSubmission(submissionData);
+                  console.log("Submission result:", result);
+                  
+                  if (result) {
+                    console.log("Submission successful!");
+                    botResponse = "✅ Great! I've submitted your bug report. You can view it in the dashboard.\n\nCan I help you with anything else?";
+                    setCurrentFlow(null);
+                    setCurrentStep(0);
+                    setBugData({
+                      title: "",
+                      description: "",
+                      stepsToReproduce: "",
+                      expectedBehavior: "",
+                      actualBehavior: "",
+                      device: "",
+                      browser: "",
+                      os: "",
+                      priority: "Medium",
+                      status: "Open",
+                      screenshot: "",
+                      assignee: {
+                        name: "You",
+                        avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
+                      },
+                      project: {
+                        id: "1",
+                        name: "Clever Project"
+                      },
+                      url: typeof window !== "undefined" ? window.location.href : "https://staging.bugsmasher.com/projects/123"
+                    });
+                  } else {
+                    console.error("Submission failed - no result returned");
+                    throw new Error("Failed to create submission - no result returned");
+                  }
+                } catch (error) {
+                  console.error('Detailed error submitting bug:', error);
+                  if (error instanceof Error) {
+                    console.error('Error message:', error.message);
+                    console.error('Error stack:', error.stack);
+                  }
+                  botResponse = "❌ I'm sorry, there was an error submitting your bug report. Please try again later.";
+                }
               } else {
                 botResponse = "Bug report cancelled. You can start over if you'd like.";
                 setTimeout(() => {
