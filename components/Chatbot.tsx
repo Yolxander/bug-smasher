@@ -22,9 +22,21 @@ export default function Chatbot() {
   const [messages, setMessages] = useState<Message[]>([initialMessage]);
   const [currentFlow, setCurrentFlow] = useState<FlowType>(null);
   const [currentStep, setCurrentStep] = useState(0);
-  const [bugTitle, setBugTitle] = useState("");
-  const [bugDescription, setBugDescription] = useState("");
-  const [bugPriority, setBugPriority] = useState<"low" | "medium" | "high" | "">("");
+  
+  // Add state for all bug report fields
+  const [bugData, setBugData] = useState({
+    title: "",
+    description: "",
+    stepsToReproduce: "",
+    expectedBehavior: "",
+    actualBehavior: "",
+    device: "",
+    browser: "",
+    os: "",
+    priority: "",
+    screenshot: "None"
+  });
+
   const [inputValue, setInputValue] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -40,9 +52,18 @@ export default function Chatbot() {
     setMessages([initialMessage]);
     setCurrentFlow(null);
     setCurrentStep(0);
-    setBugTitle("");
-    setBugDescription("");
-    setBugPriority("");
+    setBugData({
+      title: "",
+      description: "",
+      stepsToReproduce: "",
+      expectedBehavior: "",
+      actualBehavior: "",
+      device: "",
+      browser: "",
+      os: "",
+      priority: "",
+      screenshot: "None"
+    });
     setInputValue("");
   };
 
@@ -117,49 +138,58 @@ export default function Chatbot() {
         case "report":
           switch (currentStep) {
             case 0:
-              setBugTitle(option);
+              setBugData(prev => ({ ...prev, title: option }));
               botResponse = "1️⃣ Now, let's describe the bug in detail.\n\nPlease provide a detailed description of what's happening. Include any error messages you see.";
               break;
             case 1:
-              setBugDescription(option);
+              setBugData(prev => ({ ...prev, description: option }));
               botResponse = "2️⃣ Let's document how to reproduce the bug.\n\nWhat are the exact steps to reproduce this bug? Please list them in order, one step per line.";
               break;
             case 2:
-              setBugPriority(option.toLowerCase() as "low" | "medium" | "high");
+              setBugData(prev => ({ ...prev, stepsToReproduce: option }));
               botResponse = "3️⃣ Let's describe what should happen.\n\nWhat should happen when following these steps? (Expected behavior)";
               break;
             case 3:
+              setBugData(prev => ({ ...prev, expectedBehavior: option }));
               botResponse = "4️⃣ Now, let's describe what actually happens.\n\nWhat actually happens instead? (Actual behavior)";
               break;
             case 4:
+              setBugData(prev => ({ ...prev, actualBehavior: option }));
               botResponse = "5️⃣ Let's collect information about your environment.\n\nWhat device are you using? (e.g., iPhone 12, MacBook Pro, etc.)";
               break;
             case 5:
+              setBugData(prev => ({ ...prev, device: option }));
               botResponse = "Which browser are you using? (e.g., Chrome 120, Safari 17, Firefox 123)";
               break;
             case 6:
+              setBugData(prev => ({ ...prev, browser: option }));
               botResponse = "What operating system are you using? (e.g., iOS 17, macOS Sonoma, Windows 11)";
               break;
             case 7:
+              setBugData(prev => ({ ...prev, os: option }));
               botResponse = "6️⃣ Let's set the priority.\n\nHow would you rate the priority of this bug?\n\nOptions:\n- Low: Minor issue, doesn't affect core functionality\n- Medium: Affects some users but has workarounds\n- High: Affects many users or core functionality\n- Critical: System is down or data is at risk";
               nextOptions = ["Low", "Medium", "High", "Critical"];
               break;
             case 8:
+              setBugData(prev => ({ ...prev, priority: option }));
               botResponse = "7️⃣ Finally, let's add a screenshot (optional).\n\nWould you like to attach a screenshot?";
               nextOptions = ["Upload", "Skip"];
               break;
             case 9:
+              setBugData(prev => ({ ...prev, screenshot: option === "Skip" ? "None" : "Attached" }));
               botResponse = "Let me summarize what we've collected:\n\n" +
-                `Title: ${bugTitle}\n` +
-                `Description: ${bugDescription}\n` +
-                `Steps to Reproduce: ${messages[messages.length - 2].content}\n` +
-                `Expected Behavior: ${messages[messages.length - 4].content}\n` +
-                `Actual Behavior: ${messages[messages.length - 3].content}\n` +
-                `Device: ${messages[messages.length - 6].content}\n` +
-                `Browser: ${messages[messages.length - 5].content}\n` +
-                `OS: ${messages[messages.length - 4].content}\n` +
-                `Priority: ${option}\n` +
-                `Screenshot: ${option === "Skip" ? "None" : "Attached"}\n\n` +
+                "📝 Bug Report Summary:\n\n" +
+                "🔹 Title: " + bugData.title + "\n" +
+                "🔹 Description: " + bugData.description + "\n" +
+                "🔹 Steps to Reproduce:\n" + bugData.stepsToReproduce.split('\n').map(step => "   • " + step).join('\n') + "\n" +
+                "🔹 Expected Behavior: " + bugData.expectedBehavior + "\n" +
+                "🔹 Actual Behavior: " + bugData.actualBehavior + "\n" +
+                "🔹 Environment:\n" +
+                "   • Device: " + bugData.device + "\n" +
+                "   • Browser: " + bugData.browser + "\n" +
+                "   • OS: " + bugData.os + "\n" +
+                "🔹 Priority: " + bugData.priority + "\n" +
+                "🔹 Screenshot: " + bugData.screenshot + "\n\n" +
                 "Would you like to submit this bug report?";
               nextOptions = ["Yes", "No"];
               break;
