@@ -8,11 +8,35 @@ import { Search, Bell, ChevronDown, Bug, CheckCircle, Clock, AlertTriangle } fro
 import { getSubmissions } from './actions/submissions'
 import { useEffect, useState } from 'react'
 import { Submission } from './actions/submissions'
+import { useRouter } from "next/navigation"
+import { getProfile } from "@/lib/profiles"
 
 export default function HomePage() {
+  const router = useRouter()
   const { user } = useAuth()
   const [submissions, setSubmissions] = useState<Submission[]>([])
   const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const checkProfile = async () => {
+      if (!user) {
+        router.push("/auth/login")
+        return
+      }
+
+      try {
+        const profile = await getProfile(user.id)
+        if (!profile.onboarding_completed) {
+          router.push("/onboarding")
+        }
+      } catch (error) {
+        console.error("Profile check failed:", error)
+        router.push("/auth/login")
+      }
+    }
+
+    checkProfile()
+  }, [user, router])
 
   useEffect(() => {
     const fetchSubmissions = async () => {
@@ -58,6 +82,10 @@ export default function HomePage() {
       default:
         return 'bg-gray-100 text-gray-800'
     }
+  }
+
+  if (!user) {
+    return null // Don't render anything while checking auth
   }
 
   return (

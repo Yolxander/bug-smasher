@@ -24,27 +24,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const handleProfileCheck = async (user: User | null) => {
     if (!user) {
-      console.log('No user found, setting profile to null')
       setProfile(null)
       return
     }
 
     try {
-      console.log('Starting profile check for user:', user.id)
-      console.log('User email:', user.email)
-      
-      // Check if profile exists
       const { data: existingProfile, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', user.id)
         .single()
 
-      // PGRST116 is "no rows returned" which is expected when no profile exists
       if (profileError) {
         if (profileError.code === 'PGRST116') {
-          console.log('No profile found, creating new profile')
-          // Create new profile
           const { error: createError } = await supabase
             .from('profiles')
             .insert([
@@ -57,69 +49,49 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               },
             ])
           
-          if (createError) {
-            console.error('Error creating profile:', createError)
-            throw createError
-          }
-
-          // Redirect to onboarding
-          console.log('Redirecting to onboarding page')
+          if (createError) throw createError
           router.push('/onboarding')
           return
-        } else {
-          console.error('Error checking profile:', profileError)
-          throw profileError
         }
+        throw profileError
       }
 
-      // If we have a profile, check onboarding status
       if (existingProfile) {
-        console.log('Existing profile found:', existingProfile)
         setProfile(existingProfile)
-        
         if (!existingProfile.onboarding_completed) {
-          console.log('Profile exists but onboarding not completed, redirecting to onboarding')
           router.push('/onboarding')
           return
         }
-
-        console.log('Profile exists and onboarding completed, redirecting to home')
-        router.push('/')
       }
     } catch (error) {
-      console.error('Error in handleProfileCheck:', error)
       toast({
         title: 'Error',
         description: 'There was an error loading your profile',
         variant: 'destructive',
       })
+      router.push('/auth/login')
     }
   }
 
   useEffect(() => {
-    console.log('AuthProvider mounted, checking session')
     // Check active sessions and sets the user
     supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('Session check result:', session ? 'Session found' : 'No session')
       setUser(session?.user ?? null)
       if (session?.user) {
-        console.log('User found in session, checking profile')
         handleProfileCheck(session.user)
       }
       setLoading(false)
     })
 
-    // Listen for changes on auth state (signed in, signed out, etc.)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state changed:', event, session ? 'Session found' : 'No session')
       setUser(session?.user ?? null)
       if (session?.user) {
-        console.log('User found in auth state change, checking profile')
         await handleProfileCheck(session.user)
       } else {
-        console.log('No user in auth state change, redirecting to login')
         setProfile(null)
-        router.push('/auth/login')
+        if (!window.location.pathname.includes('/auth/login')) {
+          router.push('/auth/login')
+        }
       }
       setLoading(false)
     })
@@ -129,12 +101,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = async (email: string, password: string) => {
     try {
-      console.log('Attempting sign in for:', email)
       const { error } = await supabase.auth.signInWithPassword({ email, password })
       if (error) throw error
-      console.log('Sign in successful')
+      // The auth state change handler will handle the redirect
     } catch (error) {
-      console.error('Error signing in:', error)
       toast({
         title: 'Error',
         description: 'Invalid email or password',
@@ -146,7 +116,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signUp = async (email: string, password: string) => {
     try {
-      console.log('Attempting sign up for:', email)
       const { error } = await supabase.auth.signUp({ 
         email, 
         password,
@@ -155,13 +124,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       })
       if (error) throw error
-      console.log('Sign up successful')
       toast({
         title: 'Success',
         description: 'Please check your email to verify your account',
       })
     } catch (error) {
-      console.error('Error signing up:', error)
       toast({
         title: 'Error',
         description: 'There was an error creating your account',
@@ -173,13 +140,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     try {
-      console.log('Attempting sign out')
       const { error } = await supabase.auth.signOut()
       if (error) throw error
-      console.log('Sign out successful')
       router.push('/auth/login')
     } catch (error) {
-      console.error('Error signing out:', error)
       toast({
         title: 'Error',
         description: 'There was an error signing out',
