@@ -195,10 +195,9 @@ export default function Chatbot() {
               break;
             case 10:
               if (option === "Yes") {
-                botResponse = "✅ Great! I've submitted your bug report. You can view it in the dashboard.";
-                setTimeout(() => {
-                  setIsOpen(false);
-                }, 2000);
+                botResponse = "✅ Great! I've submitted your bug report. You can view it in the dashboard.\n\nCan I help you with anything else?";
+                setCurrentFlow(null);
+                setCurrentStep(0);
               } else {
                 botResponse = "Bug report cancelled. You can start over if you'd like.";
                 setTimeout(() => {
