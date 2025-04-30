@@ -14,7 +14,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "@/components/ui/use-toast"
 import Image from "next/image"
-import { ArrowRight, ArrowLeft, Bug, Target, Users, Zap } from "lucide-react"
+import { ArrowRight, ArrowLeft, Bug, Target, Users, Zap, X } from "lucide-react"
+import { supabase } from "@/lib/supabase"
 
 const onboardingSchema = z.object({
   full_name: z.string().min(2, { message: "Name must be at least 2 characters" }),
@@ -27,7 +28,7 @@ const onboardingSchema = z.object({
 const teamMembers = [
   {
     name: "Robin",
-    role: "Good worker",
+    role: "Web Manager",
     image: "/people/robin-final.png",
     bio: "Good worker"
   },
@@ -111,6 +112,20 @@ export default function OnboardingPage() {
 
   const prevStep = () => {
     setStep(prev => prev - 1)
+  }
+
+  const handleExit = async () => {
+    try {
+      await supabase.auth.signOut()
+      router.push("/auth/login")
+    } catch (error) {
+      console.error("Error signing out:", error)
+      toast({
+        title: "Error",
+        description: "There was an error signing out",
+        variant: "destructive",
+      })
+    }
   }
 
   const renderStep = () => {
@@ -341,8 +356,24 @@ export default function OnboardingPage() {
         backgroundRepeat: 'no-repeat'
       }}
     >
+      {/* Hide chatbot widget */}
+      <style jsx global>{`
+        #chatbot-widget {
+          display: none !important;
+        }
+      `}</style>
+
       {/* Dark overlay */}
       <div className="absolute inset-0 bg-black bg-opacity-75" />
+      
+      {/* Exit button */}
+      <button
+        onClick={handleExit}
+        className="absolute top-4 right-4 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors"
+        aria-label="Exit onboarding"
+      >
+        <X className="h-6 w-6" />
+      </button>
       
       {/* Content */}
       <div className="max-w-4xl w-full px-4 relative z-10">
