@@ -6,9 +6,12 @@ import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
+import { useAuth } from "@/lib/auth-context";
+import { toast } from "@/components/ui/use-toast";
 
 export default function SignUpPage() {
   const router = useRouter();
+  const { signUp } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -18,22 +21,32 @@ export default function SignUpPage() {
     e.preventDefault();
     
     if (password !== confirmPassword) {
-      // TODO: Show error message to user
+      toast({
+        title: "Passwords don't match",
+        description: "Please make sure your passwords match",
+        variant: "destructive",
+      });
       return;
     }
 
     setIsLoading(true);
     
     try {
-      // TODO: Implement actual signup logic here
-      // For now, we'll just simulate a successful signup
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
-      
-      // Redirect to main page after successful signup
-      router.push("/");
+      console.log('Starting signup process for:', email);
+      await signUp(email, password);
+      console.log('Signup successful, showing success message');
+      toast({
+        title: "Check your email",
+        description: "We've sent you a verification link. Please check your email to complete the signup process.",
+      });
+      router.push("/auth/login");
     } catch (error) {
       console.error("Signup failed:", error);
-      // TODO: Show error message to user
+      toast({
+        title: "Signup failed",
+        description: error instanceof Error ? error.message : "An error occurred during signup",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }

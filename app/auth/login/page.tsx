@@ -1,38 +1,59 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import Image from "next/image";
+import { useAuth } from "@/lib/auth-context";
+import { toast } from "@/components/ui/use-toast";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { signIn, user, loading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Redirect if user is already logged in
+  useEffect(() => {
+    if (!loading && user) {
+      console.log('User is already logged in, redirecting to home...');
+      router.push("/");
+    }
+  }, [user, loading, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
     try {
-      // TODO: Implement actual login logic here
-      // For now, we'll just simulate a successful login
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
-      
-      // Redirect to main page after successful login
-      router.push("/");
+      console.log('Attempting login for:', email);
+      await signIn(email, password);
+      // Don't redirect here, the useEffect will handle it
     } catch (error) {
       console.error("Login failed:", error);
-      // TODO: Show error message to user
+      toast({
+        title: "Login failed",
+        description: error instanceof Error ? error.message : "An error occurred during login",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
   };
+
+  // Show loading state while checking auth
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#FFD700]"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex">

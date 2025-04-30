@@ -5,6 +5,8 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { Camera, Check, Info, Laptop, X } from "lucide-react"
+import { useAuth } from "@/lib/auth-context"
+import { AuthForm } from "@/components/auth-form"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -31,9 +33,11 @@ const formSchema = z.object({
 })
 
 export default function BugReportForm() {
+  const { user, loading, isRegistered } = useAuth()
   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
+  const [authMode, setAuthMode] = useState<"signin" | "signup">("signin")
 
   // Get current browser and system info
   const browserInfo =
@@ -74,31 +78,55 @@ export default function BugReportForm() {
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsSubmitting(true)
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500))
+    try {
+      // In a real implementation, you would send the form data to your API
+      console.log({
+        ...values,
+        url: window.location.href,
+        browserInfo,
+        timestamp: new Date().toISOString(),
+        screenshot: screenshotPreview,
+        userId: user.id,
+        userEmail: user.email,
+      })
 
-    // In a real implementation, you would send the form data to your API
-    console.log({
-      ...values,
-      url: window.location.href,
-      browserInfo,
-      timestamp: new Date().toISOString(),
-      screenshot: screenshotPreview,
-    })
+      setIsSubmitting(false)
+      setIsSubmitted(true)
 
-    setIsSubmitting(false)
-    setIsSubmitted(true)
-
-    toast({
-      title: "Bug report submitted",
-      description: "Your bug report has been successfully submitted",
-    })
+      toast({
+        title: "Bug report submitted",
+        description: "Your bug report has been successfully submitted",
+      })
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "An error occurred",
+        variant: "destructive",
+      })
+      setIsSubmitting(false)
+    }
   }
 
   const resetForm = () => {
     form.reset()
     setScreenshotPreview(null)
     setIsSubmitted(false)
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+      </div>
+    )
+  }
+
+  if (!user || !isRegistered) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <AuthForm mode={authMode} />
+      </div>
+    )
   }
 
   if (isSubmitted) {
