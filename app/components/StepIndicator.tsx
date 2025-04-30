@@ -14,9 +14,9 @@ export function StepIndicator({ currentStep, totalSteps, steps }: StepIndicatorP
           <div key={step} className="flex items-center">
             <div className={`flex items-center justify-center w-8 h-8 rounded-full ${
               index + 1 === currentStep
-                ? 'bg-emerald-600 text-white'
+                ? 'bg-black text-white'
                 : index + 1 < currentStep
-                ? 'bg-emerald-200 text-emerald-700'
+                ? 'bg-black text-white'
                 : 'bg-gray-200 text-gray-500'
             }`}>
               {index + 1}
@@ -24,7 +24,7 @@ export function StepIndicator({ currentStep, totalSteps, steps }: StepIndicatorP
             <div className="ml-2 text-sm font-medium text-gray-600">{step}</div>
             {index < steps.length - 1 && (
               <div className={`h-[2px] w-16 mx-2 ${
-                index + 1 < currentStep ? 'bg-emerald-200' : 'bg-gray-200'
+                index + 1 < currentStep ? 'bg-black' : 'bg-gray-200'
               }`} />
             )}
           </div>

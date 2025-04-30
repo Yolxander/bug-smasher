@@ -1,0 +1,44 @@
+{
+  "submissions": [
+    {
+      "id": "1",
+      "title": "Login button not working",
+      "description": "The login button on the homepage does not respond to clicks",
+      "status": "Open",
+      "priority": "High",
+      "assignee": {
+        "name": "Mark Branson",
+        "avatar": "/placeholder.svg?height=32&width=32"
+      },
+      "project": {
+        "id": "1",
+        "name": "Clever Project"
+      },
+      "createdAt": "2024-04-29T10:00:00Z",
+      "updatedAt": "2024-04-29T10:00:00Z",
+      "device": "Chrome on MacBook Pro",
+      "url": "https://staging.bugsmasher.com/login",
+      "screenshot": "/placeholder.svg?height=200&width=300"
+    },
+    {
+      "id": "2",
+      "title": "Mobile view broken",
+      "description": "The layout breaks on mobile devices below 320px width",
+      "status": "In Progress",
+      "priority": "Medium",
+      "assignee": {
+        "name": "Sara Summer",
+        "avatar": "/placeholder.svg?height=32&width=32"
+      },
+      "project": {
+        "id": "1",
+        "name": "Clever Project"
+      },
+      "createdAt": "2024-04-28T15:30:00Z",
+      "updatedAt": "2024-04-29T09:15:00Z",
+      "device": "Safari on iPhone",
+      "url": "https://staging.bugsmasher.com/dashboard",
+      "screenshot": "/placeholder.svg?height=200&width=300"
+    }
+  ]
+} 

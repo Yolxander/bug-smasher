@@ -1,0 +1,9 @@
+{
+  "projects": [
+    {
+      "id": "1",
+      "name": "Clever Project",
+      "description": "A project for testing and bug reporting"
+    }
+  ]
+} 

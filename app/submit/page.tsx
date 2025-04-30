@@ -29,6 +29,7 @@ export default function SubmitBugPage() {
   const [priority, setPriority] = useState("Medium");
   const [status, setStatus] = useState("Open");
   const [dueDate, setDueDate] = useState("");
+  const [url, setUrl] = useState(getMockUrl());
   const [screenshot, setScreenshot] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [notifications, setNotifications] = useState(false);
@@ -44,7 +45,6 @@ export default function SubmitBugPage() {
   ];
 
   // Pre-filled fields
-  const url = getMockUrl();
   const device = getMockDevice();
   const timestamp = getMockTimestamp();
 
@@ -89,7 +89,7 @@ export default function SubmitBugPage() {
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 required
-                className="w-full text-xl font-semibold mb-2 bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-200 focus:outline-none transition"
+                className="w-full text-xl font-semibold mb-2 bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 focus:ring-2 focus:ring-black focus:outline-none transition"
                 placeholder="Give your bug a short, clear title..."
               />
             </div>
@@ -99,7 +99,7 @@ export default function SubmitBugPage() {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 required
-                className="w-full min-h-[100px] bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 text-base focus:ring-2 focus:ring-emerald-200 focus:outline-none transition"
+                className="w-full min-h-[100px] bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 text-base focus:ring-2 focus:ring-black focus:outline-none transition"
                 placeholder="Describe what happened, what you expected, and any other details..."
               />
             </div>
@@ -114,7 +114,7 @@ export default function SubmitBugPage() {
                 <select
                   value={priority}
                   onChange={(e) => setPriority(e.target.value)}
-                  className="w-full rounded border border-gray-200 px-3 py-2 text-base bg-gray-50 font-medium focus:ring-2 focus:ring-emerald-200 focus:outline-none"
+                  className="w-full rounded border border-gray-200 px-3 py-2 text-base bg-gray-50 font-medium focus:ring-2 focus:ring-black focus:outline-none"
                 >
                   <option value="Low">Low</option>
                   <option value="Medium">Medium</option>
@@ -127,7 +127,7 @@ export default function SubmitBugPage() {
                   type="date"
                   value={dueDate}
                   onChange={e => setDueDate(e.target.value)}
-                  className="w-full rounded border border-gray-200 px-3 py-2 text-base bg-gray-50 font-medium focus:ring-2 focus:ring-emerald-200 focus:outline-none"
+                  className="w-full rounded border border-gray-200 px-3 py-2 text-base bg-gray-50 font-medium focus:ring-2 focus:ring-black focus:outline-none"
                 />
               </div>
             </div>
@@ -137,13 +137,13 @@ export default function SubmitBugPage() {
         return (
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1">Screenshot / Attachment</label>
-            <label className="block w-full border-2 border-dashed border-emerald-200 rounded-xl p-6 text-center cursor-pointer bg-gray-50 hover:bg-emerald-50 transition">
+            <label className="block w-full border-2 border-dashed border-black rounded-xl p-6 text-center cursor-pointer bg-gray-50 hover:bg-black transition">
               <input type="file" accept="image/*" onChange={handleScreenshot} className="hidden" />
               <div className="flex flex-col items-center justify-center gap-2">
-                <svg width="32" height="32" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24" className="mx-auto text-emerald-400">
+                <svg width="32" height="32" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24" className="mx-auto text-black">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 16V4m0 0-4 4m4-4 4 4M20 16.5V19a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 19v-2.5A2.5 2.5 0 0 1 6.5 14h11a2.5 2.5 0 0 1 2.5 2.5Z"/>
                 </svg>
-                <span className="text-xs text-emerald-700">Upload a file or drag and drop<br/>PNG, JPG, GIF up to 3MB</span>
+                <span className="text-xs text-black">Upload a file or drag and drop<br/>PNG, JPG, GIF up to 3MB</span>
                 {screenshot && (
                   <div className="mt-2 flex flex-col items-center">
                     <Image src={screenshot} alt="Screenshot preview" width={120} height={80} className="rounded shadow" />
@@ -160,7 +160,7 @@ export default function SubmitBugPage() {
             <div className="flex flex-col md:flex-row gap-4">
               <div className="flex-1">
                 <label className="block text-sm font-semibold text-gray-700 mb-1">Project</label>
-                <select className="w-full rounded border border-gray-200 px-3 py-2 text-base bg-gray-50 font-medium focus:ring-2 focus:ring-emerald-200 focus:outline-none">
+                <select className="w-full rounded border border-gray-200 px-3 py-2 text-base bg-gray-50 font-medium focus:ring-2 focus:ring-black focus:outline-none">
                   <option>{mockProject}</option>
                 </select>
               </div>
@@ -217,7 +217,7 @@ export default function SubmitBugPage() {
                 type="checkbox"
                 checked={notifications}
                 onChange={() => setNotifications(!notifications)}
-                className="accent-emerald-500"
+                className="accent-black-500"
                 id="subscribe"
               />
               <label htmlFor="subscribe" className="text-sm text-gray-700">Notify me about updates to this bug</label>
@@ -267,16 +267,16 @@ export default function SubmitBugPage() {
           </header>
           <div className="p-8 max-w-6xl mx-auto">
             <div className="mb-8 text-center">
-              <h1 className="text-xl font-extrabold text-emerald-600 mb-2 flex items-center justify-center gap-2">
+              <h1 className="text-xl font-extrabold text-black mb-2 flex items-center justify-center gap-2">
                 Submit new Bug
               </h1>
       
             </div>
             {submitted ? (
-              <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-2xl p-8 text-center shadow-md animate-in fade-in zoom-in-95">
+              <div className="bg-black-50 border border-black text-black rounded-2xl p-8 text-center shadow-md animate-in fade-in zoom-in-95">
                 <h2 className="text-2xl font-bold mb-2 flex items-center justify-center gap-2">🎉 Bug Submitted!</h2>
                 <p className="mb-2">Thank you for making the product better. Our QA team will review your report soon.</p>
-                <Link href="/my-submissions" className="inline-block mt-4 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-6 py-2 rounded-full shadow transition">View My Submissions</Link>
+                <Link href="/my-submissions" className="inline-block mt-4 bg-black hover:bg-gray-700 text-white font-semibold px-6 py-2 rounded-full shadow transition">View My Submissions</Link>
               </div>
             ) : (
               <form className="flex flex-col gap-8" onSubmit={handleSubmit}>
@@ -285,8 +285,15 @@ export default function SubmitBugPage() {
                   {renderStepContent()}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
                     <div>
-                      <div className="text-xs text-gray-400 mb-1">Current URL</div>
-                      <div className="text-xs text-gray-700 bg-gray-50 rounded px-2 py-1">{url}</div>
+                      <div className="text-sm font-medium text-gray-700 mb-1">Bug URL</div>
+                      <div className="text-xs text-gray-500 mb-2">Enter the URL where you found the bug</div>
+                      <input
+                        type="text"
+                        value={url}
+                        onChange={(e) => setUrl(e.target.value)}
+                        className="w-full text-sm text-gray-700 bg-gray-50 rounded-lg px-3 py-2 border border-gray-200 focus:ring-2 focus:ring-black focus:outline-none"
+                        placeholder="https://example.com/page"
+                      />
                     </div>
                     <div>
                       <div className="text-xs text-gray-400 mb-1">Browser/Device</div>
@@ -308,7 +315,7 @@ export default function SubmitBugPage() {
                     {currentStep === totalSteps ? (
                       <button
                         type="submit"
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-6 py-2 rounded-full shadow transition"
+                        className="bg-black  hover:bg-black text-white font-semibold px-6 py-2 rounded-full shadow transition"
                       >
                         Submit Bug 🚀
                       </button>
@@ -316,7 +323,7 @@ export default function SubmitBugPage() {
                       <button
                         type="button"
                         onClick={nextStep}
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-6 py-2 rounded-full shadow transition"
+                        className="bg-black hover:bg-black text-white font-semibold px-6 py-2 rounded-full shadow transition"
                       >
                         Next Step
                       </button>

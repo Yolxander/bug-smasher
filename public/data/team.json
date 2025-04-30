@@ -1,0 +1,52 @@
+{
+  "team": [
+    {
+      "id": "1",
+      "name": "Mark Branson",
+      "role": "Frontend Developer",
+      "avatar": "/placeholder.svg?height=32&width=32",
+      "email": "mark@bugsmasher.com",
+      "status": "Active",
+      "projects": [
+        {
+          "id": "1",
+          "name": "Clever Project"
+        }
+      ],
+      "bugsAssigned": 5,
+      "bugsResolved": 12
+    },
+    {
+      "id": "2",
+      "name": "Sara Summer",
+      "role": "Backend Developer",
+      "avatar": "/placeholder.svg?height=32&width=32",
+      "email": "sara@bugsmasher.com",
+      "status": "Active",
+      "projects": [
+        {
+          "id": "1",
+          "name": "Clever Project"
+        }
+      ],
+      "bugsAssigned": 3,
+      "bugsResolved": 8
+    },
+    {
+      "id": "3",
+      "name": "Alex Chen",
+      "role": "QA Engineer",
+      "avatar": "/placeholder.svg?height=32&width=32",
+      "email": "alex@bugsmasher.com",
+      "status": "On Leave",
+      "projects": [
+        {
+          "id": "1",
+          "name": "Clever Project"
+        }
+      ],
+      "bugsAssigned": 2,
+      "bugsResolved": 15
+    }
+  ]
+} 

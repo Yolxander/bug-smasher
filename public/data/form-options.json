@@ -1,0 +1,17 @@
+{
+  "priorities": [
+    "Low",
+    "Medium",
+    "High"
+  ],
+  "statuses": [
+    "Open",
+    "In Progress",
+    "Resolved",
+    "Closed"
+  ],
+  "defaultValues": {
+    "priority": "Medium",
+    "status": "Open"
+  }
+} 
