@@ -1,7 +1,6 @@
 "use client";
-
-import { useState, useRef, useEffect } from "react";
-import { MessageSquare, X, Send, Image as ImageIcon, RotateCcw } from "lucide-react";
+import React, { useState, useRef, useEffect } from "react";
+import { Send, Bot, User, X, Loader2, MessageSquare, RotateCcw } from "lucide-react";
 
 interface Message {
   type: "bot" | "user";
@@ -29,6 +28,14 @@ export default function Chatbot() {
   const [inputValue, setInputValue] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
   const resetChat = () => {
     setMessages([initialMessage]);
     setCurrentFlow(null);
@@ -38,14 +45,6 @@ export default function Chatbot() {
     setBugPriority("");
     setInputValue("");
   };
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
 
   const handleFlowSelection = (flow: FlowType) => {
     setCurrentFlow(flow);
@@ -170,67 +169,76 @@ export default function Chatbot() {
   };
 
   return (
-    <>
-      {!isOpen && (
+    <div className="fixed bottom-4 right-4 z-50">
+      {!isOpen ? (
         <button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-6 bg-black text-[#FFD700] p-4 rounded-full shadow-lg hover:bg-gray-900 hover:text-yellow-400 transition-colors border-2 border-[#FFD700]"
+          className="bg-amber-500 text-white p-3 rounded-full shadow-lg hover:bg-amber-600 transition-colors"
         >
-          <MessageSquare className="w-6 h-6" />
+          <MessageSquare className="h-6 w-6" />
         </button>
-      )}
-
-      {isOpen && (
-        <div className="fixed bottom-6 right-6 w-96 bg-white rounded-lg shadow-xl border border-gray-200 flex flex-col">
-          <div className="p-4 border-b border-gray-200 flex justify-between items-center">
-            <h3 className="font-semibold text-gray-900">Bug Smasher Assistant</h3>
-            <div className="flex items-center gap-2">
+      ) : (
+        <div className="bg-white rounded-xl shadow-xl w-96 h-[600px] flex flex-col">
+          <div className="flex items-center justify-between p-4 border-b border-gray-200">
+            <div className="flex items-center space-x-2">
+              <Bot className="h-6 w-6 text-amber-500" />
+              <h2 className="text-lg font-semibold text-gray-900">Bug Smasher Assistant</h2>
+            </div>
+            <div className="flex items-center space-x-2">
               <button
                 onClick={resetChat}
-                className="text-gray-400 hover:text-amber-600 transition-colors"
+                className="text-gray-400 hover:text-amber-500 transition-colors"
                 title="Reset chat"
               >
-                <RotateCcw className="w-5 h-5" />
+                <RotateCcw className="h-5 w-5" />
               </button>
               <button
                 onClick={() => setIsOpen(false)}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-400 hover:text-gray-500"
               >
-                <X className="w-5 h-5" />
+                <X className="h-5 w-5" />
               </button>
             </div>
           </div>
 
-          <div className="flex-1 p-4 overflow-y-auto max-h-96">
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {messages.map((message, index) => (
               <div
                 key={index}
-                className={`mb-4 ${
-                  message.type === "user" ? "text-right" : "text-left"
+                className={`flex ${
+                  message.type === "user" ? "justify-end" : "justify-start"
                 }`}
               >
                 <div
-                  className={`inline-block p-3 rounded-lg ${
+                  className={`max-w-[80%] rounded-lg p-3 ${
                     message.type === "user"
-                      ? "bg-amber-400 text-white"
+                      ? "bg-amber-500 text-white"
                       : "bg-gray-100 text-gray-900"
                   }`}
                 >
-                  {message.content}
-                </div>
-                {message.options && (
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {message.options.map((option, optionIndex) => (
-                      <button
-                        key={optionIndex}
-                        onClick={() => handleOptionClick(option)}
-                        className="px-3 py-1 bg-amber-100 text-amber-800 rounded-full hover:bg-amber-200 transition-colors text-sm"
-                      >
-                        {option}
-                      </button>
-                    ))}
+                  <div className="flex items-start space-x-2">
+                    {message.type === "bot" && (
+                      <Bot className="h-5 w-5 text-amber-500 flex-shrink-0" />
+                    )}
+                    <p className="text-sm">{message.content}</p>
+                    {message.type === "user" && (
+                      <User className="h-5 w-5 text-white flex-shrink-0" />
+                    )}
                   </div>
-                )}
+                  {message.options && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {message.options.map((option, optionIndex) => (
+                        <button
+                          key={optionIndex}
+                          onClick={() => handleOptionClick(option)}
+                          className="px-3 py-1 bg-amber-100 text-amber-800 rounded-full hover:bg-amber-200 transition-colors text-sm"
+                        >
+                          {option}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             ))}
             {!currentFlow && (
@@ -272,25 +280,26 @@ export default function Chatbot() {
 
           {currentFlow && (
             <form onSubmit={handleSubmit} className="p-4 border-t border-gray-200">
-              <div className="flex gap-2">
+              <div className="flex space-x-2">
                 <input
                   type="text"
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   placeholder="Type your message..."
-                  className="flex-1 p-2 rounded-lg border border-gray-200 focus:border-amber-400 focus:ring-2 focus:ring-amber-100 outline-none"
+                  className="flex-1 rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                 />
                 <button
                   type="submit"
-                  className="bg-amber-400 text-white p-2 rounded-lg hover:bg-amber-500 transition-colors"
+                  disabled={!inputValue.trim()}
+                  className="bg-amber-500 text-white p-2 rounded-lg hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                  <Send className="w-5 h-5" />
+                  <Send className="h-5 w-5" />
                 </button>
               </div>
             </form>
           )}
         </div>
       )}
-    </>
+    </div>
   );
 } 

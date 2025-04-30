@@ -179,13 +179,13 @@ export default function SettingsPage() {
                 <div className="flex">
                   <div className="flex-shrink-0 flex items-center">
                     <h1 className="text-xl font-semibold">Settings</h1>
-                  </div>
-                </div>
+            </div>
+                        </div>
                 <div className="flex items-center">
                   <div className="ml-4 flex items-center md:ml-6">
                     <button className="p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none">
                       <Bell className="h-6 w-6" />
-                    </button>
+                        </button>
                     <div className="ml-3 relative">
                       <div className="flex items-center">
                         <button
@@ -241,7 +241,7 @@ export default function SettingsPage() {
                           </div>
                           <div className="ml-4">
                             {setting.type === "toggle" && (
-                              <button
+                          <button
                                 type="button"
                                 className={`${
                                   setting.value
@@ -257,10 +257,10 @@ export default function SettingsPage() {
                                       : "translate-x-0"
                                   } pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out`}
                                 />
-                              </button>
+                          </button>
                             )}
                             {setting.type === "select" && setting.options && (
-                              <select
+                                <select
                                 className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-amber-500 focus:border-amber-500 sm:text-sm rounded-md"
                                 value={setting.value as string}
                                 onChange={(e) =>
@@ -270,9 +270,9 @@ export default function SettingsPage() {
                                 {setting.options.map((option) => (
                                   <option key={option} value={option}>
                                     {option.charAt(0).toUpperCase() + option.slice(1)}
-                                  </option>
-                                ))}
-                              </select>
+                                    </option>
+                                  ))}
+                                </select>
                             )}
                             {setting.type === "link" && setting.action && (
                               <Link
@@ -283,8 +283,8 @@ export default function SettingsPage() {
                               </Link>
                             )}
                           </div>
-                        </div>
-                      ))}
+                            </div>
+                          ))}
                     </div>
                   </div>
                 ))}
