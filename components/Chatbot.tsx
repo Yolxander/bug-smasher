@@ -2,12 +2,14 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Send, Bot, User, X, Loader2, MessageSquare, RotateCcw } from "lucide-react";
 import { createSubmission } from "@/app/actions/submissions";
+import { supabase } from "@/lib/supabase";
 
 interface Message {
   type: "bot" | "user";
   content: string;
   timestamp: Date;
   options?: string[];
+  imagePreview?: string;
 }
 
 type FlowType = "report" | "help" | "track" | "badges" | "feedback" | null;
@@ -50,6 +52,10 @@ export default function Chatbot() {
 
   const [inputValue, setInputValue] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [tempImage, setTempImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -197,22 +203,31 @@ export default function Chatbot() {
               nextOptions = ["Upload", "Skip"];
               break;
             case 9:
-              setBugData(prev => ({ ...prev, screenshot: option === "Skip" ? "None" : "Attached" }));
-              botResponse = "Let me summarize what we've collected:\n\n" +
-                "📝 Bug Report Summary:\n\n" +
-                "🔹 Title: " + bugData.title + "\n" +
-                "🔹 Description: " + bugData.description + "\n" +
-                "🔹 Steps to Reproduce:\n" + bugData.stepsToReproduce.split('\n').map(step => "   • " + step).join('\n') + "\n" +
-                "🔹 Expected Behavior: " + bugData.expectedBehavior + "\n" +
-                "🔹 Actual Behavior: " + bugData.actualBehavior + "\n" +
-                "🔹 Environment:\n" +
-                "   • Device: " + bugData.device + "\n" +
-                "   • Browser: " + bugData.browser + "\n" +
-                "   • OS: " + bugData.os + "\n" +
-                "🔹 Priority: " + bugData.priority + "\n" +
-                "🔹 Screenshot: " + bugData.screenshot + "\n\n" +
-                "Would you like to submit this bug report?";
-              nextOptions = ["Yes", "No"];
+              if (option === "Upload") {
+                botResponse = "Please select a screenshot to upload:";
+                // Trigger file input click
+                setTimeout(() => {
+                  fileInputRef.current?.click();
+                }, 100);
+              } else {
+                setBugData(prev => ({ ...prev, screenshot: "" }));
+                botResponse = "Let me summarize what we've collected:\n\n" +
+                  "📝 Bug Report Summary:\n\n" +
+                  "🔹 Title: " + bugData.title + "\n" +
+                  "🔹 Description: " + bugData.description + "\n" +
+                  "🔹 Steps to Reproduce:\n" + bugData.stepsToReproduce.split('\n').map(step => "   • " + step).join('\n') + "\n" +
+                  "🔹 Expected Behavior: " + bugData.expectedBehavior + "\n" +
+                  "🔹 Actual Behavior: " + bugData.actualBehavior + "\n" +
+                  "🔹 Environment:\n" +
+                  "   • Device: " + bugData.device + "\n" +
+                  "   • Browser: " + bugData.browser + "\n" +
+                  "   • OS: " + bugData.os + "\n" +
+                  "🔹 Priority: " + bugData.priority + "\n" +
+                  "🔹 Screenshot: None\n\n" +
+                  "Would you like to submit this bug report?";
+                nextOptions = ["Yes", "No"];
+                setCurrentStep(10);
+              }
               break;
             case 10:
               if (option === "Yes") {
@@ -231,7 +246,7 @@ export default function Chatbot() {
                   os: bugData.os,
                   priority: bugData.priority,
                   status: "Open",
-                  screenshot: bugData.screenshot,
+                  screenshot: imagePreview || "",
                   assignee: {
                     name: "You",
                     avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
@@ -328,6 +343,69 @@ export default function Chatbot() {
     setInputValue("");
   };
 
+  const handleFileUpload = async (file: File) => {
+    if (!file) return;
+    
+    setIsUploading(true);
+    try {
+      // Create a preview URL
+      const previewUrl = URL.createObjectURL(file);
+      setImagePreview(previewUrl);
+      setTempImage(file);
+      return previewUrl;
+    } catch (error) {
+      console.error('Error creating preview:', error);
+      return null;
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const previewUrl = await handleFileUpload(file);
+    if (previewUrl) {
+      setMessages(prev => [...prev, {
+        type: "user",
+        content: "Screenshot uploaded",
+        timestamp: new Date(),
+      }]);
+
+      // Show the image preview
+      setMessages(prev => [...prev, {
+        type: "bot",
+        content: "",
+        timestamp: new Date(),
+        imagePreview: previewUrl
+      }]);
+
+      setTimeout(() => {
+        setMessages(prev => [...prev, {
+          type: "bot",
+          content: "Great! Let me summarize what we've collected:\n\n" +
+            "📝 Bug Report Summary:\n\n" +
+            "🔹 Title: " + bugData.title + "\n" +
+            "🔹 Description: " + bugData.description + "\n" +
+            "🔹 Steps to Reproduce:\n" + bugData.stepsToReproduce.split('\n').map(step => "   • " + step).join('\n') + "\n" +
+            "🔹 Expected Behavior: " + bugData.expectedBehavior + "\n" +
+            "🔹 Actual Behavior: " + bugData.actualBehavior + "\n" +
+            "🔹 Environment:\n" +
+            "   • Device: " + bugData.device + "\n" +
+            "   • Browser: " + bugData.browser + "\n" +
+            "   • OS: " + bugData.os + "\n" +
+            "🔹 Priority: " + bugData.priority + "\n" +
+            "🔹 Screenshot: Attached\n\n" +
+            "Would you like to submit this bug report?",
+          timestamp: new Date(),
+          options: ["Yes", "No"]
+        }]);
+        setCurrentStep(10);
+      }, 500);
+    }
+  };
+
   return (
     <div className="fixed bottom-4 right-4 z-50">
       {!isOpen ? (
@@ -380,7 +458,15 @@ export default function Chatbot() {
                     {message.type === "bot" && (
                       <Bot className="h-5 w-5 text-amber-500 flex-shrink-0" />
                     )}
-                    <p className="text-sm">{message.content}</p>
+                    {message.imagePreview ? (
+                      <img 
+                        src={message.imagePreview} 
+                        alt="Screenshot preview" 
+                        className="max-w-full h-auto rounded-lg"
+                      />
+                    ) : (
+                      <p className="text-sm">{message.content}</p>
+                    )}
                     {message.type === "user" && (
                       <User className="h-5 w-5 text-white flex-shrink-0" />
                     )}
@@ -440,6 +526,13 @@ export default function Chatbot() {
               </div>
             </form>
           )}
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            accept="image/*"
+            className="hidden"
+          />
         </div>
       )}
     </div>
