@@ -342,9 +342,9 @@ export default function Chatbot() {
                 }
               } else {
                 botResponse = "Bug report cancelled. You can start over if you'd like.";
-                setTimeout(() => {
+              setTimeout(() => {
                   resetChat();
-                }, 2000);
+              }, 2000);
               }
               break;
           }
@@ -551,7 +551,7 @@ export default function Chatbot() {
                         className="max-w-full h-auto rounded-lg"
                       />
                     ) : (
-                      <p className="text-sm">{message.content}</p>
+                    <p className="text-sm">{message.content}</p>
                     )}
                     {message.type === "user" && (
                       <User className="h-5 w-5 text-white flex-shrink-0" />

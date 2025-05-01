@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase'
+import { getProfile } from '@/lib/profiles'
 
 export type Submission = {
   id: string;
@@ -31,7 +32,14 @@ export async function getSubmissions(): Promise<Submission[]> {
     console.log('Fetching submissions from Supabase...');
     const { data, error } = await supabase
       .from('submissions')
-      .select('*')
+      .select(`
+        *,
+        assignee:profiles!submissions_assignee_id_fkey (
+          id,
+          full_name,
+          avatar_url
+        )
+      `)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -52,7 +60,10 @@ export async function getSubmissions(): Promise<Submission[]> {
       os: item.os,
       status: item.status,
       priority: item.priority,
-      assignee: item.assignee,
+      assignee: {
+        name: item.assignee?.full_name || 'Unknown',
+        avatar: item.assignee?.avatar_url || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80'
+      },
       project: item.project,
       url: item.url,
       screenshot: item.screenshot,
@@ -72,7 +83,14 @@ export async function getSubmissionById(id: string): Promise<Submission | null> 
   try {
     const { data, error } = await supabase
       .from('submissions')
-      .select('*')
+      .select(`
+        *,
+        assignee:profiles!submissions_assignee_id_fkey (
+          id,
+          full_name,
+          avatar_url
+        )
+      `)
       .eq('id', id)
       .single();
 
@@ -92,7 +110,10 @@ export async function getSubmissionById(id: string): Promise<Submission | null> 
       os: data.os,
       status: data.status,
       priority: data.priority,
-      assignee: data.assignee,
+      assignee: {
+        name: data.assignee?.full_name || 'Unknown',
+        avatar: data.assignee?.avatar_url || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80'
+      },
       project: data.project,
       url: data.url,
       screenshot: data.screenshot,
@@ -107,31 +128,88 @@ export async function getSubmissionById(id: string): Promise<Submission | null> 
 
 export async function createSubmission(submission: Omit<Submission, 'id' | 'createdAt' | 'updatedAt'>): Promise<Submission | null> {
   try {
+    // Get the current user's profile
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      console.error('No authenticated user found');
+      return null;
+    }
+
+    const profile = await getProfile(user.id);
+    if (!profile) {
+      console.error('No profile found for user');
+      return null;
+    }
+
+    const submissionData = {
+      title: submission.title,
+      description: submission.description,
+      steps_to_reproduce: submission.stepsToReproduce,
+      expected_behavior: submission.expectedBehavior,
+      actual_behavior: submission.actualBehavior,
+      device: submission.device,
+      browser: submission.browser,
+      os: submission.os,
+      status: submission.status,
+      priority: submission.priority,
+      assignee_id: profile.id,
+      project: submission.project,
+      url: submission.url,
+      screenshot: submission.screenshot,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
+    console.log('Submitting data to Supabase:', submissionData);
+
     const { data, error } = await supabase
       .from('submissions')
-      .insert([{
-        title: submission.title,
-        description: submission.description,
-        steps_to_reproduce: submission.stepsToReproduce,
-        expected_behavior: submission.expectedBehavior,
-        actual_behavior: submission.actualBehavior,
-        device: submission.device,
-        browser: submission.browser,
-        os: submission.os,
-        status: submission.status,
-        priority: submission.priority,
-        assignee: submission.assignee,
-        project: submission.project,
-        url: submission.url,
-        screenshot: submission.screenshot,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }])
-      .select()
+      .insert([submissionData])
+      .select(`
+        *,
+        assignee:profiles!submissions_assignee_id_fkey (
+          id,
+          full_name,
+          avatar_url
+        )
+      `)
       .single();
 
-    if (error) throw error;
-    return data;
+    if (error) {
+      console.error('Supabase error:', error);
+      throw error;
+    }
+
+    if (!data) {
+      console.error('No data returned from Supabase');
+      return null;
+    }
+
+    console.log('Received data from Supabase:', data);
+
+    // Map database fields to TypeScript type
+    return {
+      id: data.id,
+      title: data.title,
+      description: data.description,
+      stepsToReproduce: data.steps_to_reproduce,
+      expectedBehavior: data.expected_behavior,
+      actualBehavior: data.actual_behavior,
+      device: data.device,
+      browser: data.browser,
+      os: data.os,
+      status: data.status,
+      priority: data.priority,
+      assignee: {
+        name: data.assignee?.full_name || 'Unknown',
+        avatar: data.assignee?.avatar_url || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80'
+      },
+      project: data.project,
+      url: data.url,
+      screenshot: data.screenshot,
+      createdAt: data.created_at,
+      updatedAt: data.updated_at
+    };
   } catch (error) {
     console.error('Error creating submission:', error);
     return null;

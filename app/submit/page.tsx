@@ -82,6 +82,11 @@ export default function SubmitBugPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (currentStep !== "environment") {
+      nextStep();
+      return;
+    }
+    
     setLoading(true);
     try {
       await createSubmission(formData);
@@ -109,10 +114,8 @@ export default function SubmitBugPage() {
         url: typeof window !== "undefined" ? window.location.href : "https://staging.bugsmasher.com/projects/123"
       });
       setCurrentStep("details");
-      // Show success message or redirect
     } catch (error) {
       console.error('Error submitting bug:', error);
-      // Show error message
     } finally {
       setLoading(false);
     }
@@ -407,8 +410,8 @@ export default function SubmitBugPage() {
                   </button>
 
                   <button
-                    type={currentStep === "environment" ? "submit" : "button"}
-                    onClick={currentStep === "environment" ? undefined : nextStep}
+                    type="button"
+                    onClick={currentStep === "environment" ? handleSubmit : nextStep}
                     disabled={loading}
                     className="px-4 py-2 text-sm font-medium text-white bg-black border border-transparent rounded-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:opacity-50 disabled:cursor-not-allowed"
                   >
