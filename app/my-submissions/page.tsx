@@ -17,15 +17,38 @@ export default function MySubmissionsPage() {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
   const [assignees, setAssignees] = useState<Record<string, { name: string; avatar: string }>>({});
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('id', user.id)
+          .single();
+        if (profile) {
+          setCurrentUserId(profile.id);
+        }
+      }
+    };
+
+    fetchCurrentUser();
+  }, []);
 
   useEffect(() => {
     const fetchSubmissions = async () => {
+      if (!currentUserId) return;
+
       try {
         const data = await getSubmissions();
-        setSubmissions(data);
+        // Filter submissions to only show those assigned to the current user
+        const userSubmissions = data.filter(submission => submission.assignee_id === currentUserId);
+        setSubmissions(userSubmissions);
 
         // Fetch assignee profiles
-        const assigneeIds = [...new Set(data.map(sub => sub.assignee_id))];
+        const assigneeIds = [...new Set(userSubmissions.map(sub => sub.assignee_id))];
         const { data: profiles } = await supabase
           .from('profiles')
           .select('id, full_name, avatar_url')
@@ -49,7 +72,7 @@ export default function MySubmissionsPage() {
     };
 
     fetchSubmissions();
-  }, []);
+  }, [currentUserId]);
 
   const statusOptions = ["All", "Open", "In Progress", "Resolved"];
   const priorityOptions = ["All", "High", "Medium", "Low"];
