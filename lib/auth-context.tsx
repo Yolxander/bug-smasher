@@ -1,71 +1,69 @@
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from '@/components/ui/use-toast'
+import { getCurrentProfile } from '../app/actions/profiles'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000'
 
 interface User {
-  id: number
+  id: string
   email: string
-  name?: string
+  name: string
+  profile_id?: string
 }
 
 interface AuthContextType {
   user: User | null
+  profileId: string | null
   loading: boolean
-  signIn: (email: string, password: string) => Promise<void>
-  signUp: (email: string, password: string, name?: string) => Promise<void>
-  signOut: () => Promise<void>
-  profile: any | null
+  error: string | null
+  login: (email: string, password: string) => Promise<void>
+  register: (name: string, email: string, password: string, password_confirmation: string) => Promise<void>
+  logout: () => Promise<void>
+  setUser: (user: User | null) => void
+  setProfileId: (id: string | null) => void
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
+  const [profileId, setProfileId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
-  const [profile, setProfile] = useState<any | null>(null)
+  const [error, setError] = useState<string | null>(null)
   const router = useRouter()
 
-  const fetchUser = async () => {
-    try {
-      const response = await fetch(`${API_URL}/api/user`, {
-        credentials: 'include',
-      })
-      
-      if (response.ok) {
-        const userData = await response.json()
-        setUser(userData)
-        setProfile(userData)
-      } else {
-        setUser(null)
-        setProfile(null)
-      }
-    } catch (error) {
-      console.error('Error fetching user:', error)
-      setUser(null)
-      setProfile(null)
-    } finally {
-      setLoading(false)
-    }
-  }
-
   useEffect(() => {
-    fetchUser()
+    const checkAuth = async () => {
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/user`, {
+          credentials: 'include',
+        })
+
+        if (response.ok) {
+          const userData = await response.json()
+          setUser(userData)
+          
+          // Fetch and set profile ID
+          const profile = await getCurrentProfile()
+          if (profile) {
+            setProfileId(profile.id)
+          }
+        }
+      } catch (error) {
+        console.error('Error checking auth:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    checkAuth()
   }, [])
 
-  const signIn = async (email: string, password: string) => {
+  const login = async (email: string, password: string) => {
     try {
-      // First get CSRF cookie
-      const csrfResponse = await fetch(`${API_URL}/sanctum/csrf-cookie`, {
-        credentials: 'include',
-      })
-
-      if (!csrfResponse.ok) {
-        throw new Error('Failed to get CSRF token')
-      }
-
-      const response = await fetch(`${API_URL}/api/login`, {
+      setError(null)
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -76,80 +74,68 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       })
 
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.message || 'Login failed')
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Login failed')
       }
 
-      await fetchUser()
+      const userData = await response.json()
+      setUser(userData)
+
+      // Fetch and set profile ID after login
+      const profile = await getCurrentProfile()
+      if (profile) {
+        setProfileId(profile.id)
+      }
+
       router.push('/')
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Invalid email or password',
-        variant: 'destructive',
-      })
+      console.error('Login error:', error)
+      setError(error instanceof Error ? error.message : 'Login failed')
       throw error
     }
   }
 
-  const signUp = async (email: string, password: string, name?: string) => {
+  const register = async (name: string, email: string, password: string, password_confirmation: string) => {
     try {
-      // First get CSRF cookie
-      const csrfResponse = await fetch(`${API_URL}/sanctum/csrf-cookie`, {
-        credentials: 'include',
-      })
-
-      if (!csrfResponse.ok) {
-        throw new Error('Failed to get CSRF token')
-      }
-
-      // Use provided name or generate from email
-      const userName = name || email.split('@')[0]
-
-      const response = await fetch(`${API_URL}/api/register`, {
+      setError(null)
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-Requested-With': 'XMLHttpRequest',
         },
         credentials: 'include',
-        body: JSON.stringify({ 
-          email, 
-          password,
-          name: userName,
-          password_confirmation: password
-        }),
+        body: JSON.stringify({ name, email, password, password_confirmation }),
       })
 
       if (!response.ok) {
         const errorData = await response.json()
-        // Format validation errors into a readable message
-        const errorMessage = errorData.message || 
-          (errorData.errors ? Object.values(errorData.errors).flat().join(', ') : 'Registration failed')
-        throw new Error(errorMessage)
+        throw new Error(errorData.message || 'Registration failed')
       }
 
-      toast({
-        title: 'Success',
-        description: 'Please check your email to verify your account',
-      })
-      router.push('/auth/login')
+      const userData = await response.json()
+      setUser(userData)
+
+      // Fetch and set profile ID after registration
+      const profile = await getCurrentProfile()
+      if (profile) {
+        setProfileId(profile.id)
+      }
+
+      router.push('/')
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'There was an error creating your account',
-        variant: 'destructive',
-      })
+      console.error('Registration error:', error)
+      setError(error instanceof Error ? error.message : 'Registration failed')
       throw error
     }
   }
 
-  const signOut = async () => {
+  const logout = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/logout`, {
+      setError(null)
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/logout`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           'X-Requested-With': 'XMLHttpRequest',
         },
         credentials: 'include',
@@ -160,25 +146,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       setUser(null)
-      setProfile(null)
+      setProfileId(null)
       router.push('/auth/login')
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'There was an error signing out',
-        variant: 'destructive',
-      })
+      console.error('Logout error:', error)
+      setError(error instanceof Error ? error.message : 'Logout failed')
       throw error
     }
   }
 
   const value = {
     user,
+    profileId,
     loading,
-    signIn,
-    signUp,
-    signOut,
-    profile,
+    error,
+    login,
+    register,
+    logout,
+    setUser,
+    setProfileId,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

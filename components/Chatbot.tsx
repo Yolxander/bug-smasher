@@ -3,6 +3,9 @@ import React, { useState, useRef, useEffect } from "react";
 import { Send, Bot, User, X, Loader2, MessageSquare, RotateCcw } from "lucide-react";
 import { createSubmission } from "@/app/actions/submissions";
 import { useAuth } from "@/lib/auth-context"
+import { getProfileById, Profile } from '../app/actions/profiles'
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000'
 
 interface Message {
   type: "bot" | "user";
@@ -15,10 +18,12 @@ interface Message {
 type FlowType = "report" | "help" | "track" | "badges" | "feedback" | null;
 
 export default function Chatbot() {
-  const { user } = useAuth()
+  const { user, profileId } = useAuth()
   const initialMessage = {
     type: "bot" as const,
-    content: "Hi there! I'm your Bug Smasher Assistant. What would you like to do?",
+    content: user ? 
+      "Hi there! I'm your Bug Smasher Assistant. What would you like to do?" :
+      "Hi there! I'm your Bug Smasher Assistant. Please sign in to start reporting bugs.",
     timestamp: new Date(),
   };
 
@@ -69,26 +74,19 @@ export default function Chatbot() {
 
   useEffect(() => {
     const fetchUserData = async () => {
-      if (!user) return
+      if (!user) return;
       
       try {
-        const response = await fetch('/api/profile', {
-          credentials: 'include',
-        })
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch profile')
+        if (!profileId) {
+          throw new Error('No profile ID found');
         }
-        
-        const profile = await response.json()
-        // Use profile data as needed
       } catch (error) {
-        console.error('Error fetching profile:', error)
+        console.error('Error checking profile:', error);
       }
-    }
+    };
 
-    fetchUserData()
-  }, [user])
+    fetchUserData();
+  }, [user, profileId]);
 
   const resetChat = () => {
     setMessages([initialMessage]);
@@ -291,25 +289,11 @@ export default function Chatbot() {
               break;
             case 10:
               if (option === "Yes") {
-                console.log("Starting submission process...");
-                console.log("Bug data to submit:", bugData);
-                
                 try {
-                  // Get the current user's profile
-                  const response = await fetch('/api/profile', {
-                    credentials: 'include',
-                  });
-                  
-                  if (!response.ok) {
-                    throw new Error("Failed to fetch user profile");
-                  }
-                  
-                  const profile = await response.json();
-                  if (!profile) {
-                    throw new Error("No profile found for user");
+                  if (!profileId) {
+                    throw new Error('No profile ID found');
                   }
 
-                  // Create submission with collected data
                   const submissionData = {
                     title: bugData.title,
                     description: bugData.description,
@@ -320,63 +304,64 @@ export default function Chatbot() {
                     browser: bugData.browser,
                     os: bugData.os,
                     priority: bugData.priority,
-                    status: "Open",
-                    screenshot: imagePreview || "",
-                    assignee_id: profile.id,
+                    status: 'Open',
+                    screenshot: imagePreview || '',
+                    assignee_id: profileId,
                     project: {
-                      id: "1",
-                      name: "Clever Project"
+                      id: '1',
+                      name: 'Clever Project'
                     },
-                    url: typeof window !== "undefined" ? window.location.href : "https://staging.bugsmasher.com/projects/123"
+                    url: typeof window !== 'undefined' ? window.location.href : 'https://staging.bugsmasher.com/projects/123'
                   };
 
-                  console.log("Prepared submission data:", submissionData);
-
-                  console.log("Calling createSubmission...");
                   const result = await createSubmission(submissionData);
-                  console.log("Submission result:", result);
-                  
                   if (result) {
-                    console.log("Submission successful!");
-                    botResponse = "✅ Great! I've submitted your bug report. You can view it in the dashboard.\n\nCan I help you with anything else?";
+                    setMessages(prev => [...prev, {
+                      type: 'bot',
+                      content: '✅ Great! I\'ve submitted your bug report. You can view it in the dashboard.\n\nCan I help you with anything else?',
+                      timestamp: new Date(),
+                    }]);
                     setCurrentFlow(null);
                     setCurrentStep(0);
                     setBugData({
-                      title: "",
-                      description: "",
-                      stepsToReproduce: "",
-                      expectedBehavior: "",
-                      actualBehavior: "",
-                      device: "",
-                      browser: "",
-                      os: "",
-                      priority: "Medium",
-                      status: "Open",
-                      screenshot: "",
+                      title: '',
+                      description: '',
+                      stepsToReproduce: '',
+                      expectedBehavior: '',
+                      actualBehavior: '',
+                      device: '',
+                      browser: '',
+                      os: '',
+                      priority: 'Medium',
+                      status: 'Open',
+                      screenshot: '',
                       assignee: {
-                        name: "You",
-                        avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
+                        name: 'You',
+                        avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80'
                       },
                       project: {
-                        id: "1",
-                        name: "Clever Project"
+                        id: '1',
+                        name: 'Clever Project'
                       },
-                      url: typeof window !== "undefined" ? window.location.href : "https://staging.bugsmasher.com/projects/123"
+                      url: typeof window !== 'undefined' ? window.location.href : 'https://staging.bugsmasher.com/projects/123'
                     });
                   } else {
-                    console.error("Submission failed - no result returned");
-                    throw new Error("Failed to create submission - no result returned");
+                    throw new Error('Failed to create submission');
                   }
                 } catch (error) {
-                  console.error('Detailed error submitting bug:', error);
-                  if (error instanceof Error) {
-                    console.error('Error message:', error.message);
-                    console.error('Error stack:', error.stack);
-                  }
-                  botResponse = "❌ I'm sorry, there was an error submitting your bug report. Please try again later.";
+                  console.error('Error submitting bug:', error);
+                  setMessages(prev => [...prev, {
+                    type: 'bot',
+                    content: '❌ I\'m sorry, there was an error submitting your bug report. Please try again later.',
+                    timestamp: new Date(),
+                  }]);
                 }
               } else {
-                botResponse = "Bug report cancelled. You can start over if you'd like.";
+                setMessages(prev => [...prev, {
+                  type: 'bot',
+                  content: 'Bug report cancelled. You can start over if you\'d like.',
+                  timestamp: new Date(),
+                }]);
                 setTimeout(() => {
                   resetChat();
                 }, 2000);
@@ -592,7 +577,7 @@ export default function Chatbot() {
                       <User className="h-5 w-5 text-white flex-shrink-0" />
                     )}
                   </div>
-                  {message.options && (
+                  {message.options && user && (
                     <div className="flex flex-wrap gap-2 mt-2">
                       {message.options.map((option, optionIndex) => (
                         <button
@@ -612,7 +597,7 @@ export default function Chatbot() {
                 </div>
               </div>
             ))}
-            {!currentFlow && (
+            {!currentFlow && user && (
               <div className="grid grid-cols-2 gap-2 mt-4">
                 <button
                   onClick={() => handleFlowSelection("report")}
@@ -628,10 +613,21 @@ export default function Chatbot() {
                 </button>
               </div>
             )}
+            {!user && (
+              <div className="text-center mt-4">
+                <p className="text-gray-500 mb-4">Please sign in to start reporting bugs.</p>
+                <a
+                  href="/auth/login"
+                  className="inline-block bg-amber-500 text-white px-4 py-2 rounded-lg hover:bg-amber-600 transition-colors"
+                >
+                  Sign In
+                </a>
+              </div>
+            )}
             <div ref={messagesEndRef} />
           </div>
 
-          {currentFlow && (
+          {currentFlow && user && (
             <form onSubmit={handleSubmit} className="p-4 border-t border-gray-200">
               <div className="flex space-x-2">
                 <input

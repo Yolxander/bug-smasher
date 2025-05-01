@@ -12,23 +12,26 @@ import { toast } from "@/components/ui/use-toast";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { signIn } = useAuth();
+  const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
     setIsLoading(true);
     
     try {
       console.log('Attempting login for:', email);
-      await signIn(email, password);
+      await login(email, password);
       console.log('Login successful, redirecting...');
       router.push("/");
     } catch (error) {
       console.error("Login failed:", error);
+      setError(error instanceof Error ? error.message : "Login failed");
       toast({
         title: "Login failed",
         description: error instanceof Error ? error.message : "An error occurred during login",
@@ -94,6 +97,10 @@ export default function LoginPage() {
               Forgot Password?
             </Link>
           </div>
+
+          {error && (
+            <div className="text-red-500 text-sm text-center">{error}</div>
+          )}
 
           <Button
             type="submit"

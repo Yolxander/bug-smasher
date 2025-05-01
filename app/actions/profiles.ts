@@ -14,34 +14,24 @@ export type Profile = {
   onboarding_completed: boolean
 }
 
-export async function createProfile(userId: string, email: string) {
+export async function getProfileById(id: string): Promise<Profile | null> {
   try {
-    const response = await fetch(`${API_URL}/api/profiles`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Requested-With': 'XMLHttpRequest',
-      },
+    const response = await fetch(`${API_URL}/api/profiles/${id}`, {
       credentials: 'include',
-      body: JSON.stringify({
-        id: userId,
-        email,
-        onboarding_completed: false
-      }),
     })
 
     if (!response.ok) {
-      throw new Error('Failed to create profile')
+      throw new Error('Failed to fetch profile')
     }
 
     return await response.json()
   } catch (error) {
-    console.error('Error creating profile:', error)
-    throw error
+    console.error('Error fetching profile:', error)
+    return null
   }
 }
 
-export async function getProfile(userId: string) {
+export async function getCurrentProfile(): Promise<Profile | null> {
   try {
     const response = await fetch(`${API_URL}/api/profiles`, {
       credentials: 'include',
@@ -54,11 +44,11 @@ export async function getProfile(userId: string) {
     return await response.json()
   } catch (error) {
     console.error('Error fetching profile:', error)
-    throw error
+    return null
   }
 }
 
-export async function updateProfile(userId: string, data: any) {
+export async function updateProfile(data: Partial<Profile>): Promise<Profile | null> {
   try {
     const response = await fetch(`${API_URL}/api/profiles`, {
       method: 'PUT',
@@ -77,12 +67,15 @@ export async function updateProfile(userId: string, data: any) {
     return await response.json()
   } catch (error) {
     console.error('Error updating profile:', error)
-    throw error
+    return null
   }
 }
 
-export async function completeOnboarding(userId: string, data: any) {
+export async function completeOnboarding(data: Partial<Profile>): Promise<Profile | null> {
+  console.log('completeOnboarding called with data:', data)
+  
   try {
+    console.log('Making request to:', `${API_URL}/api/profiles`)
     const response = await fetch(`${API_URL}/api/profiles`, {
       method: 'PUT',
       headers: {
@@ -96,13 +89,20 @@ export async function completeOnboarding(userId: string, data: any) {
       }),
     })
 
+    console.log('Response status:', response.status)
+    console.log('Response headers:', response.headers)
+
     if (!response.ok) {
-      throw new Error('Failed to complete onboarding')
+      const errorText = await response.text()
+      console.error('Error response:', errorText)
+      throw new Error(`Failed to complete onboarding: ${response.status} ${errorText}`)
     }
 
-    return await response.json()
+    const result = await response.json()
+    console.log('Response data:', result)
+    return result
   } catch (error) {
-    console.error('Error completing onboarding:', error)
-    throw error
+    console.error('Error in completeOnboarding:', error)
+    return null
   }
 } 

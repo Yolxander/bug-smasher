@@ -16,6 +16,7 @@ export default function HomePage() {
   const { user } = useAuth()
   const [submissions, setSubmissions] = useState<Submission[]>([])
   const [loading, setLoading] = useState(true)
+  const [profile, setProfile] = useState<any>(null)
 
   useEffect(() => {
     const checkProfile = async () => {
@@ -25,35 +26,27 @@ export default function HomePage() {
       }
 
       try {
-        const profile = await getProfile(user.id)
-        if (!profile.onboarding_completed) {
+        const profileData = await getProfile(user.id)
+        setProfile(profileData)
+        
+        if (!profileData) {
           router.push("/onboarding")
+          return
         }
-      } catch (error) {
-        console.error("Profile check failed:", error)
-        router.push("/auth/login")
-      }
-    }
 
-    checkProfile()
-  }, [user, router])
-
-  useEffect(() => {
-    const fetchSubmissions = async () => {
-      try {
-        console.log('Starting to fetch submissions...');
+        // Only fetch submissions if we have a valid profile
         const data = await getSubmissions()
-        console.log('Received submissions in page:', data);
         setSubmissions(data)
       } catch (error) {
-        console.error('Error fetching submissions:', error)
+        console.error("Error checking profile or fetching submissions:", error)
+        router.push("/onboarding")
       } finally {
         setLoading(false)
       }
     }
 
-    fetchSubmissions()
-  }, [])
+    checkProfile()
+  }, [user, router])
 
   // Calculate status counts
   const statusCounts = submissions.reduce((acc, submission) => {
@@ -61,15 +54,10 @@ export default function HomePage() {
     return acc
   }, {} as Record<string, number>)
 
-  console.log('Current submissions state:', submissions);
-  console.log('Status counts:', statusCounts);
-
   // Get recent submissions (last 2)
   const recentSubmissions = submissions
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 2)
-
-  console.log('Recent submissions:', recentSubmissions);
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
@@ -84,8 +72,8 @@ export default function HomePage() {
     }
   }
 
-  if (!user) {
-    return null // Don't render anything while checking auth
+  if (!user || !profile) {
+    return null // Don't render anything while checking auth or profile
   }
 
   return (
@@ -98,7 +86,7 @@ export default function HomePage() {
               <div className="flex justify-between h-16">
                 <div className="flex">
                   <div className="flex-shrink-0 flex items-center">
-                    <h1 className="text-xl font-semibold">Bug Smasher Dashboard</h1>
+                    <h1 className="text-xl font-semibold">Dashboard</h1>
                   </div>
                 </div>
                 <div className="flex items-center">
@@ -138,78 +126,53 @@ export default function HomePage() {
           </header>
 
           <main className="flex-1 p-8">
-            {/* Updated Hero Section */}
-            <div className="flex justify-between mb-8">
-              <div className="bg-black rounded-2xl p-8 flex-1 mr-4">
-                <div className="max-w-md flex justify-between items-start">
-                  <div>
-                    <h2 className="text-2xl font-bold mb-2 text-amber-400">Welcome to Bug Smasher</h2>
-                    <p className="text-white mb-4 opacity-90">Report bugs easily and help improve our software. No technical knowledge required - just tell us what's not working!</p>
-                    <Link 
-                      href="/submit" 
-                      className="bg-amber-400 text-black px-6 py-2 rounded-full font-medium hover:bg-amber-300 transition-colors"
-                    >
-                      Report a Bug
-                    </Link>
+            <div className="grid grid-cols-4 gap-8 mb-8">
+              <div className="bg-white rounded-xl shadow-sm p-6">
+                <div className="flex items-center">
+                  <div className="p-3 rounded-full bg-red-100 text-red-600">
+                    <Bug className="h-6 w-6" />
                   </div>
-                  <Bug className="h-32 w-32 text-amber-400 ml-4" />
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-500">Open Bugs</p>
+                    <p className="text-2xl font-semibold text-gray-900">{statusCounts['Open'] || 0}</p>
+                  </div>
                 </div>
               </div>
-              
-              <div className="bg-white shadow-lg rounded-2xl p-6 w-[400px]">
-                <h3 className="text-lg font-semibold mb-4">Quick Tips</h3>
-                <ul className="space-y-3">
-                  <li className="flex items-center text-sm text-gray-600">
-                    <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
-                    Take a screenshot if possible
-                  </li>
-                  <li className="flex items-center text-sm text-gray-600">
-                    <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
-                    Describe what you were trying to do
-                  </li>
-                  <li className="flex items-center text-sm text-gray-600">
-                    <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
-                    Tell us what you expected to happen
-                  </li>
-                </ul>
-              </div>
-            </div>
-
-            {/* Status Overview */}
-            <div className="mb-8">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold">Bug Report Status</h2>
-                <Link href="/bugs" className="text-indigo-600 hover:text-indigo-800">View All Reports</Link>
-              </div>
-              <div className="grid grid-cols-3 gap-6">
-                <div className="bg-white p-6 rounded-xl shadow-sm">
-                  <div className="flex items-center mb-4">
-                    <AlertTriangle className="h-8 w-8 text-red-500 mr-3" />
-                    <h3 className="text-xl font-semibold">Open Issues</h3>
+              <div className="bg-white rounded-xl shadow-sm p-6">
+                <div className="flex items-center">
+                  <div className="p-3 rounded-full bg-yellow-100 text-yellow-600">
+                    <Clock className="h-6 w-6" />
                   </div>
-                  <p className="text-3xl font-bold text-gray-900">{statusCounts['Open'] || 0}</p>
-                  <p className="text-sm text-gray-500 mt-2">Needs attention</p>
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-500">In Progress</p>
+                    <p className="text-2xl font-semibold text-gray-900">{statusCounts['In Progress'] || 0}</p>
+                  </div>
                 </div>
-                <div className="bg-white p-6 rounded-xl shadow-sm">
-                  <div className="flex items-center mb-4">
-                    <Clock className="h-8 w-8 text-yellow-500 mr-3" />
-                    <h3 className="text-xl font-semibold">In Progress</h3>
+              </div>
+              <div className="bg-white rounded-xl shadow-sm p-6">
+                <div className="flex items-center">
+                  <div className="p-3 rounded-full bg-green-100 text-green-600">
+                    <CheckCircle className="h-6 w-6" />
                   </div>
-                  <p className="text-3xl font-bold text-gray-900">{statusCounts['In Progress'] || 0}</p>
-                  <p className="text-sm text-gray-500 mt-2">Being worked on</p>
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-500">Resolved</p>
+                    <p className="text-2xl font-semibold text-gray-900">{statusCounts['Resolved'] || 0}</p>
+                  </div>
                 </div>
-                <div className="bg-white p-6 rounded-xl shadow-sm">
-                  <div className="flex items-center mb-4">
-                    <CheckCircle className="h-8 w-8 text-green-500 mr-3" />
-                    <h3 className="text-xl font-semibold">Resolved</h3>
+              </div>
+              <div className="bg-white rounded-xl shadow-sm p-6">
+                <div className="flex items-center">
+                  <div className="p-3 rounded-full bg-gray-100 text-gray-600">
+                    <AlertTriangle className="h-6 w-6" />
                   </div>
-                  <p className="text-3xl font-bold text-gray-900">{statusCounts['Resolved'] || 0}</p>
-                  <p className="text-sm text-gray-500 mt-2">This month</p>
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-500">Total Bugs</p>
+                    <p className="text-2xl font-semibold text-gray-900">{submissions.length}</p>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Recent Reports */}
             <div className="grid grid-cols-2 gap-8">
               <div>
                 <h2 className="text-2xl font-bold mb-4">Your Recent Reports</h2>

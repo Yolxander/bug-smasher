@@ -8,9 +8,12 @@ import { DashboardSidebar } from "@/components/DashboardSidebar";
 import { getSubmissions } from "../actions/submissions";
 import { Submission } from "../actions/submissions";
 import { useAuth } from "@/lib/auth-context";
+import { getProfileById, getCurrentProfile, Profile } from '../actions/profiles'
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000'
 
 export default function MySubmissionsPage() {
-  const { user } = useAuth();
+  const { user, profileId } = useAuth();
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState("All");
@@ -18,53 +21,25 @@ export default function MySubmissionsPage() {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
   const [assignees, setAssignees] = useState<Record<string, { name: string; avatar: string }>>({});
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!user) return;
-      
-      try {
-        const response = await fetch('/api/profile', {
-          credentials: 'include',
-        });
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch profile');
-        }
-        
-        const profile = await response.json();
-        if (profile) {
-          setCurrentUserId(profile.id);
-        }
-      } catch (error) {
-        console.error('Error fetching profile:', error);
-      }
-    };
-
-    fetchData();
-  }, [user]);
 
   useEffect(() => {
     const fetchSubmissions = async () => {
-      if (!currentUserId) return;
+      if (!profileId) return;
 
       try {
         const data = await getSubmissions();
         // Filter submissions to only show those assigned to the current user
-        const userSubmissions = data.filter(submission => submission.assignee_id === currentUserId);
+        const userSubmissions = data.filter(submission => submission.assignee_id === profileId);
         setSubmissions(userSubmissions);
 
         // Fetch assignee profiles
-        const assigneeIds = [...new Set(userSubmissions.map(sub => sub.assignee_id))];
+        const assigneeIds = [...new Set(userSubmissions.map((sub: Submission) => sub.assignee_id))];
         const profiles = await Promise.all(
           assigneeIds.map(async (id) => {
             try {
-              const response = await fetch(`/api/profile/${id}`, {
-                credentials: 'include',
-              });
-              if (!response.ok) throw new Error('Failed to fetch profile');
-              return await response.json();
+              const profile = await getProfileById(id);
+              if (!profile) throw new Error('Failed to fetch profile');
+              return profile;
             } catch (error) {
               console.error('Error fetching profile:', error);
               return null;
@@ -91,7 +66,7 @@ export default function MySubmissionsPage() {
     };
 
     fetchSubmissions();
-  }, [currentUserId]);
+  }, [profileId]);
 
   const statusOptions = ["All", "Open", "In Progress", "Resolved"];
   const priorityOptions = ["All", "High", "Medium", "Low"];

@@ -1,5 +1,7 @@
 import { useAuth } from "@/lib/auth-context"
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000'
+
 export type Submission = {
   id: string;
   title: string;
@@ -25,7 +27,7 @@ export type Submission = {
 
 export async function getSubmissions() {
   try {
-    const response = await fetch('/api/submissions', {
+    const response = await fetch(`${API_URL}/bugs`, {
       credentials: 'include',
     })
 
@@ -42,7 +44,7 @@ export async function getSubmissions() {
 
 export async function getSubmissionById(id: string): Promise<Submission | null> {
   try {
-    const response = await fetch(`/api/submissions/${id}`, {
+    const response = await fetch(`${API_URL}/bugs/${id}`, {
       credentials: 'include',
     })
 
@@ -59,7 +61,7 @@ export async function getSubmissionById(id: string): Promise<Submission | null> 
 
 export async function createSubmission(submissionData: any) {
   try {
-    const response = await fetch('/api/submissions', {
+    const response = await fetch(`${API_URL}/bugs`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -83,7 +85,7 @@ export async function createSubmission(submissionData: any) {
 
 export async function updateSubmission(submissionId: string, data: any) {
   try {
-    const response = await fetch(`/api/submissions/${submissionId}`, {
+    const response = await fetch(`${API_URL}/bugs/${submissionId}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -107,7 +109,7 @@ export async function updateSubmission(submissionId: string, data: any) {
 
 export async function deleteSubmission(id: string): Promise<boolean> {
   try {
-    const response = await fetch(`/api/submissions/${id}`, {
+    const response = await fetch(`${API_URL}/bugs/${id}`, {
       method: 'DELETE',
       credentials: 'include',
     })

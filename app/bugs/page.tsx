@@ -8,9 +8,12 @@ import { DashboardSidebar } from "@/components/DashboardSidebar";
 import { getSubmissions } from "../actions/submissions";
 import { Submission } from "../actions/submissions";
 import { useAuth } from "@/lib/auth-context"
+import { getProfileById, Profile } from '../actions/profiles'
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000'
 
 export default function BugReportsPage() {
-  const { user } = useAuth()
+  const { user, profileId } = useAuth()
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState("All");
@@ -26,15 +29,13 @@ export default function BugReportsPage() {
         setSubmissions(data);
 
         // Fetch assignee profiles
-        const assigneeIds = [...new Set(data.map(sub => sub.assignee_id))];
+        const assigneeIds = [...new Set(data.map((sub: Submission) => sub.assignee_id))];
         const profiles = await Promise.all(
           assigneeIds.map(async (id) => {
             try {
-              const response = await fetch(`/api/profile/${id}`, {
-                credentials: 'include',
-              });
-              if (!response.ok) throw new Error('Failed to fetch profile');
-              return await response.json();
+              const profile = await getProfileById(id);
+              if (!profile) throw new Error('Failed to fetch profile');
+              return profile;
             } catch (error) {
               console.error('Error fetching profile:', error);
               return null;
@@ -68,16 +69,10 @@ export default function BugReportsPage() {
       if (!user) return
       
       try {
-        const response = await fetch('/api/profile', {
-          credentials: 'include',
-        })
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch profile')
+        const profile = await getCurrentProfile();
+        if (!profile) {
+          throw new Error('Failed to fetch profile');
         }
-        
-        const profile = await response.json()
-        // Use profile data as needed
       } catch (error) {
         console.error('Error fetching profile:', error)
       }

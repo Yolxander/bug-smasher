@@ -1,27 +1,25 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
-import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
-import { completeOnboarding } from "@/lib/profiles"
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
+import { completeOnboarding } from "../actions/profiles"
+import { toast } from "@/components/ui/use-toast"
+import { Form } from "@/components/ui/form"
+import { useForm } from "react-hook-form"
+import { z } from "zod"
+import { zodResolver } from "@hookform/resolvers/zod"
 import { Button } from "@/components/ui/button"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { toast } from "@/components/ui/use-toast"
 import Image from "next/image"
 import { ArrowRight, ArrowLeft, Bug, Target, Users, Zap, X } from "lucide-react"
 
 const onboardingSchema = z.object({
-  full_name: z.string().min(2, { message: "Name must be at least 2 characters" }),
-  role: z.enum(["developer", "qa", "product_manager", "designer"], {
-    required_error: "Please select your role",
-  }),
-  bio: z.string().min(10, { message: "Please provide a brief bio" }),
+  full_name: z.string().min(1, "Full name is required"),
+  role: z.enum(["developer", "qa", "product_manager", "designer"]),
+  bio: z.string().min(1, "Bio is required"),
 })
 
 const teamMembers = [
@@ -69,50 +67,75 @@ const features = [
 ]
 
 export default function OnboardingPage() {
+  const { user, profileId } = useAuth()
   const router = useRouter()
-  const { user, signOut } = useAuth()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [step, setStep] = useState(1) // 1: Welcome, 2: Features, 3: Team, 4: Profile
+  const [fullName, setFullName] = useState("")
+  const [role, setRole] = useState<"developer" | "qa" | "product_manager" | "designer" | null>(null)
+  const [bio, setBio] = useState("")
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    // Hide chatbot widget
-    const chatbotWidget = document.getElementById('chatbot-widget')
-    if (chatbotWidget) {
-      chatbotWidget.style.display = 'none'
+    if (profileId) {
+      router.push("/")
     }
-
-    // Cleanup function to show widget when component unmounts
-    return () => {
-      if (chatbotWidget) {
-        chatbotWidget.style.display = 'block'
-      }
-    }
-  }, [])
+  }, [profileId, router])
 
   const form = useForm<z.infer<typeof onboardingSchema>>({
     resolver: zodResolver(onboardingSchema),
     defaultValues: {
       full_name: "",
+      role: "developer",
       bio: "",
     },
   })
 
   const onSubmit = async (values: z.infer<typeof onboardingSchema>) => {
-    if (!user) return
+    console.log('Form submitted with values:', values)
+    
+    if (!user) {
+      console.log('No user found')
+      toast({
+        title: "Error",
+        description: "User not authenticated",
+        variant: "destructive",
+      })
+      return
+    }
 
     setIsSubmitting(true)
     try {
-      await completeOnboarding(user.id, values)
-      toast({
-        title: "Profile completed",
-        description: "Your profile has been updated successfully",
+      console.log('Creating profile with data:', {
+        ...values,
+        email: user.email
       })
+
+      const profileData = {
+        ...values,
+        email: user.email
+      }
+
+      console.log('Calling completeOnboarding with:', profileData)
+      const result = await completeOnboarding(profileData)
+      console.log('completeOnboarding result:', result)
+      
+      if (!result) {
+        throw new Error("Failed to create profile")
+      }
+
+      toast({
+        title: "Profile created",
+        description: "Your profile has been created successfully",
+      })
+
       router.push("/")
     } catch (error) {
-      console.error("Error completing onboarding:", error)
+      console.error("Error creating profile:", error)
       toast({
         title: "Error",
-        description: "There was an error updating your profile",
+        description: error instanceof Error ? error.message : "Failed to create profile",
         variant: "destructive",
       })
     } finally {
@@ -121,11 +144,11 @@ export default function OnboardingPage() {
   }
 
   const nextStep = () => {
-    setStep(prev => prev + 1)
+    setStep((prev) => Math.min(prev + 1, 4))
   }
 
   const prevStep = () => {
-    setStep(prev => prev - 1)
+    setStep((prev) => Math.max(prev - 1, 1))
   }
 
   const handleExit = async () => {
@@ -276,80 +299,73 @@ export default function OnboardingPage() {
             <div className="bg-[#FFF8CC] rounded-xl shadow-xl p-6 border border-amber-200">
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                  <FormField
-                    control={form.control}
-                    name="full_name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-gray-900 font-medium">Full Name</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="Enter your full name" 
-                            {...field}
-                            className="bg-white border-amber-200 text-gray-900 placeholder:text-gray-500 focus:border-amber-400 focus:ring-amber-400"
-                          />
-                        </FormControl>
-                        <FormMessage className="text-red-600" />
-                      </FormItem>
-                    )}
-                  />
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Full Name
+                      </label>
+                      <Input
+                        {...form.register("full_name")}
+                        placeholder="Enter your full name"
+                      />
+                      {form.formState.errors.full_name && (
+                        <p className="text-red-500 text-sm mt-1">
+                          {form.formState.errors.full_name.message}
+                        </p>
+                      )}
+                    </div>
 
-                  <FormField
-                    control={form.control}
-                    name="role"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-gray-900 font-medium">Role</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger className="bg-white border-amber-200 text-gray-900 focus:border-amber-400 focus:ring-amber-400">
-                              <SelectValue placeholder="Select your role" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent className="bg-white border-amber-200">
-                            <SelectItem value="developer" className="text-gray-900 hover:bg-amber-50">Developer</SelectItem>
-                            <SelectItem value="qa" className="text-gray-900 hover:bg-amber-50">QA Engineer</SelectItem>
-                            <SelectItem value="product_manager" className="text-gray-900 hover:bg-amber-50">Product Manager</SelectItem>
-                            <SelectItem value="designer" className="text-gray-900 hover:bg-amber-50">Designer</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage className="text-red-600" />
-                      </FormItem>
-                    )}
-                  />
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Role
+                      </label>
+                      <Select
+                        onValueChange={(value) => form.setValue("role", value as any)}
+                        defaultValue={form.getValues("role")}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select your role" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="developer">Developer</SelectItem>
+                          <SelectItem value="qa">QA Engineer</SelectItem>
+                          <SelectItem value="product_manager">Product Manager</SelectItem>
+                          <SelectItem value="designer">Designer</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {form.formState.errors.role && (
+                        <p className="text-red-500 text-sm mt-1">
+                          {form.formState.errors.role.message}
+                        </p>
+                      )}
+                    </div>
 
-                  <FormField
-                    control={form.control}
-                    name="bio"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-gray-900 font-medium">Bio</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            placeholder="Tell us about yourself and your experience"
-                            className="min-h-[100px] bg-white border-amber-200 text-gray-900 placeholder:text-gray-500 focus:border-amber-400 focus:ring-amber-400"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage className="text-red-600" />
-                      </FormItem>
-                    )}
-                  />
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Bio
+                      </label>
+                      <Textarea
+                        {...form.register("bio")}
+                        placeholder="Tell us about yourself"
+                      />
+                      {form.formState.errors.bio && (
+                        <p className="text-red-500 text-sm mt-1">
+                          {form.formState.errors.bio.message}
+                        </p>
+                      )}
+                    </div>
+                  </div>
 
                   <div className="flex justify-between">
-                    <Button 
-                      type="button"
-                      onClick={prevStep}
-                      className="bg-gray-800 hover:bg-gray-700 text-white font-semibold px-8 py-2 rounded-lg transition-colors"
-                    >
-                      <ArrowLeft className="mr-2 w-4 h-4" /> Back
+                    <Button variant="outline" onClick={prevStep}>
+                      Back
                     </Button>
-                    <Button 
-                      type="submit" 
-                      className="bg-amber-400 hover:bg-amber-500 text-black font-semibold px-8 py-2 rounded-lg transition-colors"
+                    <Button
+                      type="submit"
+                      className="bg-[#FFD700] hover:bg-[#F4C430]"
                       disabled={isSubmitting}
                     >
-                      {isSubmitting ? "Saving..." : "Complete Profile"}
+                      {isSubmitting ? "Creating Profile..." : "Complete Profile"}
                     </Button>
                   </div>
                 </form>
