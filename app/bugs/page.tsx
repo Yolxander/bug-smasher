@@ -7,6 +7,7 @@ import { Search, Bell, ChevronDown, Bug, CheckCircle, Clock, AlertTriangle } fro
 import { DashboardSidebar } from "@/components/DashboardSidebar";
 import { getSubmissions } from "../actions/submissions";
 import { Submission } from "../actions/submissions";
+import { supabase } from "@/lib/supabase";
 
 export default function BugReportsPage() {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
@@ -15,12 +16,31 @@ export default function BugReportsPage() {
   const [priority, setPriority] = useState("All");
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
+  const [assignees, setAssignees] = useState<Record<string, { name: string; avatar: string }>>({});
 
   useEffect(() => {
     const fetchSubmissions = async () => {
       try {
         const data = await getSubmissions();
         setSubmissions(data);
+
+        // Fetch assignee profiles
+        const assigneeIds = [...new Set(data.map(sub => sub.assignee_id))];
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, full_name, avatar_url')
+          .in('id', assigneeIds);
+
+        if (profiles) {
+          const assigneeMap = profiles.reduce((acc, profile) => ({
+            ...acc,
+            [profile.id]: {
+              name: profile.full_name || 'Unknown',
+              avatar: profile.avatar_url || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80'
+            }
+          }), {});
+          setAssignees(assigneeMap);
+        }
       } catch (error) {
         console.error('Error fetching submissions:', error);
       } finally {
@@ -206,61 +226,68 @@ export default function BugReportsPage() {
                         </td>
                       </tr>
                     ) : (
-                      filteredBugs.map((bug) => (
-                        <tr key={bug.id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <input
-                              type="checkbox"
-                              checked={selected.includes(bug.id)}
-                              onChange={() => toggleSelect(bug.id)}
-                              className="rounded border-gray-300 text-black focus:ring-black"
-                            />
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="font-medium text-gray-900">{bug.title}</div>
-                            <div className="text-sm text-gray-500 line-clamp-1">{bug.description}</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(bug.status)}`}>
-                              {bug.status}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(bug.priority)}`}>
-                              {bug.priority}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                              <img
-                                className="h-8 w-8 rounded-full"
-                                src={bug.assignee.avatar}
-                                alt={bug.assignee.name}
+                      filteredBugs.map((bug) => {
+                        const assignee = assignees[bug.assignee_id] || {
+                          name: 'Unknown',
+                          avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80'
+                        };
+
+                        return (
+                          <tr key={bug.id} className="hover:bg-gray-50">
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <input
+                                type="checkbox"
+                                checked={selected.includes(bug.id)}
+                                onChange={() => toggleSelect(bug.id)}
+                                className="rounded border-gray-300 text-black focus:ring-black"
                               />
-                              <div className="ml-2">
-                                <div className="text-sm font-medium text-gray-900">{bug.assignee.name}</div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="font-medium text-gray-900">{bug.title}</div>
+                              <div className="text-sm text-gray-500 line-clamp-1">{bug.description}</div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(bug.status)}`}>
+                                {bug.status}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(bug.priority)}`}>
+                                {bug.priority}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex items-center">
+                                <Image
+                                  src={assignee.avatar}
+                                  alt={assignee.name}
+                                  width={32}
+                                  height={32}
+                                  className="rounded-full"
+                                />
+                                <span className="ml-2">{assignee.name}</span>
                               </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {bug.device}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {new Date(bug.createdAt).toLocaleDateString()}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {bug.screenshot && (
-                              <Image
-                                src={bug.screenshot}
-                                alt="Screenshot"
-                                width={80}
-                                height={48}
-                                className="rounded shadow"
-                              />
-                            )}
-                          </td>
-                        </tr>
-                      ))
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {bug.device}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {new Date(bug.createdAt).toLocaleDateString()}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              {bug.screenshot && (
+                                <Image
+                                  src={bug.screenshot}
+                                  alt="Screenshot"
+                                  width={80}
+                                  height={48}
+                                  className="rounded shadow"
+                                />
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })
                     )}
                   </tbody>
                 </table>

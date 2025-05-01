@@ -270,33 +270,46 @@ export default function Chatbot() {
                 console.log("Starting submission process...");
                 console.log("Bug data to submit:", bugData);
                 
-                // Create submission with collected data
-                const submissionData = {
-                  title: bugData.title,
-                  description: bugData.description,
-                  stepsToReproduce: bugData.stepsToReproduce,
-                  expectedBehavior: bugData.expectedBehavior,
-                  actualBehavior: bugData.actualBehavior,
-                  device: bugData.device,
-                  browser: bugData.browser,
-                  os: bugData.os,
-                  priority: bugData.priority,
-                  status: "Open",
-                  screenshot: imagePreview || "",
-                  assignee: {
-                    name: "You",
-                    avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
-                  },
-                  project: {
-                    id: "1",
-                    name: "Clever Project"
-                  },
-                  url: typeof window !== "undefined" ? window.location.href : "https://staging.bugsmasher.com/projects/123"
-                };
-
-                console.log("Prepared submission data:", submissionData);
-
                 try {
+                  // Get the current user's profile
+                  const { data: { user } } = await supabase.auth.getUser();
+                  if (!user) {
+                    throw new Error("No authenticated user found");
+                  }
+
+                  const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('id')
+                    .eq('id', user.id)
+                    .single();
+
+                  if (!profile) {
+                    throw new Error("No profile found for user");
+                  }
+
+                  // Create submission with collected data
+                  const submissionData = {
+                    title: bugData.title,
+                    description: bugData.description,
+                    stepsToReproduce: bugData.stepsToReproduce,
+                    expectedBehavior: bugData.expectedBehavior,
+                    actualBehavior: bugData.actualBehavior,
+                    device: bugData.device,
+                    browser: bugData.browser,
+                    os: bugData.os,
+                    priority: bugData.priority,
+                    status: "Open",
+                    screenshot: imagePreview || "",
+                    assignee_id: profile.id,
+                    project: {
+                      id: "1",
+                      name: "Clever Project"
+                    },
+                    url: typeof window !== "undefined" ? window.location.href : "https://staging.bugsmasher.com/projects/123"
+                  };
+
+                  console.log("Prepared submission data:", submissionData);
+
                   console.log("Calling createSubmission...");
                   const result = await createSubmission(submissionData);
                   console.log("Submission result:", result);
@@ -342,9 +355,9 @@ export default function Chatbot() {
                 }
               } else {
                 botResponse = "Bug report cancelled. You can start over if you'd like.";
-              setTimeout(() => {
+                setTimeout(() => {
                   resetChat();
-              }, 2000);
+                }, 2000);
               }
               break;
           }

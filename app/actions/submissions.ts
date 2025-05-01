@@ -13,10 +13,7 @@ export type Submission = {
   os: string;
   status: string;
   priority: string;
-  assignee: {
-    name: string;
-    avatar: string;
-  };
+  assignee_id: string;
   project: {
     id: string;
     name: string;
@@ -60,10 +57,7 @@ export async function getSubmissions(): Promise<Submission[]> {
       os: item.os,
       status: item.status,
       priority: item.priority,
-      assignee: {
-        name: item.assignee?.full_name || 'Unknown',
-        avatar: item.assignee?.avatar_url || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80'
-      },
+      assignee_id: item.assignee_id,
       project: item.project,
       url: item.url,
       screenshot: item.screenshot,
@@ -110,10 +104,7 @@ export async function getSubmissionById(id: string): Promise<Submission | null> 
       os: data.os,
       status: data.status,
       priority: data.priority,
-      assignee: {
-        name: data.assignee?.full_name || 'Unknown',
-        avatar: data.assignee?.avatar_url || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80'
-      },
+      assignee_id: data.assignee_id,
       project: data.project,
       url: data.url,
       screenshot: data.screenshot,
@@ -200,10 +191,7 @@ export async function createSubmission(submission: Omit<Submission, 'id' | 'crea
       os: data.os,
       status: data.status,
       priority: data.priority,
-      assignee: {
-        name: data.assignee?.full_name || 'Unknown',
-        avatar: data.assignee?.avatar_url || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80'
-      },
+      assignee_id: data.assignee_id,
       project: data.project,
       url: data.url,
       screenshot: data.screenshot,
@@ -231,7 +219,7 @@ export async function updateSubmission(id: string, submission: Partial<Submissio
         os: submission.os,
         status: submission.status,
         priority: submission.priority,
-        assignee: submission.assignee,
+        assignee_id: submission.assignee_id,
         project: submission.project,
         url: submission.url,
         screenshot: submission.screenshot,
@@ -257,7 +245,7 @@ export async function updateSubmission(id: string, submission: Partial<Submissio
       os: data.os,
       status: data.status,
       priority: data.priority,
-      assignee: data.assignee,
+      assignee_id: data.assignee_id,
       project: data.project,
       url: data.url,
       screenshot: data.screenshot,
