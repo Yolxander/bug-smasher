@@ -82,16 +82,21 @@ export function DashboardSidebar({ activePage }: { activePage: string }) {
         <Image src="/logo.png" alt="Bug Smasher Logo" width={60} height={60} className="mx-auto rounded-lg" />
       </div>
       <nav className="flex-1 px-3 py-2 space-y-1">
-        {navItems.map((item, index) => (
-          <Link
-            key={index}
-            href={item.href}
-            className={`flex items-center gap-3 rounded-md p-3 text-sm font-medium hover:bg-gray-100 ${item.href === activePage ? "bg-amber-400 text-black" : "text-gray-600"}`}
-          >
-            {getIcon(item.icon)}
-            <span>{item.label}</span>
-          </Link>
-        ))}
+        {navItems.map((item, index) => {
+          const isActive = pathname === item.href || activePage === item.href.replace('/', '');
+          return (
+            <Link
+              key={index}
+              href={item.href}
+              className={`flex items-center gap-3 rounded-md p-3 text-sm font-medium hover:bg-gray-100 ${
+                isActive ? "bg-amber-400 text-black" : "text-gray-600"
+              }`}
+            >
+              {getIcon(item.icon)}
+              <span>{item.label}</span>
+            </Link>
+          );
+        })}
       </nav>
       {/* Counselor profile */}
       <div className="mt-auto p-4 bg-white rounded-lg mx-3 mb-3 shadow">
