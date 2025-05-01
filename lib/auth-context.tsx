@@ -1,9 +1,12 @@
 import { createContext, useContext, useEffect, useState } from 'react'
-import { User } from '@supabase/supabase-js'
-import { supabase } from './supabase'
 import { useRouter } from 'next/navigation'
-import { getProfile, createProfile } from './profiles'
 import { toast } from '@/components/ui/use-toast'
+
+interface User {
+  id: number
+  email: string
+  name?: string
+}
 
 interface AuthContextType {
   user: User | null
@@ -22,92 +25,61 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<any | null>(null)
   const router = useRouter()
 
-  const handleProfileCheck = async (user: User | null) => {
-    if (!user) {
-      setProfile(null)
-      return
-    }
-
+  const fetchUser = async () => {
     try {
-      const { data: existingProfile, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single()
-
-      if (profileError) {
-        if (profileError.code === 'PGRST116') {
-          const { error: createError } = await supabase
-            .from('profiles')
-            .insert([
-              {
-                id: user.id,
-                email: user.email,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-                onboarding_completed: false
-              },
-            ])
-          
-          if (createError) throw createError
-          router.push('/onboarding')
-          return
-        }
-        throw profileError
-      }
-
-      if (existingProfile) {
-        setProfile(existingProfile)
-        if (!existingProfile.onboarding_completed) {
-          router.push('/onboarding')
-          return
-        }
+      const response = await fetch('/api/user', {
+        credentials: 'include',
+      })
+      
+      if (response.ok) {
+        const userData = await response.json()
+        setUser(userData)
+        setProfile(userData)
+      } else {
+        setUser(null)
+        setProfile(null)
       }
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'There was an error loading your profile',
-        variant: 'destructive',
-      })
-      router.push('/auth/login')
+      console.error('Error fetching user:', error)
+      setUser(null)
+      setProfile(null)
+    } finally {
+      setLoading(false)
     }
   }
 
   useEffect(() => {
-    // Check active sessions and sets the user
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null)
-      if (session?.user) {
-        handleProfileCheck(session.user)
-      }
-      setLoading(false)
-    })
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      setUser(session?.user ?? null)
-      if (session?.user) {
-        await handleProfileCheck(session.user)
-      } else {
-        setProfile(null)
-        if (!window.location.pathname.includes('/auth/login')) {
-          router.push('/auth/login')
-        }
-      }
-      setLoading(false)
-    })
-
-    return () => subscription.unsubscribe()
-  }, [router])
+    fetchUser()
+  }, [])
 
   const signIn = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password })
-      if (error) throw error
-      // The auth state change handler will handle the redirect
+      // First get CSRF cookie
+      await fetch('/sanctum/csrf-cookie', {
+        credentials: 'include',
+      })
+
+      const response = await fetch('/api/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ email, password }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.message || 'Login failed')
+      }
+
+      await fetchUser()
+      router.push('/')
     } catch (error) {
       toast({
         title: 'Error',
-        description: 'Invalid email or password',
+        description: error instanceof Error ? error.message : 'Invalid email or password',
         variant: 'destructive',
       })
       throw error
@@ -116,22 +88,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signUp = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signUp({ 
-        email, 
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`
-        }
+      // First get CSRF cookie
+      await fetch('/sanctum/csrf-cookie', {
+        credentials: 'include',
       })
-      if (error) throw error
+
+      const response = await fetch('/api/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ email, password }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.message || 'Registration failed')
+      }
+
       toast({
         title: 'Success',
         description: 'Please check your email to verify your account',
       })
+      router.push('/auth/login')
     } catch (error) {
       toast({
         title: 'Error',
-        description: 'There was an error creating your account',
+        description: error instanceof Error ? error.message : 'There was an error creating your account',
         variant: 'destructive',
       })
       throw error
@@ -140,8 +125,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     try {
-      const { error } = await supabase.auth.signOut()
-      if (error) throw error
+      const response = await fetch('/api/logout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+        credentials: 'include',
+      })
+
+      if (!response.ok) {
+        throw new Error('Logout failed')
+      }
+
+      setUser(null)
+      setProfile(null)
       router.push('/auth/login')
     } catch (error) {
       toast({

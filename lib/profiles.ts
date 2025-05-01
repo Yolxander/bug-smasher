@@ -1,5 +1,3 @@
-import { supabase } from './supabase'
-
 export type Profile = {
   id: string
   email: string
@@ -13,53 +11,94 @@ export type Profile = {
 }
 
 export async function createProfile(userId: string, email: string) {
-  const { error } = await supabase
-    .from('profiles')
-    .insert([
-      {
-        id: userId,
-        email: email,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        onboarding_completed: false
+  try {
+    const response = await fetch('/api/profile', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
       },
-    ])
+      credentials: 'include',
+      body: JSON.stringify({
+        id: userId,
+        email,
+        onboarding_completed: false
+      }),
+    })
 
-  if (error) throw error
+    if (!response.ok) {
+      throw new Error('Failed to create profile')
+    }
+
+    return await response.json()
+  } catch (error) {
+    console.error('Error creating profile:', error)
+    throw error
+  }
 }
 
 export async function getProfile(userId: string) {
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', userId)
-    .single()
+  try {
+    const response = await fetch('/api/profile', {
+      credentials: 'include',
+    })
 
-  if (error) throw error
-  return data as Profile
+    if (!response.ok) {
+      throw new Error('Failed to fetch profile')
+    }
+
+    return await response.json()
+  } catch (error) {
+    console.error('Error fetching profile:', error)
+    throw error
+  }
 }
 
-export async function updateProfile(userId: string, profileData: Partial<Profile>) {
-  const { error } = await supabase
-    .from('profiles')
-    .update({
-      ...profileData,
-      updated_at: new Date().toISOString()
+export async function updateProfile(userId: string, data: any) {
+  try {
+    const response = await fetch('/api/profile', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+      },
+      credentials: 'include',
+      body: JSON.stringify(data),
     })
-    .eq('id', userId)
 
-  if (error) throw error
+    if (!response.ok) {
+      throw new Error('Failed to update profile')
+    }
+
+    return await response.json()
+  } catch (error) {
+    console.error('Error updating profile:', error)
+    throw error
+  }
 }
 
-export async function completeOnboarding(userId: string, profileData: Partial<Profile>) {
-  const { error } = await supabase
-    .from('profiles')
-    .update({
-      ...profileData,
-      onboarding_completed: true,
-      updated_at: new Date().toISOString()
+export async function completeOnboarding(userId: string, data: any) {
+  try {
+    const response = await fetch('/api/profile', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+      },
+      credentials: 'include',
+      body: JSON.stringify({
+        ...data,
+        onboarding_completed: true
+      }),
     })
-    .eq('id', userId)
 
-  if (error) throw error
+    if (!response.ok) {
+      throw new Error('Failed to complete onboarding')
+    }
+
+    return await response.json()
+  } catch (error) {
+    console.error('Error completing onboarding:', error)
+    throw error
+  }
 } 

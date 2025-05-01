@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Send, Bot, User, X, Loader2, MessageSquare, RotateCcw } from "lucide-react";
 import { createSubmission } from "@/app/actions/submissions";
-import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/lib/auth-context"
 
 interface Message {
   type: "bot" | "user";
@@ -15,6 +15,7 @@ interface Message {
 type FlowType = "report" | "help" | "track" | "badges" | "feedback" | null;
 
 export default function Chatbot() {
+  const { user } = useAuth()
   const initialMessage = {
     type: "bot" as const,
     content: "Hi there! I'm your Bug Smasher Assistant. What would you like to do?",
@@ -65,6 +66,29 @@ export default function Chatbot() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (!user) return
+      
+      try {
+        const response = await fetch('/api/profile', {
+          credentials: 'include',
+        })
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch profile')
+        }
+        
+        const profile = await response.json()
+        // Use profile data as needed
+      } catch (error) {
+        console.error('Error fetching profile:', error)
+      }
+    }
+
+    fetchUserData()
+  }, [user])
 
   const resetChat = () => {
     setMessages([initialMessage]);
@@ -272,17 +296,15 @@ export default function Chatbot() {
                 
                 try {
                   // Get the current user's profile
-                  const { data: { user } } = await supabase.auth.getUser();
-                  if (!user) {
-                    throw new Error("No authenticated user found");
+                  const response = await fetch('/api/profile', {
+                    credentials: 'include',
+                  });
+                  
+                  if (!response.ok) {
+                    throw new Error("Failed to fetch user profile");
                   }
-
-                  const { data: profile } = await supabase
-                    .from('profiles')
-                    .select('id')
-                    .eq('id', user.id)
-                    .single();
-
+                  
+                  const profile = await response.json();
                   if (!profile) {
                     throw new Error("No profile found for user");
                   }

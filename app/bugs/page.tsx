@@ -7,9 +7,10 @@ import { Search, Bell, ChevronDown, Bug, CheckCircle, Clock, AlertTriangle } fro
 import { DashboardSidebar } from "@/components/DashboardSidebar";
 import { getSubmissions } from "../actions/submissions";
 import { Submission } from "../actions/submissions";
-import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/lib/auth-context"
 
 export default function BugReportsPage() {
+  const { user } = useAuth()
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState("All");
@@ -26,21 +27,32 @@ export default function BugReportsPage() {
 
         // Fetch assignee profiles
         const assigneeIds = [...new Set(data.map(sub => sub.assignee_id))];
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('id, full_name, avatar_url')
-          .in('id', assigneeIds);
+        const profiles = await Promise.all(
+          assigneeIds.map(async (id) => {
+            try {
+              const response = await fetch(`/api/profile/${id}`, {
+                credentials: 'include',
+              });
+              if (!response.ok) throw new Error('Failed to fetch profile');
+              return await response.json();
+            } catch (error) {
+              console.error('Error fetching profile:', error);
+              return null;
+            }
+          })
+        );
 
-        if (profiles) {
-          const assigneeMap = profiles.reduce((acc, profile) => ({
+        const assigneeMap = profiles.reduce((acc, profile) => {
+          if (!profile) return acc;
+          return {
             ...acc,
             [profile.id]: {
               name: profile.full_name || 'Unknown',
               avatar: profile.avatar_url || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80'
             }
-          }), {});
-          setAssignees(assigneeMap);
-        }
+          };
+        }, {});
+        setAssignees(assigneeMap);
       } catch (error) {
         console.error('Error fetching submissions:', error);
       } finally {
@@ -50,6 +62,29 @@ export default function BugReportsPage() {
 
     fetchSubmissions();
   }, []);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!user) return
+      
+      try {
+        const response = await fetch('/api/profile', {
+          credentials: 'include',
+        })
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch profile')
+        }
+        
+        const profile = await response.json()
+        // Use profile data as needed
+      } catch (error) {
+        console.error('Error fetching profile:', error)
+      }
+    }
+
+    fetchData()
+  }, [user])
 
   const statusOptions = ["All", "Open", "In Progress", "Resolved"];
   const priorityOptions = ["All", "High", "Medium", "Low"];

@@ -15,7 +15,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "@/components/ui/use-toast"
 import Image from "next/image"
 import { ArrowRight, ArrowLeft, Bug, Target, Users, Zap, X } from "lucide-react"
-import { supabase } from "@/lib/supabase"
 
 const onboardingSchema = z.object({
   full_name: z.string().min(2, { message: "Name must be at least 2 characters" }),
@@ -71,7 +70,7 @@ const features = [
 
 export default function OnboardingPage() {
   const router = useRouter()
-  const { user } = useAuth()
+  const { user, signOut } = useAuth()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [step, setStep] = useState(1) // 1: Welcome, 2: Features, 3: Team, 4: Profile
 
@@ -131,7 +130,7 @@ export default function OnboardingPage() {
 
   const handleExit = async () => {
     try {
-      await supabase.auth.signOut()
+      await signOut()
       router.push("/auth/login")
     } catch (error) {
       console.error("Error signing out:", error)
