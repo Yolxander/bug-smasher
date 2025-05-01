@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
@@ -13,9 +13,17 @@ export default function SignUpPage() {
   const router = useRouter();
   const { signUp } = useAuth();
   const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  // Update name when email changes
+  useEffect(() => {
+    if (email && !name) {
+      setName(email.split('@')[0]);
+    }
+  }, [email, name]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,7 +41,7 @@ export default function SignUpPage() {
     
     try {
       console.log('Starting signup process for:', email);
-      await signUp(email, password);
+      await signUp(email, password, name);
       console.log('Signup successful, showing success message');
       toast({
         title: "Check your email",
@@ -73,6 +81,15 @@ export default function SignUpPage() {
               required
             />
             <Input
+              type="text"
+              placeholder="Enter your name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full p-3 border rounded-lg focus-visible:ring-[#FFD700] focus-visible:border-[#FFD700]"
+              disabled={isLoading}
+              required
+            />
+            <Input
               type="password"
               placeholder="Create a strong password"
               value={password}
@@ -97,36 +114,21 @@ export default function SignUpPage() {
             className="w-full bg-black hover:bg-black/90 text-[#FFD700] py-3 rounded-lg border-2 border-[#FFD700] font-medium"
             disabled={isLoading}
           >
-            {isLoading ? "Creating Account..." : "Start Bug Hunting"}
+            {isLoading ? "Creating account..." : "Join the Bug Hunt"}
           </Button>
 
           <p className="text-center text-gray-600 text-sm">
-            Already hunting bugs?{" "}
+            Already a bug hunter?{" "}
             <Link href="/auth/login" className="text-[#FFD700] hover:text-[#F4C430] font-medium">
               Sign In
             </Link>
           </p>
         </form>
 
-        <div className="mt-8 space-y-4">
-          <div className="flex items-center gap-2">
-            <div className="p-2 bg-black/5 rounded-full">
-              <Image src="/target-icon.svg" alt="Target" width={20} height={20} />
-            </div>
-            <p className="text-sm text-gray-600">Find and report software issues</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="p-2 bg-black/5 rounded-full">
-              <Image src="/reward-icon.svg" alt="Reward" width={20} height={20} />
-            </div>
-            <p className="text-sm text-gray-600">Earn rewards for verified bugs</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="p-2 bg-black/5 rounded-full">
-              <Image src="/community-icon.svg" alt="Community" width={20} height={20} />
-            </div>
-            <p className="text-sm text-gray-600">Join a community of bug hunters</p>
-          </div>
+        <div className="mt-8 text-center">
+          <p className="text-xs text-gray-500">
+            By creating an account, you agree to help improve software quality and follow our community guidelines.
+          </p>
         </div>
       </div>
 

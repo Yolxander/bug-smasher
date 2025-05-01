@@ -14,7 +14,7 @@ interface AuthContextType {
   user: User | null
   loading: boolean
   signIn: (email: string, password: string) => Promise<void>
-  signUp: (email: string, password: string) => Promise<void>
+  signUp: (email: string, password: string, name?: string) => Promise<void>
   signOut: () => Promise<void>
   profile: any | null
 }
@@ -92,7 +92,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const signUp = async (email: string, password: string) => {
+  const signUp = async (email: string, password: string, name?: string) => {
     try {
       // First get CSRF cookie
       const csrfResponse = await fetch(`${API_URL}/sanctum/csrf-cookie`, {
@@ -102,6 +102,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!csrfResponse.ok) {
         throw new Error('Failed to get CSRF token')
       }
+
+      // Use provided name or generate from email
+      const userName = name || email.split('@')[0]
 
       const response = await fetch(`${API_URL}/api/register`, {
         method: 'POST',
@@ -113,8 +116,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         body: JSON.stringify({ 
           email, 
           password,
-          name: email.split('@')[0], // Use the part before @ as the name
-          password_confirmation: password // Laravel requires password confirmation
+          name: userName,
+          password_confirmation: password
         }),
       })
 
