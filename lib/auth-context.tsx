@@ -2,6 +2,8 @@ import { createContext, useContext, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from '@/components/ui/use-toast'
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000'
+
 interface User {
   id: number
   email: string
@@ -27,7 +29,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchUser = async () => {
     try {
-      const response = await fetch('/api/user', {
+      const response = await fetch(`${API_URL}/api/user`, {
         credentials: 'include',
       })
       
@@ -55,11 +57,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signIn = async (email: string, password: string) => {
     try {
       // First get CSRF cookie
-      await fetch('/sanctum/csrf-cookie', {
+      const csrfResponse = await fetch(`${API_URL}/sanctum/csrf-cookie`, {
         credentials: 'include',
       })
 
-      const response = await fetch('/api/login', {
+      if (!csrfResponse.ok) {
+        throw new Error('Failed to get CSRF token')
+      }
+
+      const response = await fetch(`${API_URL}/api/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -89,23 +95,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signUp = async (email: string, password: string) => {
     try {
       // First get CSRF cookie
-      await fetch('/sanctum/csrf-cookie', {
+      const csrfResponse = await fetch(`${API_URL}/sanctum/csrf-cookie`, {
         credentials: 'include',
       })
 
-      const response = await fetch('/api/register', {
+      if (!csrfResponse.ok) {
+        throw new Error('Failed to get CSRF token')
+      }
+
+      const response = await fetch(`${API_URL}/api/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-Requested-With': 'XMLHttpRequest',
         },
         credentials: 'include',
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ 
+          email, 
+          password,
+          name: email.split('@')[0], // Use the part before @ as the name
+          password_confirmation: password // Laravel requires password confirmation
+        }),
       })
 
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.message || 'Registration failed')
+        const errorData = await response.json()
+        // Format validation errors into a readable message
+        const errorMessage = errorData.message || 
+          (errorData.errors ? Object.values(errorData.errors).flat().join(', ') : 'Registration failed')
+        throw new Error(errorMessage)
       }
 
       toast({
@@ -125,7 +143,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     try {
-      const response = await fetch('/api/logout', {
+      const response = await fetch(`${API_URL}/api/logout`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
