@@ -93,53 +93,46 @@ export default function OnboardingPage() {
   })
 
   const onSubmit = async (values: z.infer<typeof onboardingSchema>) => {
-    console.log('Form submitted with values:', values)
-    
-    if (!user) {
-      console.log('No user found')
-      toast({
-        title: "Error",
-        description: "User not authenticated",
-        variant: "destructive",
-      })
-      return
-    }
-
-    setIsSubmitting(true)
     try {
-      console.log('Creating profile with data:', {
-        ...values,
-        email: user.email
-      })
-
-      const profileData = {
-        ...values,
-        email: user.email
+      setLoading(true)
+      setError(null)
+      
+      if (!user || !user.email) {
+        console.log('No user or email found')
+        setError('User not authenticated')
+        return
       }
 
-      console.log('Calling completeOnboarding with:', profileData)
+      console.log('User data:', user)
+      console.log('Form submitted with values:', values)
+      
+      const profileData = {
+        full_name: values.full_name,
+        role: values.role,
+        bio: values.bio,
+        email: user.email,
+        user_id: user.id
+      }
+
+      console.log('Creating profile with data:', profileData)
+      
       const result = await completeOnboarding(profileData)
       console.log('completeOnboarding result:', result)
-      
-      if (!result) {
-        throw new Error("Failed to create profile")
+
+      if (result) {
+        toast({
+          title: "Profile created successfully",
+          description: "Your profile has been created and you can now access all features.",
+        })
+        router.push('/')
+      } else {
+        throw new Error('Failed to create profile')
       }
-
-      toast({
-        title: "Profile created",
-        description: "Your profile has been created successfully",
-      })
-
-      router.push("/")
     } catch (error) {
-      console.error("Error creating profile:", error)
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to create profile",
-        variant: "destructive",
-      })
+      console.error('Error creating profile:', error)
+      setError(error instanceof Error ? error.message : 'Failed to create profile')
     } finally {
-      setIsSubmitting(false)
+      setLoading(false)
     }
   }
 

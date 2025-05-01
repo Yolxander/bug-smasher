@@ -9,14 +9,12 @@ import { getSubmissions } from './actions/submissions'
 import { useEffect, useState } from 'react'
 import { Submission } from './actions/submissions'
 import { useRouter } from "next/navigation"
-import { getProfile } from "@/lib/profiles"
 
 export default function HomePage() {
   const router = useRouter()
-  const { user } = useAuth()
+  const { user, profileId } = useAuth()
   const [submissions, setSubmissions] = useState<Submission[]>([])
   const [loading, setLoading] = useState(true)
-  const [profile, setProfile] = useState<any>(null)
 
   useEffect(() => {
     const checkProfile = async () => {
@@ -26,20 +24,11 @@ export default function HomePage() {
       }
 
       try {
-        const profileData = await getProfile(user.id)
-        setProfile(profileData)
-        
-        if (!profileData) {
-          router.push("/onboarding")
-          return
-        }
-
         // Only fetch submissions if we have a valid profile
         const data = await getSubmissions()
         setSubmissions(data)
       } catch (error) {
-        console.error("Error checking profile or fetching submissions:", error)
-        router.push("/onboarding")
+        console.error("Error fetching submissions:", error)
       } finally {
         setLoading(false)
       }
@@ -72,8 +61,13 @@ export default function HomePage() {
     }
   }
 
-  if (!user || !profile) {
-    return null // Don't render anything while checking auth or profile
+  if (!user) {
+    return null // Don't render anything while checking auth
+  }
+
+  if (!profileId) {
+    router.push("/onboarding")
+    return null
   }
 
   return (
