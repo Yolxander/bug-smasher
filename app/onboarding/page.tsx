@@ -124,7 +124,8 @@ export default function OnboardingPage() {
           title: "Profile created successfully",
           description: "Your profile has been created and you can now access all features.",
         })
-        router.push('/')
+        // Force a refresh of the auth context
+        window.location.href = '/'
       } else {
         throw new Error('Failed to create profile')
       }

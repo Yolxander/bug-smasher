@@ -4,7 +4,7 @@ import { useAuth } from '@/lib/auth-context'
 import { DashboardSidebar } from "@/components/DashboardSidebar"
 import Image from 'next/image'
 import Link from 'next/link'
-import { Search, Bell, ChevronDown, Bug, CheckCircle, Clock, AlertTriangle } from "lucide-react"
+import { Search, Bell, ChevronDown, Bug, CheckCircle, Clock, AlertTriangle, ArrowRight } from "lucide-react"
 import { getSubmissions } from './actions/submissions'
 import { useEffect, useState } from 'react'
 import { Submission } from './actions/submissions'
@@ -26,9 +26,14 @@ export default function HomePage() {
       try {
         // Only fetch submissions if we have a valid profile
         const data = await getSubmissions()
+        if (!data) {
+          setSubmissions([])
+          return
+        }
         setSubmissions(data)
       } catch (error) {
         console.error("Error fetching submissions:", error)
+        setSubmissions([])
       } finally {
         setLoading(false)
       }
@@ -38,15 +43,16 @@ export default function HomePage() {
   }, [user, router])
 
   // Calculate status counts
-  const statusCounts = submissions.reduce((acc, submission) => {
+  const statusCounts = submissions?.reduce((acc, submission) => {
+    if (!submission?.status) return acc
     acc[submission.status] = (acc[submission.status] || 0) + 1
     return acc
-  }, {} as Record<string, number>)
+  }, {} as Record<string, number>) || {}
 
   // Get recent submissions (last 2)
   const recentSubmissions = submissions
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .slice(0, 2)
+    ?.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 2) || []
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
@@ -120,6 +126,44 @@ export default function HomePage() {
           </header>
 
           <main className="flex-1 p-8">
+            {/* Promotional Cards */}
+            <div className="grid grid-cols-2 gap-8 mb-8">
+              <div className="bg-[#FFF8E7] rounded-xl p-6 flex items-center justify-between">
+                <div className="space-y-2">
+                  <h3 className="text-lg font-semibold">Report Bugs Smarter</h3>
+                  <p className="text-sm text-gray-600 max-w-sm">
+                    Use our AI-powered system to submit detailed bug reports. Our smart matching system helps assign the right developer to fix your issues.
+                  </p>
+                  <button className="mt-4 text-sm font-medium bg-black text-white px-4 py-2 rounded-lg hover:bg-black/90">
+                    Submit Bug Report
+                  </button>
+                </div>
+                <div className="relative w-32 h-32">
+                  <Image
+                    src="/bug-illustration.png"
+                    alt="Bug reporting illustration"
+                    fill
+                    className="object-contain"
+                  />
+                </div>
+              </div>
+
+              <div className="bg-black rounded-xl p-6 text-white">
+                <div className="mb-4">
+                  <span className="text-sm font-medium">Latest Update</span>
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-lg font-semibold">New Bug Tracking Features</h3>
+                  <p className="text-sm text-gray-400">Platform Update · Real-time bug status tracking now available</p>
+                  <button className="mt-2 text-sm font-medium bg-white text-black px-4 py-2 rounded-lg hover:bg-gray-100 flex items-center gap-2">
+                    Learn More
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Existing Stats Grid */}
             <div className="grid grid-cols-4 gap-8 mb-8">
               <div className="bg-white rounded-xl shadow-sm p-6">
                 <div className="flex items-center">

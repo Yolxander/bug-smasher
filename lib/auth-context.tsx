@@ -46,58 +46,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       console.log('Checking auth status...')
       
-      // First check localStorage for user data and token
+      // Check localStorage first
       const storedUser = localStorage.getItem('user')
-      const storedToken = localStorage.getItem('token')
-      
-      if (storedUser && storedToken) {
+      if (storedUser) {
         const userData = JSON.parse(storedUser)
         console.log('Found stored user data:', userData)
         setUser(userData)
-      }
-
-      // Then verify with the server
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/user`, {
-        credentials: 'include',
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${storedToken}`,
-        },
-      })
-
-      if (response.ok) {
-        const userData = await response.json()
-        console.log('Server user data received:', userData)
         
-        // Update both state and localStorage
-        const updatedUser = {
-          id: userData.id,
-          email: userData.email,
-          name: userData.name,
-          profile_id: userData.profile_id
+        // Check for profile ID in localStorage
+        const storedProfileId = localStorage.getItem('profileId')
+        if (storedProfileId) {
+          console.log('Found stored profile ID:', storedProfileId)
+          setProfileId(storedProfileId)
+        } else {
+          // If no profile ID in localStorage, try to fetch it
+          const profile = await getCurrentProfile()
+          if (profile) {
+            console.log('Fetched profile data:', profile)
+            setProfileId(profile.id)
+            localStorage.setItem('profileId', profile.id)
+          }
         }
-        
-        setUser(updatedUser)
-        localStorage.setItem('user', JSON.stringify(updatedUser))
-
-        // Fetch profile data
-        const profile = await getCurrentProfile()
-        console.log('Profile data received:', profile)
-        if (profile) {
-          setProfileId(profile.id)
-        }
-      } else {
-        console.log('No authenticated user found')
-        setUser(null)
-        setProfileId(null)
-        localStorage.removeItem('user')
-        localStorage.removeItem('token')
       }
     } catch (error) {
       console.error('Error checking auth:', error)
-      setError(error instanceof Error ? error.message : 'Failed to check authentication')
-    } finally {
-      setLoading(false)
+      setUser(null)
+      setProfileId(null)
     }
   }
 
@@ -145,9 +119,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem('user', JSON.stringify(user))
       localStorage.setItem('token', token)
 
-      // Set profile ID if profile exists
+      // Set profile ID and store profile data if profile exists
       if (userData.profile) {
         setProfileId(userData.profile.id)
+        localStorage.setItem('profileId', userData.profile.id)
+        localStorage.setItem('profile', JSON.stringify(userData.profile))
       }
 
       router.push('/')

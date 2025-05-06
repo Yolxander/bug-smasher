@@ -33,6 +33,13 @@ export async function getProfileById(id: string): Promise<Profile | null> {
 
 export async function getCurrentProfile(): Promise<Profile | null> {
   try {
+    // First try to get the profile from localStorage
+    const storedProfile = localStorage.getItem('profile')
+    if (storedProfile) {
+      return JSON.parse(storedProfile)
+    }
+
+    // If not in localStorage, try to get it from the API
     const response = await fetch(`${API_URL}/api/profiles`, {
       credentials: 'include',
     })
@@ -41,7 +48,14 @@ export async function getCurrentProfile(): Promise<Profile | null> {
       throw new Error('Failed to fetch profile')
     }
 
-    return await response.json()
+    const profile = await response.json()
+    
+    // Store the profile in localStorage for future use
+    if (profile) {
+      localStorage.setItem('profile', JSON.stringify(profile))
+    }
+
+    return profile
   } catch (error) {
     console.error('Error fetching profile:', error)
     return null
@@ -96,7 +110,8 @@ export async function completeOnboarding(data: {
           role: data.role,
           bio: data.bio,
           email: data.email,
-          user_id: data.user_id
+          user_id: data.user_id,
+          onboarding_completed: true
         }
       }
     }
@@ -129,9 +144,6 @@ export async function completeOnboarding(data: {
     if (result.data && result.data.id) {
       localStorage.setItem('profileId', result.data.id)
     }
-
-    // Redirect to home page
-    window.location.href = '/'
 
     return result
   } catch (error) {

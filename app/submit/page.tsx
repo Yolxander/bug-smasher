@@ -5,7 +5,8 @@ import Link from "next/link";
 import { Bell, ChevronDown, ArrowLeft } from "lucide-react";
 import { DashboardSidebar } from "@/components/DashboardSidebar";
 import { StepIndicator } from "../components/StepIndicator";
-import { createSubmission } from "../actions/submissions";
+import { createBug } from "../actions/bugs";
+import { toast } from "@/components/ui/use-toast";
 
 export default function SubmitBugPage() {
   const [currentStep, setCurrentStep] = useState("details");
@@ -23,6 +24,7 @@ export default function SubmitBugPage() {
     status: "Open",
     screenshot: "",
     assignee: {
+      id: "1",
       name: "You",
       avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
     },
@@ -89,7 +91,31 @@ export default function SubmitBugPage() {
     
     setLoading(true);
     try {
-      await createSubmission(formData);
+      const bugData = {
+        title: formData.title,
+        description: formData.description,
+        steps_to_reproduce: formData.stepsToReproduce,
+        expected_behavior: formData.expectedBehavior,
+        actual_behavior: formData.actualBehavior,
+        environment: {
+          device: formData.device,
+          browser: formData.browser,
+          os: formData.os
+        },
+        priority: formData.priority,
+        status: formData.status,
+        screenshot: formData.screenshot,
+        assignee_id: formData.assignee.id,
+        project_id: formData.project.id,
+        url: formData.url
+      };
+
+      await createBug(bugData);
+      toast({
+        title: "Success",
+        description: "Bug report submitted successfully",
+      });
+
       // Reset form and go back to first step
       setFormData({
         title: "",
@@ -104,6 +130,7 @@ export default function SubmitBugPage() {
         status: "Open",
         screenshot: "",
         assignee: {
+          id: "1",
           name: "You",
           avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
         },
@@ -116,6 +143,11 @@ export default function SubmitBugPage() {
       setCurrentStep("details");
     } catch (error) {
       console.error('Error submitting bug:', error);
+      toast({
+        title: "Error",
+        description: "Failed to submit bug report. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }

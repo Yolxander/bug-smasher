@@ -8,7 +8,7 @@ import { DashboardSidebar } from "@/components/DashboardSidebar";
 import { getSubmissions } from "../actions/submissions";
 import { Submission } from "../actions/submissions";
 import { useAuth } from "@/lib/auth-context"
-import { getProfileById, Profile } from '../actions/profiles'
+import { getProfileById, getCurrentProfile, Profile } from '../actions/profiles'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000'
 
@@ -21,20 +21,28 @@ export default function BugReportsPage() {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
   const [assignees, setAssignees] = useState<Record<string, { name: string; avatar: string }>>({});
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchSubmissions = async () => {
       try {
         const data = await getSubmissions();
+        if (!data) {
+          setError('Failed to fetch submissions');
+          return;
+        }
         setSubmissions(data);
 
         // Fetch assignee profiles
-        const assigneeIds = [...new Set(data.map((sub: Submission) => sub.assignee_id))];
+        const assigneeIds = [...new Set(data.map((sub: Submission) => sub.assignee_id).filter(Boolean))];
         const profiles = await Promise.all(
           assigneeIds.map(async (id) => {
             try {
               const profile = await getProfileById(id);
-              if (!profile) throw new Error('Failed to fetch profile');
+              if (!profile) {
+                console.warn(`Profile not found for ID: ${id}`);
+                return null;
+              }
               return profile;
             } catch (error) {
               console.error('Error fetching profile:', error);
@@ -56,6 +64,7 @@ export default function BugReportsPage() {
         setAssignees(assigneeMap);
       } catch (error) {
         console.error('Error fetching submissions:', error);
+        setError('Failed to fetch submissions');
       } finally {
         setLoading(false);
       }
@@ -71,7 +80,7 @@ export default function BugReportsPage() {
       try {
         const profile = await getCurrentProfile();
         if (!profile) {
-          throw new Error('Failed to fetch profile');
+          console.warn('No profile found for current user');
         }
       } catch (error) {
         console.error('Error fetching profile:', error)
@@ -85,11 +94,12 @@ export default function BugReportsPage() {
   const priorityOptions = ["All", "High", "Medium", "Low"];
 
   const filteredBugs = submissions.filter((bug) => {
+    if (!bug) return false;
     const matchesStatus = status === "All" || bug.status === status;
     const matchesPriority = priority === "All" || bug.priority === priority;
     const matchesSearch =
-      bug.title.toLowerCase().includes(search.toLowerCase()) ||
-      bug.description.toLowerCase().includes(search.toLowerCase());
+      bug.title?.toLowerCase().includes(search.toLowerCase()) ||
+      bug.description?.toLowerCase().includes(search.toLowerCase());
     return matchesStatus && matchesPriority && matchesSearch;
   });
 
