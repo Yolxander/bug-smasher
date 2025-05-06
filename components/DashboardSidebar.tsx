@@ -2,16 +2,39 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { usePathname } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
-import { Home, FileText, Settings, LogOut } from 'lucide-react'
+import { ChevronDown, ChevronRight } from 'lucide-react'
 
-const navItems = [
+interface NavItem {
+  icon: string;
+  label: string;
+  href: string;
+  children?: NavItem[];
+}
+
+const navItems: NavItem[] = [
   { icon: "dashboard", label: "Dashboard", href: "/" },
-  { icon: "bug", label: "Bug Reports", href: "/bugs" },
-  { icon: "plus-circle", label: "Submit Bug", href: "/submit" },
-  { icon: "clipboard", label: "My Submissions", href: "/my-submissions" },
+  {
+    icon: "bug",
+    label: "Bugs",
+    href: "#",
+    children: [
+      { icon: "bug", label: "Bug Reports", href: "/bugs" },
+      { icon: "plus-circle", label: "Submit Bug", href: "/submit" },
+      { icon: "clipboard", label: "My Submissions", href: "/my-submissions" },
+    ]
+  },
+  {
+    icon: "check-square",
+    label: "QA",
+    href: "#",
+    children: [
+      { icon: "check-square", label: "QA List", href: "/qa" },
+      { icon: "plus-circle", label: "Submit QA", href: "/qa/submit" },
+    ]
+  },
   { icon: "users", label: "Team", href: "/team" },
   { icon: "trophy", label: "Badges", href: "/badges" },
   { icon: "book", label: "Docs", href: "/docs" },
@@ -38,6 +61,10 @@ function getIcon(icon: string) {
     case "clipboard":
       return (
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-500"><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M4 7h16v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/></svg>
+      );
+    case "check-square":
+      return (
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-500"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
       );
     case "users":
       return (
@@ -67,6 +94,18 @@ function getIcon(icon: string) {
 export function DashboardSidebar({ activePage }: { activePage: string }) {
   const pathname = usePathname()
   const { signOut } = useAuth()
+  const [expandedItems, setExpandedItems] = useState<string[]>([])
+
+  // Automatically expand dropdowns when a child page is active
+  useEffect(() => {
+    const activeParents = navItems
+      .filter(item => item.children?.some(child => 
+        pathname === child.href || activePage === child.href.replace('/', '')
+      ))
+      .map(item => item.label)
+    
+    setExpandedItems(activeParents)
+  }, [pathname, activePage])
 
   const handleLogout = async () => {
     try {
@@ -76,27 +115,78 @@ export function DashboardSidebar({ activePage }: { activePage: string }) {
     }
   }
 
+  const toggleExpand = (label: string) => {
+    setExpandedItems(prev =>
+      prev.includes(label)
+        ? prev.filter(item => item !== label)
+        : [...prev, label]
+    )
+  }
+
+  const isActive = (item: NavItem) => {
+    if (item.href === '#') return false
+    // Ensure exact path matching by comparing the full paths
+    return pathname === item.href
+  }
+
+  const isChildActive = (item: NavItem) => {
+    if (!item.children) return false
+    return item.children.some(child => isActive(child))
+  }
+
+  const renderNavItem = (item: NavItem, isChild = false) => {
+    const hasChildren = item.children && item.children.length > 0
+    const isExpanded = expandedItems.includes(item.label)
+    const isItemActive = isActive(item)
+    const isParentActive = isChildActive(item)
+
+    return (
+      <div key={item.label}>
+        <div
+          className={`flex items-center justify-between rounded-md p-3 text-sm font-medium hover:bg-gray-100 ${
+            isItemActive ? "bg-amber-400 text-black" : "text-gray-600"
+          } ${isChild ? "pl-8" : ""}`}
+        >
+          {hasChildren ? (
+            <button
+              onClick={() => toggleExpand(item.label)}
+              className="flex items-center gap-3 flex-1"
+            >
+              {getIcon(item.icon)}
+              <span>{item.label}</span>
+            </button>
+          ) : (
+            <Link href={item.href} className="flex items-center gap-3 flex-1">
+              {getIcon(item.icon)}
+              <span>{item.label}</span>
+            </Link>
+          )}
+          {hasChildren && (
+            <button onClick={() => toggleExpand(item.label)}>
+              {isExpanded ? (
+                <ChevronDown className="h-4 w-4" />
+              ) : (
+                <ChevronRight className="h-4 w-4" />
+              )}
+            </button>
+          )}
+        </div>
+        {hasChildren && isExpanded && (
+          <div className="mt-1">
+            {item.children.map(child => renderNavItem(child, true))}
+          </div>
+        )}
+      </div>
+    )
+  }
+
   return (
     <div className="w-[232px] flex flex-col rounded-l-3xl shadow-md border-r border-gray-100">
       <div className="p-6 flex justify-start rounded-lg">
         <Image src="/logo.png" alt="Bug Smasher Logo" width={60} height={60} className="mx-auto rounded-lg" />
       </div>
       <nav className="flex-1 px-3 py-2 space-y-1">
-        {navItems.map((item, index) => {
-          const isActive = pathname === item.href || activePage === item.href.replace('/', '');
-          return (
-            <Link
-              key={index}
-              href={item.href}
-              className={`flex items-center gap-3 rounded-md p-3 text-sm font-medium hover:bg-gray-100 ${
-                isActive ? "bg-amber-400 text-black" : "text-gray-600"
-              }`}
-            >
-              {getIcon(item.icon)}
-              <span>{item.label}</span>
-            </Link>
-          );
-        })}
+        {navItems.map(item => renderNavItem(item))}
       </nav>
       {/* Counselor profile */}
       <div className="mt-auto p-4 bg-white rounded-lg mx-3 mb-3 shadow">
