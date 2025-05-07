@@ -144,11 +144,50 @@ export function DashboardSidebar({ activePage }: { activePage: string }) {
     const isActive = pathname === item.href || (item.children && item.children.some(child => pathname === child.href))
     const isExpanded = expandedItems.includes(item.label)
 
+    if (item.children) {
+      return (
+        <div key={item.label} className="space-y-1">
+          <div
+            onClick={() => toggleExpand(item.label)}
+            className={`flex items-center px-3 py-2 text-sm font-medium rounded-md cursor-pointer ${
+              isActive ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+            }`}
+          >
+            <div className="flex items-center flex-1">
+              <div className="flex-shrink-0 w-5 h-5">
+                {getIcon(item.icon)}
+              </div>
+              <span className="ml-3">{item.label}</span>
+            </div>
+            <ChevronDown className={`h-4 w-4 transform transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+          </div>
+          {isExpanded && (
+            <div className="pl-8 space-y-1">
+              {item.children.map(child => (
+                <Link
+                  key={child.label}
+                  href={child.href}
+                  className={`flex items-center px-3 py-2 text-sm font-medium rounded-md ${
+                    pathname === child.href ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                  }`}
+                >
+                  <div className="flex-shrink-0 w-5 h-5">
+                    {getIcon(child.icon)}
+                  </div>
+                  <span className="ml-3">{child.label}</span>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+      )
+    }
+
     return (
       <div key={item.label} className="space-y-1">
-        <div
-          onClick={() => item.children && toggleExpand(item.label)}
-          className={`flex items-center px-3 py-2 text-sm font-medium rounded-md cursor-pointer ${
+        <Link
+          href={item.href}
+          className={`flex items-center px-3 py-2 text-sm font-medium rounded-md ${
             isActive ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
           }`}
         >
@@ -158,28 +197,7 @@ export function DashboardSidebar({ activePage }: { activePage: string }) {
             </div>
             <span className="ml-3">{item.label}</span>
           </div>
-          {item.children && (
-            <ChevronDown className={`h-4 w-4 transform transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-          )}
-        </div>
-        {item.children && isExpanded && (
-          <div className="pl-8 space-y-1">
-            {item.children.map(child => (
-              <Link
-                key={child.label}
-                href={child.href}
-                className={`flex items-center px-3 py-2 text-sm font-medium rounded-md ${
-                  pathname === child.href ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                }`}
-              >
-                <div className="flex-shrink-0 w-5 h-5">
-                  {getIcon(child.icon)}
-                </div>
-                <span className="ml-3">{child.label}</span>
-              </Link>
-            ))}
-          </div>
-        )}
+        </Link>
       </div>
     )
   }
