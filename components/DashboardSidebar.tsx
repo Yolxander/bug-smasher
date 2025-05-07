@@ -17,6 +17,15 @@ interface NavItem {
 const navItems: NavItem[] = [
   { icon: "dashboard", label: "Dashboard", href: "/" },
   {
+    icon: "check-square",
+    label: "QA",
+    href: "#",
+    children: [
+      { icon: "check-square", label: "QA List", href: "/qa" },
+      { icon: "plus-circle", label: "Submit QA", href: "/qa/submit" },
+    ]
+  },
+  {
     icon: "bug",
     label: "Bugs",
     href: "#",
@@ -26,15 +35,7 @@ const navItems: NavItem[] = [
       { icon: "clipboard", label: "My Submissions", href: "/my-submissions" },
     ]
   },
-  {
-    icon: "check-square",
-    label: "QA",
-    href: "#",
-    children: [
-      { icon: "check-square", label: "QA List", href: "/qa" },
-      { icon: "plus-circle", label: "Submit QA", href: "/qa/submit" },
-    ]
-  },
+ 
   { icon: "users", label: "Team", href: "/team" },
   { icon: "trophy", label: "Badges", href: "/badges" },
   { icon: "book", label: "Docs", href: "/docs" },

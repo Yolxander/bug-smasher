@@ -92,7 +92,7 @@ export default function HomePage() {
       <div className="flex">
         <DashboardSidebar activePage="dashboard" />
         <div className="flex-1">
-          <header className="bg-white shadow-sm">
+          <header className="bg-white shadow-md">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="flex justify-between h-16">
                 <div className="flex">
@@ -139,7 +139,7 @@ export default function HomePage() {
           <main className="flex-1 p-8">
             {/* Promotional Cards */}
             <div className="grid grid-cols-2 gap-8 mb-8">
-              <div className="bg-[#FFF8E7] rounded-xl p-6 flex items-center justify-between">
+              <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-200 p-6 flex items-center justify-between">
                 <div className="space-y-2">
                   <h3 className="text-lg font-semibold">Report Bugs Smarter</h3>
                   <p className="text-sm text-gray-600 max-w-sm">
@@ -159,7 +159,7 @@ export default function HomePage() {
                 </div>
               </div>
 
-              <div className="bg-black rounded-xl p-6 text-white">
+              <div className="bg-black rounded-xl shadow-md hover:shadow-lg transition-shadow duration-200 p-6 text-white">
                 <div className="mb-4">
                   <span className="text-sm font-medium">Latest Update</span>
                 </div>
@@ -176,7 +176,7 @@ export default function HomePage() {
 
             {/* Existing Stats Grid */}
             <div className="grid grid-cols-4 gap-8 mb-8">
-              <div className="bg-white rounded-xl shadow-sm p-6">
+              <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-200 p-6">
                 <div className="flex items-center">
                   <div className="p-3 rounded-full bg-red-100 text-red-600">
                     <Bug className="h-6 w-6" />
@@ -187,7 +187,7 @@ export default function HomePage() {
                   </div>
                 </div>
               </div>
-              <div className="bg-white rounded-xl shadow-sm p-6">
+              <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-200 p-6">
                 <div className="flex items-center">
                   <div className="p-3 rounded-full bg-yellow-100 text-yellow-600">
                     <Clock className="h-6 w-6" />
@@ -198,7 +198,7 @@ export default function HomePage() {
                   </div>
                 </div>
               </div>
-              <div className="bg-white rounded-xl shadow-sm p-6">
+              <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-200 p-6">
                 <div className="flex items-center">
                   <div className="p-3 rounded-full bg-green-100 text-green-600">
                     <CheckCircle className="h-6 w-6" />
@@ -209,7 +209,7 @@ export default function HomePage() {
                   </div>
                 </div>
               </div>
-              <div className="bg-white rounded-xl shadow-sm p-6">
+              <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-200 p-6">
                 <div className="flex items-center">
                   <div className="p-3 rounded-full bg-gray-100 text-gray-600">
                     <AlertTriangle className="h-6 w-6" />
@@ -224,7 +224,7 @@ export default function HomePage() {
 
             {/* Stats Overview */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              <div className="bg-white p-8 rounded-xl shadow-sm">
+              <div className="bg-white p-8 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-200">
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="text-base font-medium text-gray-500">Active QA Projects</h3>
                   <CheckSquare className="h-6 w-6 text-gray-400" />
@@ -236,7 +236,7 @@ export default function HomePage() {
                 </div>
               </div>
 
-              <div className="bg-white p-8 rounded-xl shadow-sm">
+              <div className="bg-white p-8 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-200">
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="text-base font-medium text-gray-500">QA Items Completed</h3>
                   <CheckCircle className="h-6 w-6 text-gray-400" />
@@ -248,7 +248,7 @@ export default function HomePage() {
                 </div>
               </div>
 
-              <div className="bg-white p-8 rounded-xl shadow-sm">
+              <div className="bg-white p-8 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-200">
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="text-base font-medium text-gray-500">Active Reviewers</h3>
                   <Users className="h-6 w-6 text-gray-400" />
@@ -264,7 +264,7 @@ export default function HomePage() {
             {/* Recent Activity and QA Projects */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {/* Recent Bug Reports */}
-              <div className="bg-white rounded-xl shadow-sm">
+              <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-200 p-6">
                 <div className="p-6 border-b border-gray-100">
                   <h2 className="text-lg font-semibold text-gray-900">Recent Bug Reports</h2>
                 </div>
@@ -295,7 +295,7 @@ export default function HomePage() {
               </div>
 
               {/* Active QA Projects */}
-              <div className="bg-white rounded-xl shadow-sm">
+              <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-200 p-6">
                 <div className="p-6 border-b border-gray-100">
                   <h2 className="text-lg font-semibold text-gray-900">Active QA Projects</h2>
                 </div>
@@ -331,7 +331,7 @@ export default function HomePage() {
 
             {/* Quick Actions */}
             <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-white p-6 rounded-xl shadow-sm">
+              <div className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-200">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
                 <div className="space-y-4">
                   <Link href="/submit" className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100">
@@ -361,7 +361,7 @@ export default function HomePage() {
                 </div>
               </div>
 
-              <div className="bg-white p-6 rounded-xl shadow-sm">
+              <div className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-200">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
                 <div className="space-y-4">
                   <div className="flex items-center gap-3">

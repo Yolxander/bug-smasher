@@ -195,7 +195,7 @@ export default function SubmitQAPage() {
                 id="name"
                 value={project.name}
                 onChange={(e) => setProject(prev => ({ ...prev, name: e.target.value }))}
-                className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm bg-gray-50 focus:ring-2 focus:ring-black focus:outline-none"
+                className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm bg-gray-50 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                 placeholder="Enter project name"
               />
             </div>
@@ -208,7 +208,7 @@ export default function SubmitQAPage() {
                 value={project.description}
                 onChange={(e) => setProject(prev => ({ ...prev, description: e.target.value }))}
                 rows={4}
-                className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm bg-gray-50 focus:ring-2 focus:ring-black focus:outline-none"
+                className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm bg-gray-50 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                 placeholder="Enter project description"
               />
             </div>
@@ -222,7 +222,7 @@ export default function SubmitQAPage() {
               <h3 className="text-lg font-medium text-gray-900">Checklist Items</h3>
               <button
                 onClick={addChecklistItem}
-                className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-white bg-black hover:bg-gray-800"
+                className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
               >
                 <Plus className="h-4 w-4 mr-1" />
                 Add Custom Item
@@ -239,7 +239,7 @@ export default function SubmitQAPage() {
                     onClick={() => handleTemplateSelect(template.id)}
                     className={`p-4 rounded-lg border cursor-pointer transition-colors ${
                       selectedTemplate === template.id
-                        ? 'border-black bg-gray-50'
+                        ? 'border-indigo-600 bg-indigo-50'
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
@@ -267,7 +267,7 @@ export default function SubmitQAPage() {
                         type="text"
                         value={item.name}
                         onChange={(e) => updateChecklistItem(item.id, 'name', e.target.value)}
-                        className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm bg-gray-50 focus:ring-2 focus:ring-black focus:outline-none"
+                        className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm bg-gray-50 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                         placeholder="Enter item name"
                       />
                     </div>
@@ -279,7 +279,7 @@ export default function SubmitQAPage() {
                         value={item.notes}
                         onChange={(e) => updateChecklistItem(item.id, 'notes', e.target.value)}
                         rows={2}
-                        className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm bg-gray-50 focus:ring-2 focus:ring-black focus:outline-none"
+                        className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm bg-gray-50 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                         placeholder="Enter additional notes"
                       />
                     </div>
@@ -317,7 +317,7 @@ export default function SubmitQAPage() {
                     onClick={() => toggleTeamMember(member)}
                     className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer ${
                       isSelected
-                        ? 'border-black bg-gray-50'
+                        ? 'border-indigo-600 bg-indigo-50'
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
@@ -460,7 +460,7 @@ export default function SubmitQAPage() {
                       <div
                         className={`flex items-center justify-center w-10 h-10 rounded-full ${
                           currentStep >= step.number
-                            ? 'bg-black text-white'
+                            ? 'bg-indigo-600 text-white'
                             : 'bg-gray-200 text-gray-600'
                         }`}
                       >
@@ -472,7 +472,7 @@ export default function SubmitQAPage() {
                       {index < steps.length - 1 && (
                         <div className="w-0.5 h-0.5 mx-4 bg-gray-200">
                           <div
-                            className={`h-full bg-black transition-all duration-300`}
+                            className={`h-full bg-indigo-600 transition-all duration-300`}
                             style={{
                               width: currentStep > step.number ? '100%' : '0%'
                             }}
@@ -493,7 +493,7 @@ export default function SubmitQAPage() {
               <div className="mt-6 flex justify-between">
                 <button
                   onClick={handleBack}
-                  className={`px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:opacity-50 disabled:cursor-not-allowed ${
+                  className={`px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed ${
                     currentStep === 1 ? 'invisible' : ''
                   }`}
                 >
@@ -503,7 +503,7 @@ export default function SubmitQAPage() {
                 <button
                   onClick={currentStep === steps.length ? handleSubmit : handleNext}
                   disabled={!isStepValid()}
-                  className={`px-4 py-2 text-sm font-medium text-white bg-black border border-transparent rounded-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:opacity-50 disabled:cursor-not-allowed`}
+                  className={`px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
                   {currentStep === steps.length ? (
                     'Create QA Project'
