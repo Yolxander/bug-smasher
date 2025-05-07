@@ -23,6 +23,7 @@ const navItems: NavItem[] = [
     children: [
       { icon: "check-square", label: "QA List", href: "/qa" },
       { icon: "plus-circle", label: "Submit QA", href: "/qa/submit" },
+      { icon: "check-circle", label: "Complete QA", href: "/qa/complete" },
     ]
   },
   {
@@ -66,6 +67,10 @@ function getIcon(icon: string) {
     case "check-square":
       return (
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-500"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      );
+    case "check-circle":
+      return (
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-500"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
       );
     case "users":
       return (
@@ -135,46 +140,44 @@ export function DashboardSidebar({ activePage }: { activePage: string }) {
     return item.children.some(child => isActive(child))
   }
 
-  const renderNavItem = (item: NavItem, isChild = false) => {
-    const hasChildren = item.children && item.children.length > 0
+  const renderNavItem = (item: NavItem) => {
+    const isActive = pathname === item.href || (item.children && item.children.some(child => pathname === child.href))
     const isExpanded = expandedItems.includes(item.label)
-    const isItemActive = isActive(item)
-    const isParentActive = isChildActive(item)
 
     return (
-      <div key={item.label}>
+      <div key={item.label} className="space-y-1">
         <div
-          className={`flex items-center justify-between rounded-md p-3 text-sm font-medium hover:bg-gray-100 ${
-            isItemActive ? "bg-amber-400 text-black" : "text-gray-600"
-          } ${isChild ? "pl-8" : ""}`}
+          onClick={() => item.children && toggleExpand(item.label)}
+          className={`flex items-center px-3 py-2 text-sm font-medium rounded-md cursor-pointer ${
+            isActive ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+          }`}
         >
-          {hasChildren ? (
-            <button
-              onClick={() => toggleExpand(item.label)}
-              className="flex items-center gap-3 flex-1"
-            >
+          <div className="flex items-center flex-1">
+            <div className="flex-shrink-0 w-5 h-5">
               {getIcon(item.icon)}
-              <span>{item.label}</span>
-            </button>
-          ) : (
-            <Link href={item.href} className="flex items-center gap-3 flex-1">
-              {getIcon(item.icon)}
-              <span>{item.label}</span>
-            </Link>
-          )}
-          {hasChildren && (
-            <button onClick={() => toggleExpand(item.label)}>
-              {isExpanded ? (
-                <ChevronDown className="h-4 w-4" />
-              ) : (
-                <ChevronRight className="h-4 w-4" />
-              )}
-            </button>
+            </div>
+            <span className="ml-3">{item.label}</span>
+          </div>
+          {item.children && (
+            <ChevronDown className={`h-4 w-4 transform transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
           )}
         </div>
-        {hasChildren && isExpanded && (
-          <div className="mt-1">
-            {item.children.map(child => renderNavItem(child, true))}
+        {item.children && isExpanded && (
+          <div className="pl-8 space-y-1">
+            {item.children.map(child => (
+              <Link
+                key={child.label}
+                href={child.href}
+                className={`flex items-center px-3 py-2 text-sm font-medium rounded-md ${
+                  pathname === child.href ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                }`}
+              >
+                <div className="flex-shrink-0 w-5 h-5">
+                  {getIcon(child.icon)}
+                </div>
+                <span className="ml-3">{child.label}</span>
+              </Link>
+            ))}
           </div>
         )}
       </div>
