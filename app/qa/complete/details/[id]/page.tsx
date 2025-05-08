@@ -2,8 +2,8 @@
 
 import { useAuth } from '@/lib/auth-context'
 import { DashboardSidebar } from "@/components/DashboardSidebar"
-import { ArrowRight, Clock, Users, Save, ChevronRight, CheckCircle, XCircle, AlertTriangle } from "lucide-react"
-import { useEffect, useState } from 'react'
+import { ArrowRight, Clock, Users, Save, ChevronRight, CheckCircle, XCircle, AlertTriangle, Info, Paperclip, Bug, X } from "lucide-react"
+import { useEffect, useState, use } from 'react'
 import { useRouter } from "next/navigation"
 import { getQaChecklist, QaChecklist } from '@/app/actions/qaChecklistActions'
 
@@ -16,28 +16,43 @@ interface ChecklistItem {
   order_number: number
   created_at: string
   updated_at: string
-  status?: 'passed' | 'failed' | 'pending'
+  status?: 'passed' | 'failed' | 'pending' | 'in_progress' | 'done'
   notes?: string
   failureReason?: string
   assignedTo?: string[]
   linkedBugs?: number
 }
 
-export default function QACompleteDetailsPage({ params }: { params: { id: string } }) {
+interface QAProject extends QaChecklist {
+  items: ChecklistItem[]
+}
+
+type ViewMode = 'board' | 'list'
+
+export default function QACompleteDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter()
   const { user, profileId } = useAuth()
-  const [checklist, setChecklist] = useState<QaChecklist | null>(null)
+  const [checklist, setChecklist] = useState<QAProject | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [expandedItems, setExpandedItems] = useState<Set<number>>(new Set())
+  const [viewMode, setViewMode] = useState<ViewMode>('board')
+  const [showDetails, setShowDetails] = useState(false)
+  const [selectedItem, setSelectedItem] = useState<ChecklistItem | null>(null)
+  const [attachment, setAttachment] = useState<File | null>(null)
+  const [answer, setAnswer] = useState('')
+
+  // Unwrap params using React.use()
+  const unwrappedParams = use(params)
+  const checklistId = parseInt(unwrappedParams.id)
 
   useEffect(() => {
     const fetchChecklist = async () => {
       try {
-        const data = await getQaChecklist(parseInt(params.id))
-        console.log('Fetched QA checklist:', data)
-        setChecklist(data)
+        const data = await getQaChecklist(checklistId)
+        const items = 'items' in data && Array.isArray((data as any).items) ? (data as any).items : [];
+        setChecklist({ ...data, items })
         setLoading(false)
       } catch (err) {
         console.error('Error fetching QA checklist:', err)
@@ -45,9 +60,8 @@ export default function QACompleteDetailsPage({ params }: { params: { id: string
         setLoading(false)
       }
     }
-
     fetchChecklist()
-  }, [params.id])
+  }, [checklistId])
 
   if (!user) {
     return null
@@ -95,6 +109,9 @@ export default function QACompleteDetailsPage({ params }: { params: { id: string
 
     const updatedItems = checklist.items.map(item => {
       if (item.id === itemId) {
+        if (item.is_required && status === 'pending') {
+          return item
+        }
         return { ...item, status }
       }
       return item
@@ -116,6 +133,70 @@ export default function QACompleteDetailsPage({ params }: { params: { id: string
     setChecklist({ ...checklist, items: updatedItems })
   }
 
+  const renderItemTypeSpecificContent = (item: ChecklistItem) => {
+    switch (item.item_type.toLowerCase()) {
+      case 'text':
+        return (
+          <div className="mt-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Response
+            </label>
+            <textarea
+              value={item.notes || ''}
+              onChange={(e) => updateFailureReason(item.id, e.target.value)}
+              placeholder="Enter your response..."
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+              rows={3}
+            />
+          </div>
+        )
+      case 'checkbox':
+        return (
+          <div className="mt-4">
+            <label className="flex items-center">
+              <input
+                type="checkbox"
+                checked={item.status === 'passed'}
+                onChange={(e) => updateItemStatus(item.id, e.target.checked ? 'passed' : 'failed')}
+                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+              />
+              <span className="ml-2 text-sm text-gray-700">Mark as completed</span>
+            </label>
+          </div>
+        )
+      case 'radio':
+        return (
+          <div className="mt-4 space-y-2">
+            <label className="block text-sm font-medium text-gray-700">Select an option:</label>
+            <div className="space-y-2">
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  name={`item-${item.id}`}
+                  checked={item.status === 'passed'}
+                  onChange={() => updateItemStatus(item.id, 'passed')}
+                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
+                />
+                <span className="ml-2 text-sm text-gray-700">Pass</span>
+              </label>
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  name={`item-${item.id}`}
+                  checked={item.status === 'failed'}
+                  onChange={() => updateItemStatus(item.id, 'failed')}
+                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
+                />
+                <span className="ml-2 text-sm text-gray-700">Fail</span>
+              </label>
+            </div>
+          </div>
+        )
+      default:
+        return null
+    }
+  }
+
   const handleSave = async () => {
     setSaving(true)
     try {
@@ -128,12 +209,236 @@ export default function QACompleteDetailsPage({ params }: { params: { id: string
     }
   }
 
+  // Kanban columns
+  const columns = [
+    {
+      key: 'pending',
+      title: 'Pending',
+      color: 'border-pink-500',
+      countColor: 'text-pink-500',
+      items: checklist?.items?.filter(item => item.status === 'pending' || !item.status) || [],
+    },
+    {
+      key: 'passed',
+      title: 'Passed',
+      color: 'border-green-500',
+      countColor: 'text-green-500',
+      items: checklist?.items?.filter(item => item.status === 'passed') || [],
+    },
+    {
+      key: 'failed',
+      title: 'Fail',
+      color: 'border-red-500',
+      countColor: 'text-red-500',
+      items: checklist?.items?.filter(item => item.status === 'failed') || [],
+    },
+  ];
+
+  // Checklist details modal
+  const DetailsModal = () => (
+    showDetails && checklist ? (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+        <div className="bg-white rounded-xl shadow-lg p-8 max-w-lg w-full relative">
+          <button onClick={() => setShowDetails(false)} className="absolute top-3 right-3 text-gray-400 hover:text-gray-600">
+            <XCircle className="h-6 w-6" />
+          </button>
+          <h2 className="text-xl font-bold mb-2">{checklist.title}</h2>
+          <p className="text-gray-600 mb-4">{checklist.description}</p>
+          <div className="space-y-2 text-sm text-gray-700">
+            <div><span className="font-medium">Status:</span> {checklist.status}</div>
+            <div><span className="font-medium">Created:</span> {new Date(checklist.created_at).toLocaleDateString()}</div>
+            <div><span className="font-medium">Last Updated:</span> {new Date(checklist.updated_at).toLocaleDateString()}</div>
+          </div>
+        </div>
+      </div>
+    ) : null
+  )
+
+  // Board-level header controls (no filters, checklist name, info icon)
+  const BoardHeader = () => (
+    <div className="flex flex-wrap items-center justify-between mb-8 gap-4">
+      <div className="flex items-center gap-2">
+        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          {checklist?.title || 'Checklist'}
+          <button onClick={() => setShowDetails(true)} className="ml-2 text-gray-400 hover:text-blue-600" title="View details">
+            <Info className="h-6 w-6" />
+          </button>
+        </h1>
+      </div>
+      <div className="flex items-center gap-4">
+        <button className={`px-3 py-2 rounded-md font-medium flex items-center gap-1 border ${viewMode === 'board' ? 'bg-gray-100 text-gray-900 border-gray-300' : 'text-gray-500 border-transparent hover:text-gray-900'}`} onClick={() => setViewMode('board')}><ChevronRight className="h-4 w-4 rotate-180" />Board View</button>
+        <button className={`px-3 py-2 rounded-md font-medium flex items-center gap-1 border ${viewMode === 'list' ? 'bg-gray-100 text-gray-900 border-gray-300' : 'text-gray-500 border-transparent hover:text-gray-900'}`} onClick={() => setViewMode('list')}><ChevronRight className="h-4 w-4" />List View</button>
+      </div>
+    </div>
+  );
+
+  // Card meta info (removed avatars)
+  const CardMeta = () => (
+    <div className="flex items-center justify-between mt-4">
+      <div />
+      <div className="flex items-center gap-3 text-gray-400 text-xs">
+        <span className="flex items-center gap-1"><CheckCircle className="h-4 w-4" />1</span>
+        <span className="flex items-center gap-1"><ChevronRight className="h-4 w-4" />2</span>
+        <span className="flex items-center gap-1"><ChevronRight className="h-4 w-4" />6</span>
+      </div>
+    </div>
+  );
+
+  // Right sidebar (drawer) for item details
+  const ItemSidebar = () => (
+    selectedItem && (
+      <div className="fixed inset-0 z-50 flex">
+        {/* Overlay */}
+        <div className="flex-1 bg-black bg-opacity-30" onClick={() => setSelectedItem(null)} />
+        {/* Sidebar */}
+        <div className="w-full max-w-md bg-white h-full shadow-2xl p-8 overflow-y-auto relative animate-slide-in-right">
+          <button onClick={() => setSelectedItem(null)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+            <X className="h-6 w-6" />
+          </button>
+          <div className="mb-6">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-xs text-gray-400 font-semibold">#{selectedItem.id.toString().padStart(4, '0')}</span>
+              {selectedItem.status && (
+                <span className={`text-xs font-bold px-2 py-1 rounded-full ${selectedItem.status === 'passed' ? 'bg-green-100 text-green-700' : selectedItem.status === 'failed' ? 'bg-red-100 text-red-700' : selectedItem.status === 'in_progress' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'}`}>{selectedItem.status.toUpperCase()}</span>
+              )}
+            </div>
+            <h2 className="text-xl font-bold text-gray-900 mb-1">{selectedItem.item_text}</h2>
+            <div className="flex items-center gap-4 text-sm text-gray-500 mb-2">
+              <span>Type: <span className="font-medium text-gray-700">{selectedItem.item_type}</span></span>
+              <span>Required: <span className="font-medium text-gray-700">{selectedItem.is_required ? 'Yes' : 'No'}</span></span>
+            </div>
+          </div>
+          {/* Status update */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+            <div className="flex gap-2">
+              <button onClick={() => updateItemStatus(selectedItem.id, 'passed')} className={`px-3 py-1.5 rounded-md text-sm font-semibold ${selectedItem.status === 'passed' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700 hover:bg-green-50'}`}>Passed</button>
+              <button onClick={() => updateItemStatus(selectedItem.id, 'failed')} className={`px-3 py-1.5 rounded-md text-sm font-semibold ${selectedItem.status === 'failed' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700 hover:bg-red-50'}`}>Fail</button>
+              <button onClick={() => updateItemStatus(selectedItem.id, 'pending')} className={`px-3 py-1.5 rounded-md text-sm font-semibold ${selectedItem.status === 'pending' ? 'bg-pink-100 text-pink-700' : 'bg-gray-100 text-gray-700 hover:bg-pink-50'}`}>Pending</button>
+            </div>
+          </div>
+          {/* Answer/response */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Answer</label>
+            <textarea
+              className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm bg-gray-50 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+              rows={4}
+              value={answer}
+              onChange={e => setAnswer(e.target.value)}
+              placeholder="Enter your answer or notes..."
+            />
+          </div>
+          {/* Attachment upload */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Attachment</label>
+            <div className="flex items-center gap-3">
+              <input
+                type="file"
+                id="attachment-upload"
+                className="hidden"
+                onChange={e => setAttachment(e.target.files?.[0] || null)}
+              />
+              <label htmlFor="attachment-upload" className="flex items-center gap-2 px-3 py-2 rounded-md border border-gray-200 bg-gray-50 text-gray-700 cursor-pointer hover:bg-gray-100">
+                <Paperclip className="h-4 w-4" />
+                {attachment ? attachment.name : 'Upload file'}
+              </label>
+              {attachment && (
+                <button onClick={() => setAttachment(null)} className="text-xs text-red-500 hover:underline">Remove</button>
+              )}
+            </div>
+          </div>
+          {/* Report bug */}
+          <div className="mb-6">
+            <button className="flex items-center gap-2 px-4 py-2 rounded-md bg-red-100 text-red-700 font-semibold hover:bg-red-200 transition"><Bug className="h-4 w-4" />Report Bug</button>
+          </div>
+          {/* Save button */}
+          <div className="flex justify-end">
+            <button className="px-5 py-2 rounded-md bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition">Save</button>
+          </div>
+        </div>
+      </div>
+    )
+  )
+
+  // Kanban board rendering
+  const KanbanBoard = () => (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {columns.map((col, idx) => (
+        <div key={col.key} className="bg-gray-50 rounded-2xl p-4 min-h-[500px] border border-gray-100">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className={`text-lg font-semibold text-gray-900 mb-1 flex items-center gap-2 border-b-2 pb-1 ${col.color}`}>{col.title} <span className={`ml-2 text-xs font-bold ${col.countColor}`}>{col.items.length}</span></h3>
+            </div>
+            {/* Add button for Pending column */}
+            {col.key === 'pending' && (
+              <button className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-300 bg-white text-gray-400 hover:text-indigo-600 hover:border-indigo-400 transition"><span className="text-2xl leading-none">+</span></button>
+            )}
+          </div>
+          <div className="space-y-4">
+            {col.items.map(item => (
+              <div key={item.id} className="bg-white rounded-xl shadow p-4 hover:shadow-lg transition cursor-pointer border border-gray-100" onClick={() => { setSelectedItem(item); setAnswer(item.notes || ''); }}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xs font-semibold text-gray-400">#U{item.id.toString().padStart(4, '0')}</span>
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${col.key === 'pending' ? 'bg-pink-100 text-pink-600' : col.key === 'passed' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>{col.title}</span>
+                    </div>
+                    <div className="text-base font-medium text-gray-900 truncate">{item.item_text}</div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {getStatusIcon(item.status || 'pending')}
+                  </div>
+                </div>
+                <CardMeta />
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
+  // List view rendering
+  const ListView = () => (
+    <div className="bg-white rounded-2xl shadow p-6">
+      <div className="flex items-center justify-between border-b pb-4 mb-4">
+        <h2 className="text-lg font-semibold text-gray-900">Checklist Items</h2>
+        <span className="text-sm text-gray-500">{checklist?.items.length || 0} items</span>
+      </div>
+      <div className="grid gap-4">
+        {checklist?.items.map(item => (
+          <div
+            key={item.id}
+            className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gray-50 rounded-xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition-shadow duration-150 group cursor-pointer"
+            onClick={() => { setSelectedItem(item); setAnswer(item.notes || ''); }}
+          >
+            <div className="flex items-center gap-4 flex-1 min-w-0">
+              {getStatusIcon(item.status || 'pending')}
+              <div className="min-w-0">
+                <div className="font-medium text-gray-900 truncate text-base group-hover:text-indigo-700 transition-colors">{item.item_text}</div>
+                <div className="mt-2 grid grid-cols-2 md:grid-cols-3 gap-2 text-xs text-gray-500">
+                  <div><span className="font-semibold">Type:</span> {item.item_type}</div>
+                  <div><span className="font-semibold">Required:</span> {item.is_required ? <span className="text-red-500">Yes</span> : 'No'}</div>
+                  <div className="hidden md:block"><span className="font-semibold">Order:</span> {item.order_number}</div>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 md:gap-4">
+              <span className={`text-xs font-bold px-3 py-1.5 rounded-full shadow-sm border ${item.status === 'passed' ? 'bg-green-100 text-green-700 border-green-200' : item.status === 'failed' ? 'bg-red-100 text-red-700 border-red-200' : item.status === 'in_progress' ? 'bg-blue-100 text-blue-700 border-blue-200' : 'bg-gray-100 text-gray-700 border-gray-200'}`}>{(item.status || 'Pending').toUpperCase()}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
         <div className="flex">
           <DashboardSidebar activePage="qa" />
           <div className="flex-1 p-8">
+            <BoardHeader />
             <div className="text-center text-gray-500">Loading checklist...</div>
           </div>
         </div>
@@ -147,6 +452,7 @@ export default function QACompleteDetailsPage({ params }: { params: { id: string
         <div className="flex">
           <DashboardSidebar activePage="qa" />
           <div className="flex-1 p-8">
+            <BoardHeader />
             <div className="text-center text-red-500">{error || 'Checklist not found'}</div>
           </div>
         </div>
@@ -158,172 +464,15 @@ export default function QACompleteDetailsPage({ params }: { params: { id: string
     <div className="min-h-screen bg-gray-50">
       <div className="flex">
         <DashboardSidebar activePage="qa" />
-        <div className="flex-1">
-          <header className="bg-white shadow-sm">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="flex justify-between h-16">
-                <div className="flex items-center">
-                  <button
-                    onClick={() => router.back()}
-                    className="mr-4 text-gray-500 hover:text-gray-700"
-                  >
-                    <ArrowRight className="h-5 w-5 transform rotate-180" />
-                  </button>
-                  <div>
-                    <h1 className="text-xl font-semibold">{checklist.title}</h1>
-                    <p className="text-sm text-gray-500">{checklist.description}</p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center text-sm text-gray-500">
-                    <Clock className="h-4 w-4 mr-1" />
-                    Last updated {new Date(checklist.updated_at).toLocaleDateString()}
-                  </div>
-                  <div className="flex items-center text-sm text-gray-500">
-                    <Users className="h-4 w-4 mr-1" />
-                    {checklist.creator?.name}
-                  </div>
-                  <button
-                    onClick={handleSave}
-                    disabled={saving}
-                    className="relative inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
-                  >
-                    <Save className="h-4 w-4 mr-2" />
-                    {saving ? 'Saving...' : 'Save Progress'}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </header>
-
-          <main className="flex-1 p-8">
-            <div className="max-w-7xl mx-auto">
-              <div className="bg-white rounded-xl shadow-sm">
-                <div className="px-6 py-4 border-b border-gray-200">
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-lg font-medium">QA Checklist Items</h2>
-                    <div className="flex items-center space-x-4">
-                      <div className="text-sm text-gray-500">
-                        Progress: {checklist.items.filter(item => item.status === 'passed').length}/{checklist.items.length} items
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        Status: {checklist.status}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="space-y-4 p-6">
-                  {checklist.items.map((item) => (
-                    <div key={item.id} className="bg-white border border-gray-200 rounded-lg p-6 hover:bg-gray-50 transition-colors duration-150">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center">
-                            <button
-                              onClick={() => toggleItemExpand(item.id)}
-                              className="mr-2 text-gray-400 hover:text-gray-600"
-                            >
-                              <ChevronRight
-                                className={`h-5 w-5 transform transition-transform ${
-                                  expandedItems.has(item.id) ? 'rotate-90' : ''
-                                }`}
-                              />
-                            </button>
-                            <h3 className="text-lg font-medium text-gray-900">{item.item_text}</h3>
-                            <div className="ml-4">
-                              {getStatusIcon(item.status || 'pending')}
-                            </div>
-                          </div>
-                          <p className="mt-1 text-sm text-gray-500 ml-7">Type: {item.item_type}</p>
-                          
-                          {expandedItems.has(item.id) && (
-                            <div className="mt-4 space-y-4 ml-7">
-                              <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                  Notes
-                                </label>
-                                <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-sm text-gray-700">
-                                  {item.notes || 'No notes available'}
-                                </div>
-                              </div>
-
-                              {item.status === 'failed' && (
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Failure Reason
-                                  </label>
-                                  <textarea
-                                    value={item.failureReason || ''}
-                                    onChange={(e) => updateFailureReason(item.id, e.target.value)}
-                                    placeholder="Explain why this item failed..."
-                                    className="w-full px-3 py-2 border border-red-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 sm:text-sm"
-                                    rows={3}
-                                    required
-                                  />
-                                </div>
-                              )}
-
-                              <div className="flex items-center text-sm text-gray-500">
-                                <div className="flex items-center">
-                                  <span>Required: {item.is_required ? 'Yes' : 'No'}</span>
-                                </div>
-                                <span className="mx-2">•</span>
-                                <div className="flex items-center">
-                                  <span>Order: {item.order_number}</span>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                        <div className="ml-6 flex flex-col items-end space-y-2">
-                          <div className="flex items-center space-x-2">
-                            <button
-                              onClick={() => updateItemStatus(item.id, 'passed')}
-                              className={`px-4 py-2 rounded-md text-sm font-medium ${
-                                item.status === 'passed'
-                                  ? 'bg-green-100 text-green-800'
-                                  : 'text-gray-500 hover:bg-gray-100'
-                              }`}
-                            >
-                              Pass
-                            </button>
-                            <button
-                              onClick={() => updateItemStatus(item.id, 'failed')}
-                              className={`px-4 py-2 rounded-md text-sm font-medium ${
-                                item.status === 'failed'
-                                  ? 'bg-red-100 text-red-800'
-                                  : 'text-gray-500 hover:bg-gray-100'
-                              }`}
-                            >
-                              Fail
-                            </button>
-                            <button
-                              onClick={() => updateItemStatus(item.id, 'pending')}
-                              className={`px-4 py-2 rounded-md text-sm font-medium ${
-                                item.status === 'pending'
-                                  ? 'bg-yellow-100 text-yellow-800'
-                                  : 'text-gray-500 hover:bg-gray-100'
-                              }`}
-                            >
-                              Pending
-                            </button>
-                            <button
-                              onClick={() => router.push('/submit')}
-                              className="px-4 py-2 rounded-md text-sm font-medium bg-indigo-100 text-indigo-800 hover:bg-indigo-200 transition-colors duration-150"
-                            >
-                              Report Bug
-                            </button>
-                          </div>
-                          <div className={`text-sm font-medium ${getStatusColor(item.status || 'pending')}`}>
-                            {(item.status || 'pending').charAt(0).toUpperCase() + (item.status || 'pending').slice(1)}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </main>
+        <div className="flex-1 p-8">
+          <BoardHeader />
+          <DetailsModal />
+          <ItemSidebar />
+          {viewMode === 'board' ? (
+            <KanbanBoard />
+          ) : (
+            <ListView />
+          )}
         </div>
       </div>
     </div>
