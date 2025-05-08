@@ -2,7 +2,7 @@
 
 import { useAuth } from '@/lib/auth-context'
 import { DashboardSidebar } from "@/components/DashboardSidebar"
-import { Search, Bell, ChevronDown, CheckCircle, AlertTriangle, ArrowRight, Users, FileCheck } from "lucide-react"
+import { Search, Bell, ChevronDown, CheckCircle, AlertTriangle, ArrowRight, Users, FileCheck, Grid, List } from "lucide-react"
 import { useEffect, useState } from 'react'
 import { useRouter } from "next/navigation"
 import Link from 'next/link'
@@ -14,6 +14,7 @@ export default function QAPage() {
   const [checklists, setChecklists] = useState<QaChecklist[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list')
 
   useEffect(() => {
     const fetchChecklists = async () => {
@@ -129,10 +130,24 @@ export default function QAPage() {
               </div>
             </div>
 
-            {/* Projects List */}
+            {/* Checklists List/Grid */}
             <div className="bg-white rounded-xl shadow-sm">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-lg font-medium">QA Projects</h2>
+              <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                <h2 className="text-lg font-medium">All QA Checklists</h2>
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => setViewMode('list')}
+                    className={`p-2 rounded-md ${viewMode === 'list' ? 'bg-gray-100' : 'hover:bg-gray-50'}`}
+                  >
+                    <List className="h-5 w-5 text-gray-500" />
+                  </button>
+                  <button
+                    onClick={() => setViewMode('grid')}
+                    className={`p-2 rounded-md ${viewMode === 'grid' ? 'bg-gray-100' : 'hover:bg-gray-50'}`}
+                  >
+                    <Grid className="h-5 w-5 text-gray-500" />
+                  </button>
+                </div>
               </div>
               {loading ? (
                 <div className="p-6 text-center text-gray-500">Loading checklists...</div>
@@ -140,7 +155,7 @@ export default function QAPage() {
                 <div className="p-6 text-center text-red-500">{error}</div>
               ) : checklists.length === 0 ? (
                 <div className="p-6 text-center text-gray-500">No QA checklists found</div>
-              ) : (
+              ) : viewMode === 'list' ? (
                 <div className="divide-y divide-gray-200">
                   {checklists.map((checklist) => (
                     <div key={checklist.id} className="p-6">
@@ -165,7 +180,43 @@ export default function QAPage() {
                           >
                             View Checklist
                           </Link>
+                          <Link
+                            href={`/qa/complete/details/${checklist.id}`}
+                            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
+                          >
+                            Complete
+                          </Link>
                         </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
+                  {checklists.map((checklist) => (
+                    <div key={checklist.id} className="bg-white border rounded-lg shadow-sm p-6">
+                      <h3 className="text-lg font-medium mb-2">{checklist.title}</h3>
+                      <div className="space-y-2 text-sm text-gray-500 mb-4">
+                        <p>Status: {checklist.status}</p>
+                        <p>Created: {new Date(checklist.created_at).toLocaleDateString()}</p>
+                        <p>Last Updated: {new Date(checklist.updated_at).toLocaleDateString()}</p>
+                        {checklist.description && (
+                          <p className="text-gray-600">{checklist.description}</p>
+                        )}
+                      </div>
+                      <div className="flex space-x-4">
+                        <Link
+                          href={`/qa/${checklist.id}`}
+                          className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                        >
+                          View Checklist
+                        </Link>
+                        <Link
+                          href={`/qa/complete/details/${checklist.id}`}
+                          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
+                        >
+                          Complete
+                        </Link>
                       </div>
                     </div>
                   ))}

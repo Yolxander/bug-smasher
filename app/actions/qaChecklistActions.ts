@@ -35,7 +35,7 @@ export interface QaChecklist {
 // Get all QA checklists
 export const getQaChecklists = async (): Promise<QaChecklist[]> => {
   try {
-    const token = localStorage.getItem('token')
+    const token = await getAuthToken()
     if (!token) {
       throw new Error('No authentication token found')
     }
@@ -66,10 +66,11 @@ export const getQaChecklists = async (): Promise<QaChecklist[]> => {
         throw new Error('Session expired. Please log in again.')
       }
       
-      throw new Error(`Failed to fetch QA checklists: ${response.status} ${response.statusText}`);
+      throw new Error(`Failed to fetch QA checklists: ${response.statusText}`)
     }
     
     const data = await response.json();
+    console.log('Raw API response:', data);
     
     // Handle different response structures
     if (data && typeof data === 'object') {
