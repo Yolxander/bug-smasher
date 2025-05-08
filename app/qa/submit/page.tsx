@@ -5,6 +5,7 @@ import { DashboardSidebar } from "@/components/DashboardSidebar"
 import { useState } from 'react'
 import { useRouter } from "next/navigation"
 import { CheckSquare, Users, ListChecks, ArrowRight, ArrowLeft, Plus, X, Globe, Calendar, FileText, Eye } from 'lucide-react'
+import { createQaChecklist, addChecklistItem, QaChecklistItem } from '@/app/actions/qaChecklistActions'
 
 interface TeamMember {
   id: string
@@ -130,9 +131,34 @@ export default function SubmitQAPage() {
     }
   }
 
-  const handleSubmit = () => {
-    console.log('Submitting QA project:', project)
-    router.push('/qa')
+  const handleSubmit = async () => {
+    try {
+      // Create the main checklist
+      const checklist = await createQaChecklist({
+        title: project.name,
+        description: project.description,
+        status: 'active'
+      });
+
+      // Add all checklist items
+      for (const item of project.items) {
+        const checklistItem: Partial<QaChecklistItem> = {
+          text: item.name,
+          type: 'text',
+          is_required: true,
+          order_number: project.items.indexOf(item) + 1,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+        await addChecklistItem(checklist.id, checklistItem);
+      }
+
+      // Redirect to QA page on success
+      router.push('/qa');
+    } catch (error) {
+      console.error('Failed to submit QA checklist:', error);
+      // TODO: Add proper error handling/notification
+    }
   }
 
   const addChecklistItem = () => {

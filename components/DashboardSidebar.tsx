@@ -21,9 +21,9 @@ const navItems: NavItem[] = [
     label: "QA",
     href: "#",
     children: [
-      { icon: "check-square", label: "QA List", href: "/qa" },
-      { icon: "plus-circle", label: "Submit QA", href: "/qa/submit" },
+      { icon: "check-square", label: "All QA List", href: "/qa" },
       { icon: "check-circle", label: "Complete QA", href: "/qa/complete" },
+      { icon: "plus-circle", label: "Submit QA", href: "/qa/submit" },
     ]
   },
   {
@@ -36,12 +36,18 @@ const navItems: NavItem[] = [
       { icon: "clipboard", label: "My Submissions", href: "/my-submissions" },
     ]
   },
- 
-  { icon: "users", label: "Team", href: "/team" },
-  { icon: "trophy", label: "Badges", href: "/badges" },
-  { icon: "book", label: "Docs", href: "/docs" },
-  { icon: "help-circle", label: "FAQ", href: "/faq" },
-  { icon: "settings", label: "Settings", href: "/settings" },
+  {
+    icon: "more-horizontal",
+    label: "Others",
+    href: "#",
+    children: [
+      { icon: "users", label: "Team", href: "/team" },
+      { icon: "trophy", label: "Badges", href: "/badges" },
+      { icon: "book", label: "Docs", href: "/docs" },
+      { icon: "help-circle", label: "FAQ", href: "/faq" },
+      { icon: "settings", label: "Settings", href: "/settings" },
+    ]
+  }
 ];
 
 function getIcon(icon: string) {
@@ -91,6 +97,14 @@ function getIcon(icon: string) {
     case "settings":
       return (
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-500"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.09a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.09a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.09a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      );
+    case "more-horizontal":
+      return (
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-500">
+          <circle cx="12" cy="12" r="1"/>
+          <circle cx="19" cy="12" r="1"/>
+          <circle cx="5" cy="12" r="1"/>
+        </svg>
       );
     default:
       return null;
@@ -203,7 +217,7 @@ export function DashboardSidebar({ activePage }: { activePage: string }) {
   }
 
   return (
-    <div className="w-[232px] flex flex-col rounded-l-3xl shadow-md border-r border-gray-100">
+    <div className="w-[232px] h-screen flex flex-col rounded-l-3xl shadow-md border-r border-gray-100">
       <div className="p-6 flex justify-start rounded-lg">
         <Image src="/logo.png" alt="Bug Smasher Logo" width={60} height={60} className="mx-auto rounded-lg" />
       </div>

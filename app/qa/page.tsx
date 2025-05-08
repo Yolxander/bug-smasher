@@ -6,55 +6,31 @@ import { Search, Bell, ChevronDown, CheckCircle, AlertTriangle, ArrowRight, User
 import { useEffect, useState } from 'react'
 import { useRouter } from "next/navigation"
 import Link from 'next/link'
-
-interface QAItem {
-  id: string
-  name: string
-  notes: string
-  status: 'pending' | 'passed' | 'failed'
-  assignedTo: string[]
-  linkedBugs: number
-}
-
-interface QAProject {
-  id: string
-  name: string
-  totalItems: number
-  completedItems: number
-  bugsReported: number
-  lastUpdated: string
-  lastUpdatedBy: string
-}
+import { getQaChecklists, QaChecklist } from '@/app/actions/qaChecklistActions'
 
 export default function QAPage() {
   const router = useRouter()
   const { user, profileId } = useAuth()
-  const [projects, setProjects] = useState<QAProject[]>([])
+  const [checklists, setChecklists] = useState<QaChecklist[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  // Mock data for demonstration
   useEffect(() => {
-    setProjects([
-      {
-        id: '1',
-        name: 'Web Redesign Project',
-        totalItems: 12,
-        completedItems: 8,
-        bugsReported: 4,
-        lastUpdated: '1 hour ago',
-        lastUpdatedBy: 'Daniella'
-      },
-      {
-        id: '2',
-        name: 'Mobile App Update',
-        totalItems: 15,
-        completedItems: 10,
-        bugsReported: 2,
-        lastUpdated: '2 hours ago',
-        lastUpdatedBy: 'Michael'
+    const fetchChecklists = async () => {
+      try {
+        const data = await getQaChecklists()
+        console.log('Fetched QA checklists:', data)
+        setChecklists(Array.isArray(data) ? data : [])
+        setLoading(false)
+      } catch (err) {
+        console.error('Error fetching QA checklists:', err)
+        setError(err instanceof Error ? err.message : 'Failed to load QA checklists')
+        setChecklists([])
+        setLoading(false)
       }
-    ])
-    setLoading(false)
+    }
+
+    fetchChecklists()
   }, [])
 
   if (!user) {
@@ -81,9 +57,12 @@ export default function QAPage() {
                 </div>
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
-                    <button className="relative inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    <Link
+                      href="/qa/submit"
+                      className="relative inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    >
                       Create New Checklist
-                    </button>
+                    </Link>
                   </div>
                   <div className="ml-4 flex items-center md:ml-6">
                     <button className="p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none">
@@ -105,7 +84,7 @@ export default function QAPage() {
                   </div>
                   <div className="ml-4">
                     <p className="text-sm font-medium text-gray-500">Total Checklists</p>
-                    <p className="text-2xl font-semibold text-gray-900">{projects.length}</p>
+                    <p className="text-2xl font-semibold text-gray-900">{checklists.length}</p>
                   </div>
                 </div>
               </div>
@@ -115,22 +94,22 @@ export default function QAPage() {
                     <CheckCircle className="h-6 w-6" />
                   </div>
                   <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-500">Completed Items</p>
+                    <p className="text-sm font-medium text-gray-500">Active Checklists</p>
                     <p className="text-2xl font-semibold text-gray-900">
-                      {projects.reduce((acc, proj) => acc + proj.completedItems, 0)}
+                      {checklists.filter(c => c.status === 'active').length}
                     </p>
                   </div>
                 </div>
               </div>
               <div className="bg-white rounded-xl shadow-sm p-6">
                 <div className="flex items-center">
-                  <div className="p-3 rounded-full bg-red-100 text-red-600">
+                  <div className="p-3 rounded-full bg-yellow-100 text-yellow-600">
                     <AlertTriangle className="h-6 w-6" />
                   </div>
                   <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-500">Bugs Reported</p>
+                    <p className="text-sm font-medium text-gray-500">In Progress</p>
                     <p className="text-2xl font-semibold text-gray-900">
-                      {projects.reduce((acc, proj) => acc + proj.bugsReported, 0)}
+                      {checklists.filter(c => c.status === 'in_progress').length}
                     </p>
                   </div>
                 </div>
@@ -141,8 +120,10 @@ export default function QAPage() {
                     <Users className="h-6 w-6" />
                   </div>
                   <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-500">Active Reviewers</p>
-                    <p className="text-2xl font-semibold text-gray-900">12</p>
+                    <p className="text-sm font-medium text-gray-500">Completed</p>
+                    <p className="text-2xl font-semibold text-gray-900">
+                      {checklists.filter(c => c.status === 'completed').length}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -153,38 +134,43 @@ export default function QAPage() {
               <div className="px-6 py-4 border-b border-gray-200">
                 <h2 className="text-lg font-medium">QA Projects</h2>
               </div>
-              <div className="divide-y divide-gray-200">
-                {projects.map((project) => (
-                  <div key={project.id} className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="text-lg font-medium">{project.name}</h3>
-                        <div className="mt-2 flex items-center text-sm text-gray-500">
-                          <span>QA Status: {project.completedItems} of {project.totalItems} items complete</span>
-                          <span className="mx-2">•</span>
-                          <span>Bugs Reported: {project.bugsReported}</span>
-                          <span className="mx-2">•</span>
-                          <span>Last Updated: {project.lastUpdated} by {project.lastUpdatedBy}</span>
+              {loading ? (
+                <div className="p-6 text-center text-gray-500">Loading checklists...</div>
+              ) : error ? (
+                <div className="p-6 text-center text-red-500">{error}</div>
+              ) : checklists.length === 0 ? (
+                <div className="p-6 text-center text-gray-500">No QA checklists found</div>
+              ) : (
+                <div className="divide-y divide-gray-200">
+                  {checklists.map((checklist) => (
+                    <div key={checklist.id} className="p-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className="text-lg font-medium">{checklist.title}</h3>
+                          <div className="mt-2 flex items-center text-sm text-gray-500">
+                            <span>Status: {checklist.status}</span>
+                            <span className="mx-2">•</span>
+                            <span>Created: {new Date(checklist.created_at).toLocaleDateString()}</span>
+                            <span className="mx-2">•</span>
+                            <span>Last Updated: {new Date(checklist.updated_at).toLocaleDateString()}</span>
+                          </div>
+                          {checklist.description && (
+                            <p className="mt-2 text-sm text-gray-600">{checklist.description}</p>
+                          )}
+                        </div>
+                        <div className="flex space-x-4">
+                          <Link
+                            href={`/qa/${checklist.id}`}
+                            className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                          >
+                            View Checklist
+                          </Link>
                         </div>
                       </div>
-                      <div className="flex space-x-4">
-                        <Link
-                          href={`/qa/${project.id}`}
-                          className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-                        >
-                          View QA Checklist
-                        </Link>
-                        <Link
-                          href={`/bugs?project=${project.id}`}
-                          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
-                        >
-                          View Bug Reports
-                        </Link>
-                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           </main>
         </div>
