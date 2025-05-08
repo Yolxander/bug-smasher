@@ -23,7 +23,7 @@ const navItems: NavItem[] = [
     children: [
       { icon: "check-square", label: "All QA List", href: "/qa" },
       { icon: "check-circle", label: "Complete QA", href: "/qa/complete" },
-      { icon: "plus-circle", label: "Submit QA", href: "/qa/submit" },
+      // { icon: "plus-circle", label: "Submit QA", href: "/qa/submit" },
     ]
   },
   {
