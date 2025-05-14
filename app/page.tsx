@@ -9,6 +9,7 @@ import { getSubmissions } from './actions/submissions'
 import { useEffect, useState } from 'react'
 import { Submission } from './actions/submissions'
 import { useRouter } from "next/navigation"
+import { getQaStats, QaStats } from './actions/qaChecklistActions'
 
 interface QAProject {
   id: string
@@ -26,32 +27,28 @@ export default function HomePage() {
   const [submissions, setSubmissions] = useState<Submission[]>([])
   const [qaProjects, setQAProjects] = useState<QAProject[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [qaStats, setQaStats] = useState<QaStats | null>(null)
 
   useEffect(() => {
-    const checkProfile = async () => {
-      if (!user) {
-        router.push("/auth/login")
-        return
-      }
-
+    const fetchData = async () => {
       try {
-        // Only fetch submissions if we have a valid profile
-        const data = await getSubmissions()
-        if (!data) {
-          setSubmissions([])
-          return
-        }
-        setSubmissions(data)
-      } catch (error) {
-        console.error("Error fetching submissions:", error)
-        setSubmissions([])
+        const [submissionsData, statsData] = await Promise.all([
+          getSubmissions(),
+          getQaStats()
+        ])
+        setSubmissions(submissionsData)
+        setQaStats(statsData)
+      } catch (err) {
+        console.error('Error fetching data:', err)
+        setError(err instanceof Error ? err.message : 'Failed to load data')
       } finally {
         setLoading(false)
       }
     }
 
-    checkProfile()
-  }, [user, router])
+    fetchData()
+  }, [])
 
   // Calculate status counts
   const statusCounts = submissions?.reduce((acc, submission) => {
@@ -149,12 +146,12 @@ export default function HomePage() {
                     Submit Bug Report
                   </button>
                 </div>
-                <div className="relative w-32 h-32">
+                <div className="relative w-32 h-32 rounded-lg">
                   <Image
-                    src="/bug-illustration.png"
+                    src="/logo.png"
                     alt="Bug reporting illustration"
                     fill
-                    className="object-contain"
+                    className="object-contain rounded-xl"
                   />
                 </div>
               </div>
@@ -229,10 +226,12 @@ export default function HomePage() {
                   <h3 className="text-base font-medium text-gray-500">Active QA Projects</h3>
                   <CheckSquare className="h-6 w-6 text-gray-400" />
                 </div>
-                <p className="text-3xl font-semibold text-gray-900">3</p>
+                <p className="text-3xl font-semibold text-gray-900">{qaStats?.activeProjects?.count || 0}</p>
                 <div className="mt-4 flex items-center text-sm text-gray-500">
-                  <span className="text-green-500">↑ 2</span>
-                  <span className="ml-2">new this week</span>
+                  <span className={qaStats?.activeProjects?.change && qaStats.activeProjects.change > 0 ? "text-green-500" : qaStats?.activeProjects?.change && qaStats.activeProjects.change < 0 ? "text-red-500" : "text-gray-500"}>
+                    {qaStats?.activeProjects?.change && qaStats.activeProjects.change > 0 ? "↑" : qaStats?.activeProjects?.change && qaStats.activeProjects.change < 0 ? "↓" : "→"} {Math.abs(qaStats?.activeProjects?.change || 0)}
+                  </span>
+                  <span className="ml-2">{qaStats?.activeProjects?.period || 'this week'}</span>
                 </div>
               </div>
 
@@ -241,10 +240,12 @@ export default function HomePage() {
                   <h3 className="text-base font-medium text-gray-500">QA Items Completed</h3>
                   <CheckCircle className="h-6 w-6 text-gray-400" />
                 </div>
-                <p className="text-3xl font-semibold text-gray-900">68</p>
+                <p className="text-3xl font-semibold text-gray-900">{qaStats?.completedItems?.count || 0}</p>
                 <div className="mt-4 flex items-center text-sm text-gray-500">
-                  <span className="text-green-500">↑ 15</span>
-                  <span className="ml-2">this week</span>
+                  <span className={qaStats?.completedItems?.change && qaStats.completedItems.change > 0 ? "text-green-500" : qaStats?.completedItems?.change && qaStats.completedItems.change < 0 ? "text-red-500" : "text-gray-500"}>
+                    {qaStats?.completedItems?.change && qaStats.completedItems.change > 0 ? "↑" : qaStats?.completedItems?.change && qaStats.completedItems.change < 0 ? "↓" : "→"} {Math.abs(qaStats?.completedItems?.change || 0)}
+                  </span>
+                  <span className="ml-2">{qaStats?.completedItems?.period || 'this week'}</span>
                 </div>
               </div>
 
@@ -253,15 +254,17 @@ export default function HomePage() {
                   <h3 className="text-base font-medium text-gray-500">Active Reviewers</h3>
                   <Users className="h-6 w-6 text-gray-400" />
                 </div>
-                <p className="text-3xl font-semibold text-gray-900">8</p>
+                <p className="text-3xl font-semibold text-gray-900">{qaStats?.activeReviewers?.count || 0}</p>
                 <div className="mt-4 flex items-center text-sm text-gray-500">
-                  <span className="text-gray-500">→</span>
-                  <span className="ml-2">same as last week</span>
+                  <span className={qaStats?.activeReviewers?.change && qaStats.activeReviewers.change > 0 ? "text-green-500" : qaStats?.activeReviewers?.change && qaStats.activeReviewers.change < 0 ? "text-red-500" : "text-gray-500"}>
+                    {qaStats?.activeReviewers?.change && qaStats.activeReviewers.change > 0 ? "↑" : qaStats?.activeReviewers?.change && qaStats.activeReviewers.change < 0 ? "↓" : "→"} {Math.abs(qaStats?.activeReviewers?.change || 0)}
+                  </span>
+                  <span className="ml-2">{qaStats?.activeReviewers?.period || 'this week'}</span>
                 </div>
               </div>
             </div>
 
-            {/* Recent Activity and QA Projects */}
+            {/* Recent Bug Reports and Quick Actions */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {/* Recent Bug Reports */}
               <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-200 p-6">
@@ -294,43 +297,7 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* Active QA Projects */}
-              <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-200 p-6">
-                <div className="p-6 border-b border-gray-100">
-                  <h2 className="text-lg font-semibold text-gray-900">Active QA Projects</h2>
-                </div>
-                <div className="p-6">
-                  <div className="space-y-4">
-                    {qaProjects.map((project) => (
-                      <div key={project.id} className="flex items-center justify-between">
-                        <div>
-                          <h3 className="text-sm font-medium text-gray-900">{project.name}</h3>
-                          <div className="mt-1 flex items-center gap-2">
-                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(project.status)}`}>
-                              {project.status.replace('_', ' ')}
-                            </span>
-                            <span className="text-sm text-gray-500">
-                              {project.completedItems}/{project.totalItems} items
-                            </span>
-                          </div>
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {new Date(project.lastUpdated).toLocaleDateString()}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="mt-6">
-                    <Link href="/qa" className="text-sm font-medium text-amber-600 hover:text-amber-500">
-                      View all QA projects →
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Quick Actions */}
-            <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Quick Actions */}
               <div className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-200">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
                 <div className="space-y-4">
@@ -358,39 +325,6 @@ export default function HomePage() {
                     </div>
                     <span className="text-gray-400">→</span>
                   </Link>
-                </div>
-              </div>
-
-              <div className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-200">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-blue-100 rounded-lg">
-                      <CheckCircle className="h-5 w-5 text-blue-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-900">Mobile App Testing QA completed</p>
-                      <p className="text-xs text-gray-500">2 hours ago</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-red-100 rounded-lg">
-                      <AlertTriangle className="h-5 w-5 text-red-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-900">Critical bug reported in payment system</p>
-                      <p className="text-xs text-gray-500">4 hours ago</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-green-100 rounded-lg">
-                      <Clock className="h-5 w-5 text-green-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-900">Website Redesign QA in progress</p>
-                      <p className="text-xs text-gray-500">1 day ago</p>
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>

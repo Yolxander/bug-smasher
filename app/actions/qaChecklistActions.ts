@@ -36,6 +36,24 @@ export interface QaChecklist {
   updated_by: number;
 }
 
+export interface QaStats {
+  activeProjects: {
+    count: number;
+    change: number;
+    period: string;
+  };
+  completedItems: {
+    count: number;
+    change: number;
+    period: string;
+  };
+  activeReviewers: {
+    count: number;
+    change: number;
+    period: string;
+  };
+}
+
 // Get all QA checklists
 export const getQaChecklists = async (): Promise<QaChecklist[]> => {
   try {
@@ -380,5 +398,58 @@ export const getChecklistResponses = async (checklistId: number): Promise<QaChec
   } catch (error) {
     console.error('Error in getChecklistResponses:', error);
     throw error;
+  }
+};
+
+// Get QA statistics for the dashboard widget
+export const getQaStats = async (): Promise<QaStats> => {
+  try {
+    const token = await getAuthToken()
+    if (!token) {
+      throw new Error('No authentication token found')
+    }
+
+    console.log('Fetching QA stats from:', `${API_URL}/api/qa/stats`)
+    const response = await fetch(`${API_URL}/api/qa/stats`, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      console.error('QA stats API error:', {
+        status: response.status,
+        statusText: response.statusText
+      })
+      throw new Error('Failed to fetch QA statistics')
+    }
+
+    const data = await response.json()
+    console.log('QA stats API response:', data)
+    // Return the data directly since it's already in the correct format
+    return data
+  } catch (error) {
+    console.error('Error in getQaStats:', error)
+    // Return default values if the API call fails
+    return {
+      activeProjects: {
+        count: 0,
+        change: 0,
+        period: 'this week'
+      },
+      completedItems: {
+        count: 0,
+        change: 0,
+        period: 'this week'
+      },
+      activeReviewers: {
+        count: 0,
+        change: 0,
+        period: 'this week'
+      }
+    }
   }
 }; 
