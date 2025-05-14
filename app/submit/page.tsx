@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Bell, ChevronDown, ArrowLeft } from "lucide-react";
+import { Bell, ChevronDown, ArrowLeft, Bug } from "lucide-react";
 import { DashboardSidebar } from "@/components/DashboardSidebar";
 import { StepIndicator } from "../components/StepIndicator";
 import { createBug } from "../actions/bugs";
@@ -15,8 +15,16 @@ export default function SubmitBugPage() {
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
   const searchParams = useSearchParams();
+  
+  // Debug all URL parameters
+  useEffect(() => {
+    console.log('All URL Parameters:', Object.fromEntries(searchParams.entries()));
+    console.log('Raw item parameter:', searchParams.get('item'));
+  }, [searchParams]);
+
   const checklistItemId = searchParams.get("checklist_item_id");
-  const itemName = searchParams.get("item");
+  const rawItemParam = searchParams.get("item");
+  const itemIdentifier = rawItemParam ? decodeURIComponent(rawItemParam) : '';
 
   const [formData, setFormData] = useState({
     title: "",
@@ -125,7 +133,8 @@ export default function SubmitBugPage() {
         project_id: formData.project.id,
         url: formData.url,
         checklist_item_id: checklistItemId || undefined,
-        reported_by: user.id
+        reported_by: user.id,
+        relatedItem: itemIdentifier || undefined
       };
 
       await createBug(bugData);
@@ -203,6 +212,10 @@ export default function SubmitBugPage() {
     },
   ];
 
+  if (!user) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="flex">
@@ -213,8 +226,12 @@ export default function SubmitBugPage() {
               <div className="flex justify-between h-16">
                 <div className="flex">
                   <div className="flex-shrink-0 flex items-center">
-                    <h1 className="text-xl font-semibold">
-                      Submit a Bug Report{itemName ? ` for ${itemName}` : ""}
+                    <h1 className="text-xl font-semibold flex items-center gap-2">
+                      <Bug className="h-6 w-6 text-red-600" />
+                      <span>Submit a Bug Report</span>
+                      {itemIdentifier && (
+                        <span className="text-indigo-600 font-mono"> for ({itemIdentifier})</span>
+                      )}
                     </h1>
                   </div>
                 </div>
@@ -257,7 +274,12 @@ export default function SubmitBugPage() {
           <main className="flex-1 p-8">
             <div className="max-w-7xl mx-auto">
               <div className="bg-white rounded-xl shadow-sm p-6 mb-8">
-                <h2 className="text-2xl font-bold mb-2">Report a New Bug {itemName ? ` for ${itemName} QA list item` : ""} </h2>
+                <h2 className="text-2xl font-bold mb-2 flex items-center gap-2">
+                  <span>Report a New Bug</span>
+                  {itemIdentifier && (
+                    <span className="text-indigo-600 font-mono"> for ({itemIdentifier})</span>
+                  )}
+                </h2>
                 <p className="text-gray-500 mb-6">Please provide detailed information about the bug you've encountered.</p>
                 
                 <StepIndicator

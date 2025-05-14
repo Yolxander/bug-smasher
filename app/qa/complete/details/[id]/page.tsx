@@ -7,6 +7,16 @@ import { useEffect, useState, use } from 'react'
 import { useRouter } from "next/navigation"
 import { getQaChecklist, QaChecklist, updateChecklistItem } from '@/app/actions/qaChecklistActions'
 
+interface Bug {
+  id: number
+  title: string
+  description: string
+  status: 'Open' | 'In Progress' | 'Closed'
+  priority: string
+  created_at: string
+  updated_at: string
+}
+
 interface ChecklistItem {
   id: number
   checklist_id: number
@@ -24,6 +34,7 @@ interface ChecklistItem {
   assignedTo?: string[]
   linkedBugs?: number
   identifier?: string
+  bugs?: Bug[]
 }
 
 interface QAProject extends QaChecklist {
@@ -348,6 +359,11 @@ export default function QACompleteDetailsPage({ params }: { params: Promise<{ id
   const ItemSidebar = () => {
     if (!selectedItem) return null;
 
+    const handleBugReport = () => {
+      const encodedItem = encodeURIComponent(selectedItem.identifier || '');
+      router.push(`/submit?item=${encodedItem}`);
+    };
+
     return (
       <div className="fixed inset-0 z-50 flex">
         {/* Overlay */}
@@ -411,6 +427,36 @@ export default function QACompleteDetailsPage({ params }: { params: Promise<{ id
               </div>
             </div>
 
+            {/* Connected Bug Information */}
+            {selectedItem.bugs && selectedItem.bugs.length > 0 && (
+              <div className="bg-red-50 rounded-lg p-4 border border-red-100">
+                <h3 className="text-sm font-semibold text-red-800 mb-2 flex items-center gap-2">
+                  <Bug className="h-4 w-4" />
+                  Connected Bug Report
+                </h3>
+                <div className="space-y-3">
+                  {selectedItem.bugs.map((bug) => (
+                    <div key={bug.id} className="bg-white rounded-md p-3 border border-red-200">
+                      <h4 className="font-medium text-gray-900 mb-1">{bug.title}</h4>
+                      <p className="text-sm text-gray-600 mb-2">{bug.description}</p>
+                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                        <span className={`px-2 py-1 rounded-full ${
+                          bug.status === 'Open' ? 'bg-yellow-100 text-yellow-800' :
+                          bug.status === 'In Progress' ? 'bg-blue-100 text-blue-800' :
+                          'bg-green-100 text-green-800'
+                        }`}>
+                          {bug.status}
+                        </span>
+                        <span className="px-2 py-1 rounded-full bg-gray-100">
+                          {bug.priority}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Answer/response */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Answer</label>
@@ -459,17 +505,29 @@ export default function QACompleteDetailsPage({ params }: { params: Promise<{ id
 
             {/* Save button */}
             <div className="sticky bottom-0 bg-white border-t border-gray-200 p-4">
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className={`w-full rounded-md px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors ${
-                  saving 
-                    ? 'bg-indigo-400 cursor-not-allowed' 
-                    : 'bg-indigo-600 hover:bg-indigo-700'
-                }`}
-              >
-                {saving ? 'Saving...' : 'Save Changes'}
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleSave}
+                  disabled={saving}
+                  className={`flex-1 rounded-md px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors ${
+                    saving 
+                      ? 'bg-indigo-400 cursor-not-allowed' 
+                      : 'bg-indigo-600 hover:bg-indigo-700'
+                  }`}
+                >
+                  {saving ? 'Saving...' : 'Save Changes'}
+                </button>
+                {selectedItem.status === 'failed' && (
+                  <button
+                    onClick={handleBugReport}
+                    className="flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-600 hover:text-red-600 bg-gray-100 hover:bg-gray-200 rounded-md shadow-sm transition-colors"
+                    title="Report a bug for this item"
+                  >
+                    <Bug className="h-4 w-4" />
+                    <span className="hidden sm:inline">Report Bug</span>
+                  </button>
+                )}
+              </div>
               {saveError && (
                 <p className="mt-2 text-sm text-red-600">{saveError}</p>
               )}
