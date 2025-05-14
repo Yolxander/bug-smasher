@@ -29,6 +29,15 @@ export type Submission = {
     name: string;
     avatar: string;
   };
+  qa_list_item_id: string | null;
+  fixes: Array<{
+    id: number;
+    bug_id: number;
+    findings: string;
+    solutions: string;
+    created_at: string;
+    updated_at: string;
+  }>;
 };
 
 export async function getSubmissions(): Promise<Submission[]> {
@@ -230,5 +239,58 @@ export async function deleteSubmission(id: string): Promise<boolean> {
       variant: "destructive",
     })
     return false
+  }
+}
+
+export async function fixBug(bugId: string, data: {
+  findings: string;
+  solution: string;
+  status: string;
+}): Promise<Submission | null> {
+  try {
+    const token = localStorage.getItem('token')
+    if (!token) {
+      throw new Error('No authentication token found')
+    }
+
+    const response = await fetch(`${API_URL}/api/bugs/${bugId}/fix`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      credentials: 'include',
+      body: JSON.stringify({
+        data: {
+          type: 'bugs',
+          attributes: {
+            findings: data.findings,
+            solution: data.solution,
+            status: data.status
+          }
+        }
+      }),
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.message || 'Failed to fix bug')
+    }
+
+    const result = await response.json()
+    toast({
+      title: "Success",
+      description: "Bug fix submitted successfully",
+    })
+    return result.data
+  } catch (error) {
+    console.error('Error fixing bug:', error)
+    toast({
+      title: "Error",
+      description: error instanceof Error ? error.message : "Failed to fix bug",
+      variant: "destructive",
+    })
+    return null
   }
 } 

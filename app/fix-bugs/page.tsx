@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Search, Bell, ChevronDown, Wrench, X, Save, AlertCircle, Bug, CheckCircle, Clock } from "lucide-react";
 import { DashboardSidebar } from "@/components/DashboardSidebar";
-import { getSubmissions } from "../actions/submissions";
+import { getSubmissions, fixBug } from "../actions/submissions";
 import { Submission } from "../actions/submissions";
 import { useAuth } from "@/lib/auth-context"
 
@@ -27,6 +27,9 @@ export default function FixBugsPage() {
   const [browser, setBrowser] = useState("All");
   const [os, setOs] = useState("All");
   const [isDetailsExpanded, setIsDetailsExpanded] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
   useEffect(() => {
     const fetchSubmissions = async () => {
@@ -66,7 +69,7 @@ export default function FixBugsPage() {
     const matchesSearch =
       submission.title?.toLowerCase().includes(search.toLowerCase()) ||
       submission.description?.toLowerCase().includes(search.toLowerCase()) ||
-      submission.steps_to_reproduce?.toLowerCase().includes(search.toLowerCase());
+      submission.stepsToReproduce?.toLowerCase().includes(search.toLowerCase());
     return matchesStatus && matchesPriority && matchesQaTask && matchesDevice && matchesBrowser && matchesOs && matchesSearch;
   });
 
@@ -99,8 +102,10 @@ export default function FixBugsPage() {
 
   const handleFixClick = (submission: Submission) => {
     setSelectedBug(submission);
-    setSolution(submission.solution || "");
-    setFindings(submission.findings || "");
+    // Get the latest fix if available
+    const latestFix = submission.fixes?.[submission.fixes.length - 1];
+    setSolution(latestFix?.solutions || "");
+    setFindings(latestFix?.findings || "");
     setIsDrawerOpen(true);
   };
 
@@ -108,16 +113,35 @@ export default function FixBugsPage() {
     if (!selectedBug) return;
     
     try {
-      // TODO: Implement save functionality
-      // await updateSubmission(selectedBug.id, {
-      //   status: "Resolved",
-      //   solution,
-      //   findings
-      // });
-      setIsDrawerOpen(false);
-      setSelectedBug(null);
+      setSaving(true);
+      setSaveError(null);
+      setSaveSuccess(false);
+
+      const result = await fixBug(selectedBug.id, {
+        findings,
+        solution,
+        status: selectedBug.status
+      });
+
+      if (result) {
+        setSaveSuccess(true);
+        // Update the local submissions list
+        setSubmissions(prev => prev.map(sub => 
+          sub.id === selectedBug.id ? result : sub
+        ));
+        // Close the drawer after a short delay
+        setTimeout(() => {
+          setIsDrawerOpen(false);
+          setSelectedBug(null);
+          setSolution("");
+          setFindings("");
+        }, 1500);
+      }
     } catch (error) {
       console.error('Error saving fix:', error);
+      setSaveError(error instanceof Error ? error.message : 'Failed to save fix');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -321,8 +345,17 @@ export default function FixBugsPage() {
                               onClick={() => handleFixClick(submission)}
                               className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                             >
-                              <Wrench className="h-4 w-4 mr-1" />
-                              Fix
+                              {submission.status === "Resolved" ? (
+                                <>
+                                  <CheckCircle className="h-4 w-4 mr-1" />
+                                  See Solution
+                                </>
+                              ) : (
+                                <>
+                                  <Wrench className="h-4 w-4 mr-1" />
+                                  Fix
+                                </>
+                              )}
                             </button>
                           </td>
                         </tr>
@@ -395,15 +428,15 @@ export default function FixBugsPage() {
                           </div>
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Steps to Reproduce</label>
-                            <div className="text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded-md border border-gray-200 font-mono whitespace-pre-wrap">{selectedBug.steps_to_reproduce}</div>
+                            <div className="text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded-md border border-gray-200 font-mono whitespace-pre-wrap">{selectedBug.stepsToReproduce}</div>
                           </div>
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Expected Behavior</label>
-                            <div className="text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded-md border border-gray-200 font-mono">{selectedBug.expected_behavior}</div>
+                            <div className="text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded-md border border-gray-200 font-mono">{selectedBug.expectedBehavior}</div>
                           </div>
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Actual Behavior</label>
-                            <div className="text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded-md border border-gray-200 font-mono">{selectedBug.actual_behavior}</div>
+                            <div className="text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded-md border border-gray-200 font-mono">{selectedBug.actualBehavior}</div>
                           </div>
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Environment</label>
@@ -535,13 +568,20 @@ export default function FixBugsPage() {
                     </button>
                     <button
                       type="button"
-                      className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                      className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
                       onClick={handleSaveFix}
+                      disabled={saving}
                     >
                       <Save className="h-4 w-4 mr-2" />
-                      Save Fix
+                      {saving ? 'Saving...' : 'Save Fix'}
                     </button>
                   </div>
+                  {saveError && (
+                    <p className="mt-2 text-sm text-red-600">{saveError}</p>
+                  )}
+                  {saveSuccess && (
+                    <p className="mt-2 text-sm text-green-600">Fix saved successfully!</p>
+                  )}
                 </div>
               </div>
             </div>
