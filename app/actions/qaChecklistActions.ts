@@ -9,6 +9,10 @@ export interface QaChecklistItem {
   order_number: number;
   created_at: string;
   updated_at: string;
+  status?: 'passed' | 'failed' | 'pending' | 'in_progress' | 'done';
+  notes?: string;
+  answer?: string;
+  failure_reason?: string;
 }
 
 export interface QaChecklistResponse {

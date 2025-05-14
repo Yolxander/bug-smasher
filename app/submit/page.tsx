@@ -7,10 +7,17 @@ import { DashboardSidebar } from "@/components/DashboardSidebar";
 import { StepIndicator } from "../components/StepIndicator";
 import { createBug } from "../actions/bugs";
 import { toast } from "@/components/ui/use-toast";
+import { useSearchParams } from "next/navigation";
+import { useAuth } from "../contexts/AuthContext";
 
 export default function SubmitBugPage() {
   const [currentStep, setCurrentStep] = useState("details");
   const [loading, setLoading] = useState(false);
+  const { user } = useAuth();
+  const searchParams = useSearchParams();
+  const checklistItemId = searchParams.get("checklist_item_id");
+  const itemName = searchParams.get("item");
+
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -89,6 +96,15 @@ export default function SubmitBugPage() {
       return;
     }
     
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to submit a bug report",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
     try {
       const bugData = {
@@ -107,7 +123,9 @@ export default function SubmitBugPage() {
         screenshot: formData.screenshot,
         assignee_id: formData.assignee.id,
         project_id: formData.project.id,
-        url: formData.url
+        url: formData.url,
+        checklist_item_id: checklistItemId || undefined,
+        reported_by: user.id
       };
 
       await createBug(bugData);
@@ -195,7 +213,9 @@ export default function SubmitBugPage() {
               <div className="flex justify-between h-16">
                 <div className="flex">
                   <div className="flex-shrink-0 flex items-center">
-                    <h1 className="text-xl font-semibold">Submit a Bug Report</h1>
+                    <h1 className="text-xl font-semibold">
+                      Submit a Bug Report{itemName ? ` for ${itemName}` : ""}
+                    </h1>
                   </div>
                 </div>
                 <div className="flex items-center">
@@ -237,7 +257,7 @@ export default function SubmitBugPage() {
           <main className="flex-1 p-8">
             <div className="max-w-7xl mx-auto">
               <div className="bg-white rounded-xl shadow-sm p-6 mb-8">
-                <h2 className="text-2xl font-bold mb-2">Report a New Bug</h2>
+                <h2 className="text-2xl font-bold mb-2">Report a New Bug {itemName ? ` for ${itemName} QA list item` : ""} </h2>
                 <p className="text-gray-500 mb-6">Please provide detailed information about the bug you've encountered.</p>
                 
                 <StepIndicator

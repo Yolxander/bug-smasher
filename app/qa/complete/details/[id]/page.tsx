@@ -5,7 +5,7 @@ import { DashboardSidebar } from "@/components/DashboardSidebar"
 import { ArrowRight, Clock, Users, Save, ChevronRight, CheckCircle, XCircle, AlertTriangle, Info, Paperclip, Bug, X } from "lucide-react"
 import { useEffect, useState, use } from 'react'
 import { useRouter } from "next/navigation"
-import { getQaChecklist, QaChecklist } from '@/app/actions/qaChecklistActions'
+import { getQaChecklist, QaChecklist, updateChecklistItem } from '@/app/actions/qaChecklistActions'
 
 interface ChecklistItem {
   id: number
@@ -18,9 +18,11 @@ interface ChecklistItem {
   updated_at: string
   status?: 'passed' | 'failed' | 'pending' | 'in_progress' | 'done'
   notes?: string
+  answer?: string
   failureReason?: string
   assignedTo?: string[]
   linkedBugs?: number
+  identifier?: string
 }
 
 interface QAProject extends QaChecklist {
@@ -36,16 +38,25 @@ export default function QACompleteDetailsPage({ params }: { params: Promise<{ id
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
+  const [saveSuccess, setSaveSuccess] = useState(false)
   const [expandedItems, setExpandedItems] = useState<Set<number>>(new Set())
   const [viewMode, setViewMode] = useState<ViewMode>('board')
   const [showDetails, setShowDetails] = useState(false)
   const [selectedItem, setSelectedItem] = useState<ChecklistItem | null>(null)
   const [attachment, setAttachment] = useState<File | null>(null)
-  const [answer, setAnswer] = useState('')
+  const [localNotes, setLocalNotes] = useState('')
 
   // Unwrap params using React.use()
   const unwrappedParams = use(params)
   const checklistId = parseInt(unwrappedParams.id)
+
+  // Update localNotes when selectedItem changes
+  useEffect(() => {
+    if (selectedItem) {
+      setLocalNotes(selectedItem.notes || '')
+    }
+  }, [selectedItem])
 
   useEffect(() => {
     const fetchChecklist = async () => {
@@ -118,6 +129,11 @@ export default function QACompleteDetailsPage({ params }: { params: Promise<{ id
     })
 
     setChecklist({ ...checklist, items: updatedItems })
+    
+    // Also update the selectedItem state
+    if (selectedItem && selectedItem.id === itemId) {
+      setSelectedItem(prev => prev ? { ...prev, status } : null)
+    }
   }
 
   const updateFailureReason = (itemId: number, reason: string) => {
@@ -126,6 +142,19 @@ export default function QACompleteDetailsPage({ params }: { params: Promise<{ id
     const updatedItems = checklist.items.map(item => {
       if (item.id === itemId) {
         return { ...item, failureReason: reason }
+      }
+      return item
+    })
+
+    setChecklist({ ...checklist, items: updatedItems })
+  }
+
+  const updateItemNotes = (itemId: number, notes: string) => {
+    if (!checklist) return
+
+    const updatedItems = checklist.items.map(item => {
+      if (item.id === itemId) {
+        return { ...item, notes }
       }
       return item
     })
@@ -198,14 +227,44 @@ export default function QACompleteDetailsPage({ params }: { params: Promise<{ id
   }
 
   const handleSave = async () => {
-    setSaving(true)
+    if (!checklist || !selectedItem) return;
+    
+    setSaving(true);
+    setSaveError(null);
+    setSaveSuccess(false);
+    
     try {
-      // TODO: Implement save functionality
-      await new Promise(resolve => setTimeout(resolve, 1000)) // Simulated API call
-      setSaving(false)
+      const updatedItem = await updateChecklistItem(checklist.id, selectedItem.id, {
+        text: selectedItem.item_text,
+        type: selectedItem.item_type,
+        is_required: selectedItem.is_required,
+        order_number: selectedItem.order_number,
+        status: selectedItem.status,
+        answer: selectedItem.notes,
+        failure_reason: selectedItem.failureReason
+      });
+
+      // Update the checklist items after successful save
+      const updatedItems = checklist.items.map(item => 
+        item.id === selectedItem.id ? { ...item, ...updatedItem, notes: selectedItem.notes } : item
+      );
+      
+      setChecklist(prev => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          items: updatedItems
+        };
+      });
+      
+      setSaveSuccess(true);
+      // Reset success message after 2 seconds
+      setTimeout(() => setSaveSuccess(false), 2000);
     } catch (error) {
-      console.error('Error saving checklist:', error)
-      setSaving(false)
+      console.error('Error saving checklist:', error);
+      setSaveError(error instanceof Error ? error.message : 'Failed to save changes');
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -214,8 +273,8 @@ export default function QACompleteDetailsPage({ params }: { params: Promise<{ id
     {
       key: 'pending',
       title: 'Pending',
-      color: 'border-pink-500',
-      countColor: 'text-pink-500',
+      color: 'border-gray-500',
+      countColor: 'text-gray-500',
       items: checklist?.items?.filter(item => item.status === 'pending' || !item.status) || [],
     },
     {
@@ -285,80 +344,119 @@ export default function QACompleteDetailsPage({ params }: { params: Promise<{ id
   );
 
   // Right sidebar (drawer) for item details
-  const ItemSidebar = () => (
-    selectedItem && (
+  const ItemSidebar = () => {
+    if (!selectedItem) return null;
+
+    return (
       <div className="fixed inset-0 z-50 flex">
         {/* Overlay */}
-        <div className="flex-1 bg-black bg-opacity-30" onClick={() => setSelectedItem(null)} />
+        <div 
+          className="fixed inset-0 bg-black/50 transition-opacity"
+          onClick={() => setSelectedItem(null)}
+        />
+
         {/* Sidebar */}
-        <div className="w-full max-w-md bg-white h-full shadow-2xl p-8 overflow-y-auto relative animate-slide-in-right">
-          <button onClick={() => setSelectedItem(null)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
-            <X className="h-6 w-6" />
-          </button>
-          <div className="mb-6">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-xs text-gray-400 font-semibold">#{selectedItem.id.toString().padStart(4, '0')}</span>
-              {selectedItem.status && (
-                <span className={`text-xs font-bold px-2 py-1 rounded-full ${selectedItem.status === 'passed' ? 'bg-green-100 text-green-700' : selectedItem.status === 'failed' ? 'bg-red-100 text-red-700' : selectedItem.status === 'in_progress' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'}`}>{selectedItem.status.toUpperCase()}</span>
-              )}
+        <div className="fixed right-0 top-0 h-full w-full max-w-lg bg-white shadow-xl">
+          {/* Header */}
+          <div className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-200 bg-white px-6 py-4">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-gray-400">{selectedItem.identifier}</span>
+              <h2 className="text-lg font-semibold text-gray-900">{selectedItem.item_text}</h2>
             </div>
-            <h2 className="text-xl font-bold text-gray-900 mb-1">{selectedItem.item_text}</h2>
-            <div className="flex items-center gap-4 text-sm text-gray-500 mb-2">
-              <span>Type: <span className="font-medium text-gray-700">{selectedItem.item_type}</span></span>
-              <span>Required: <span className="font-medium text-gray-700">{selectedItem.is_required ? 'Yes' : 'No'}</span></span>
+            <button
+              onClick={() => setSelectedItem(null)}
+              className="rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-500"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+
+          {/* Content */}
+          <div className="p-6 space-y-6">
+            {/* Status update */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => updateItemStatus(selectedItem.id, 'passed')}
+                  className={`px-3 py-1.5 rounded-md text-sm font-semibold transition-colors ${
+                    selectedItem.status === 'passed' 
+                      ? 'bg-green-100 text-green-700 ring-2 ring-green-500 ring-offset-2' 
+                      : 'bg-gray-100 text-gray-700 hover:bg-green-50'
+                  }`}
+                >
+                  Passed
+                </button>
+                <button 
+                  onClick={() => updateItemStatus(selectedItem.id, 'failed')}
+                  className={`px-3 py-1.5 rounded-md text-sm font-semibold transition-colors ${
+                    selectedItem.status === 'failed' 
+                      ? 'bg-red-100 text-red-700 ring-2 ring-red-500 ring-offset-2' 
+                      : 'bg-gray-100 text-gray-700 hover:bg-red-50'
+                  }`}
+                >
+                  Fail
+                </button>
+                <button 
+                  onClick={() => updateItemStatus(selectedItem.id, 'pending')}
+                  className={`px-3 py-1.5 rounded-md text-sm font-semibold transition-colors ${
+                    selectedItem.status === 'pending' 
+                      ? 'bg-gray-100 text-gray-700 ring-2 ring-gray-500 ring-offset-2' 
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  Pending
+                </button>
+              </div>
             </div>
-          </div>
-          {/* Status update */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-            <div className="flex gap-2">
-              <button onClick={() => updateItemStatus(selectedItem.id, 'passed')} className={`px-3 py-1.5 rounded-md text-sm font-semibold ${selectedItem.status === 'passed' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700 hover:bg-green-50'}`}>Passed</button>
-              <button onClick={() => updateItemStatus(selectedItem.id, 'failed')} className={`px-3 py-1.5 rounded-md text-sm font-semibold ${selectedItem.status === 'failed' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700 hover:bg-red-50'}`}>Fail</button>
-              <button onClick={() => updateItemStatus(selectedItem.id, 'pending')} className={`px-3 py-1.5 rounded-md text-sm font-semibold ${selectedItem.status === 'pending' ? 'bg-pink-100 text-pink-700' : 'bg-gray-100 text-gray-700 hover:bg-pink-50'}`}>Pending</button>
-            </div>
-          </div>
-          {/* Answer/response */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Answer</label>
-            <textarea
-              className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm bg-gray-50 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-              rows={4}
-              value={answer}
-              onChange={e => setAnswer(e.target.value)}
-              placeholder="Enter your answer or notes..."
-            />
-          </div>
-          {/* Attachment upload */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Attachment</label>
-            <div className="flex items-center gap-3">
-              <input
-                type="file"
-                id="attachment-upload"
-                className="hidden"
-                onChange={e => setAttachment(e.target.files?.[0] || null)}
+
+            {/* Answer/response */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Answer</label>
+              <textarea
+                className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:outline-none transition-colors duration-200"
+                rows={4}
+                value={selectedItem.answer || selectedItem.notes || ''}
+                onChange={(e) => {
+                  const newValue = e.target.value;
+                  setSelectedItem(prev => prev ? { ...prev, notes: newValue, answer: newValue } : null);
+                  
+                  if (checklist) {
+                    const updatedItems = checklist.items.map(item => 
+                      item.id === selectedItem.id ? { ...item, notes: newValue, answer: newValue } : item
+                    );
+                    setChecklist(prev => prev ? { ...prev, items: updatedItems } : null);
+                  }
+                }}
+                placeholder="Enter your answer..."
               />
-              <label htmlFor="attachment-upload" className="flex items-center gap-2 px-3 py-2 rounded-md border border-gray-200 bg-gray-50 text-gray-700 cursor-pointer hover:bg-gray-100">
-                <Paperclip className="h-4 w-4" />
-                {attachment ? attachment.name : 'Upload file'}
-              </label>
-              {attachment && (
-                <button onClick={() => setAttachment(null)} className="text-xs text-red-500 hover:underline">Remove</button>
+            </div>
+
+            {/* Save button */}
+            <div className="sticky bottom-0 bg-white border-t border-gray-200 p-4">
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className={`w-full rounded-md px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors ${
+                  saving 
+                    ? 'bg-indigo-400 cursor-not-allowed' 
+                    : 'bg-indigo-600 hover:bg-indigo-700'
+                }`}
+              >
+                {saving ? 'Saving...' : 'Save Changes'}
+              </button>
+              {saveError && (
+                <p className="mt-2 text-sm text-red-600">{saveError}</p>
+              )}
+              {saveSuccess && (
+                <p className="mt-2 text-sm text-green-600">Changes saved successfully!</p>
               )}
             </div>
-          </div>
-          {/* Report bug */}
-          <div className="mb-6">
-            <button className="flex items-center gap-2 px-4 py-2 rounded-md bg-red-100 text-red-700 font-semibold hover:bg-red-200 transition"><Bug className="h-4 w-4" />Report Bug</button>
-          </div>
-          {/* Save button */}
-          <div className="flex justify-end">
-            <button className="px-5 py-2 rounded-md bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition">Save</button>
           </div>
         </div>
       </div>
-    )
-  )
+    );
+  };
 
   // Kanban board rendering
   const KanbanBoard = () => (
@@ -376,12 +474,20 @@ export default function QACompleteDetailsPage({ params }: { params: Promise<{ id
           </div>
           <div className="space-y-4">
             {col.items.map(item => (
-              <div key={item.id} className="bg-white rounded-xl shadow p-4 hover:shadow-lg transition cursor-pointer border border-gray-100" onClick={() => { setSelectedItem(item); setAnswer(item.notes || ''); }}>
+              <div 
+                key={item.id} 
+                className="bg-white rounded-xl shadow p-4 hover:shadow-lg transition cursor-pointer border border-gray-100" 
+                onClick={() => setSelectedItem(item)}
+              >
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs font-semibold text-gray-400">#U{item.id.toString().padStart(4, '0')}</span>
-                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${col.key === 'pending' ? 'bg-pink-100 text-pink-600' : col.key === 'passed' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>{col.title}</span>
+                      <span className="text-xs font-semibold text-gray-400">{item.identifier}</span>
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                        col.key === 'pending' ? 'bg-gray-100 text-gray-600' : 
+                        col.key === 'passed' ? 'bg-green-100 text-green-600' : 
+                        'bg-red-100 text-red-600'
+                      }`}>{col.title}</span>
                     </div>
                     <div className="text-base font-medium text-gray-900 truncate">{item.item_text}</div>
                   </div>
@@ -410,7 +516,7 @@ export default function QACompleteDetailsPage({ params }: { params: Promise<{ id
           <div
             key={item.id}
             className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gray-50 rounded-xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition-shadow duration-150 group cursor-pointer"
-            onClick={() => { setSelectedItem(item); setAnswer(item.notes || ''); }}
+            onClick={() => setSelectedItem(item)}
           >
             <div className="flex items-center gap-4 flex-1 min-w-0">
               {getStatusIcon(item.status || 'pending')}

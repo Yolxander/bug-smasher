@@ -27,6 +27,17 @@ export type CreateBugData = {
   priority: string;
   assignee_id?: string;
   project_id?: string;
+  checklist_item_id?: string;
+  reported_by?: string;
+  steps_to_reproduce?: string;
+  expected_behavior?: string;
+  actual_behavior?: string;
+  environment?: {
+    device: string;
+    browser: string;
+    os: string;
+  };
+  url?: string;
 };
 
 export type UpdateBugData = Partial<CreateBugData>;
