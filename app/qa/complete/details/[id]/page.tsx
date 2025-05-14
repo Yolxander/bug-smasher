@@ -427,35 +427,7 @@ export default function QACompleteDetailsPage({ params }: { params: Promise<{ id
               </div>
             </div>
 
-            {/* Connected Bug Information */}
-            {selectedItem.bugs && selectedItem.bugs.length > 0 && (
-              <div className="bg-red-50 rounded-lg p-4 border border-red-100">
-                <h3 className="text-sm font-semibold text-red-800 mb-2 flex items-center gap-2">
-                  <Bug className="h-4 w-4" />
-                  Connected Bug Report
-                </h3>
-                <div className="space-y-3">
-                  {selectedItem.bugs.map((bug) => (
-                    <div key={bug.id} className="bg-white rounded-md p-3 border border-red-200">
-                      <h4 className="font-medium text-gray-900 mb-1">{bug.title}</h4>
-                      <p className="text-sm text-gray-600 mb-2">{bug.description}</p>
-                      <div className="flex items-center gap-2 text-xs text-gray-500">
-                        <span className={`px-2 py-1 rounded-full ${
-                          bug.status === 'Open' ? 'bg-yellow-100 text-yellow-800' :
-                          bug.status === 'In Progress' ? 'bg-blue-100 text-blue-800' :
-                          'bg-green-100 text-green-800'
-                        }`}>
-                          {bug.status}
-                        </span>
-                        <span className="px-2 py-1 rounded-full bg-gray-100">
-                          {bug.priority}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+          
 
             {/* Answer/response */}
             <div>
@@ -535,6 +507,36 @@ export default function QACompleteDetailsPage({ params }: { params: Promise<{ id
                 <p className="mt-2 text-sm text-green-600">Changes saved successfully!</p>
               )}
             </div>
+
+             {/* Connected Bug Information */}
+             {selectedItem.bugs && selectedItem.bugs.length > 0 && (
+              <div className="bg-red-50 rounded-lg p-4 border border-red-100">
+                <h3 className="text-sm font-semibold text-red-800 mb-2 flex items-center gap-2">
+                  <Bug className="h-4 w-4" />
+                  Connected Bug Report
+                </h3>
+                <div className="space-y-3">
+                  {selectedItem.bugs.map((bug) => (
+                    <div key={bug.id} className="bg-white rounded-md p-3 border border-red-200">
+                      <h4 className="font-medium text-gray-900 mb-1">{bug.title}</h4>
+                      <p className="text-sm text-gray-600 mb-2">{bug.description}</p>
+                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                        <span className={`px-2 py-1 rounded-full ${
+                          bug.status === 'Open' ? 'bg-yellow-100 text-yellow-800' :
+                          bug.status === 'In Progress' ? 'bg-blue-100 text-blue-800' :
+                          'bg-green-100 text-green-800'
+                        }`}>
+                          {bug.status}
+                        </span>
+                        <span className="px-2 py-1 rounded-full bg-gray-100">
+                          {bug.priority}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
