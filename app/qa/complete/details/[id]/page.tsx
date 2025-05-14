@@ -20,6 +20,7 @@ interface ChecklistItem {
   notes?: string
   answer?: string
   failureReason?: string
+  failure_reason?: string
   assignedTo?: string[]
   linkedBugs?: number
   identifier?: string
@@ -431,6 +432,30 @@ export default function QACompleteDetailsPage({ params }: { params: Promise<{ id
                 placeholder="Enter your answer..."
               />
             </div>
+
+            {/* Failure reason - only show when status is failed */}
+            {selectedItem.status === 'failed' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Reason for Failure</label>
+                <textarea
+                  className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:outline-none transition-colors duration-200"
+                  rows={4}
+                  value={selectedItem.failureReason || selectedItem.failure_reason || ''}
+                  onChange={(e) => {
+                    const newValue = e.target.value;
+                    setSelectedItem(prev => prev ? { ...prev, failureReason: newValue, failure_reason: newValue } : null);
+                    
+                    if (checklist) {
+                      const updatedItems = checklist.items.map(item => 
+                        item.id === selectedItem.id ? { ...item, failureReason: newValue, failure_reason: newValue } : item
+                      );
+                      setChecklist(prev => prev ? { ...prev, items: updatedItems } : null);
+                    }
+                  }}
+                  placeholder="Explain why this item failed..."
+                />
+              </div>
+            )}
 
             {/* Save button */}
             <div className="sticky bottom-0 bg-white border-t border-gray-200 p-4">
