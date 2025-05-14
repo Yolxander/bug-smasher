@@ -47,13 +47,23 @@ export async function getSubmissions(): Promise<Submission[]> {
     })
 
     if (!response.ok) {
-      throw new Error('Failed to fetch submissions')
+      const errorText = await response.text();
+      throw new Error(`Failed to fetch submissions: ${response.status} ${errorText}`)
     }
 
-    const data = await response.json()
-    return data.data
+    const responseData = await response.json()
+    console.log('Submissions Response:', responseData);
+    
+    // Handle both formats: direct array or { data: [...] }
+    const submissions = Array.isArray(responseData) ? responseData : responseData.data;
+    
+    if (!submissions || !Array.isArray(submissions)) {
+      return [];
+    }
+
+    return submissions;
   } catch (error) {
-    console.error('Error fetching submissions:', error)
+    console.error('Error fetching submissions:', error);
     toast({
       title: "Error",
       description: "Failed to fetch submissions",

@@ -34,6 +34,7 @@ const navItems: NavItem[] = [
       { icon: "bug", label: "Bug Reports", href: "/bugs" },
       { icon: "plus-circle", label: "Submit Bug", href: "/submit" },
       { icon: "clipboard", label: "My Submissions", href: "/my-submissions" },
+      { icon: "wrench", label: "Fix Bugs", href: "/fix-bugs" },
     ]
   },
   {

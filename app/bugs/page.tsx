@@ -26,6 +26,7 @@ export default function BugReportsPage() {
   useEffect(() => {
     const fetchSubmissions = async () => {
       try {
+        setLoading(true);
         const data = await getSubmissions();
         if (!data) {
           setError('Failed to fetch submissions');
@@ -33,37 +34,19 @@ export default function BugReportsPage() {
         }
         setSubmissions(data);
 
-        // Fetch assignee profiles
-        const assigneeIds = [...new Set(data.map((sub: Submission) => sub.assignee_id).filter(Boolean))];
-        const profiles = await Promise.all(
-          assigneeIds.map(async (id) => {
-            try {
-              const profile = await getProfileById(id);
-              if (!profile) {
-                console.warn(`Profile not found for ID: ${id}`);
-                return null;
-              }
-              return profile;
-            } catch (error) {
-              console.error('Error fetching profile:', error);
-              return null;
-            }
-          })
-        );
-
-        const assigneeMap = profiles.reduce((acc, profile) => {
-          if (!profile) return acc;
+        // Create assignee map directly from submission data
+        const assigneeMap = data.reduce((acc, submission) => {
+          if (!submission.assignee) return acc;
           return {
             ...acc,
-            [profile.id]: {
-              name: profile.full_name || 'Unknown',
-              avatar: profile.avatar_url || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80'
+            [submission.assignee_id]: {
+              name: submission.assignee.name || 'Unknown',
+              avatar: submission.assignee.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80'
             }
           };
         }, {});
         setAssignees(assigneeMap);
       } catch (error) {
-        console.error('Error fetching submissions:', error);
         setError('Failed to fetch submissions');
       } finally {
         setLoading(false);
@@ -248,20 +231,18 @@ export default function BugReportsPage() {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Priority</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assignee</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Device</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Screenshot</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {loading ? (
                       <tr>
-                        <td colSpan={8} className="px-6 py-4 text-center text-gray-500">
+                        <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
                           Loading...
                         </td>
                       </tr>
                     ) : filteredBugs.length === 0 ? (
                       <tr>
-                        <td colSpan={8} className="px-6 py-4 text-center text-gray-500">
+                        <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
                           No bugs found.
                         </td>
                       </tr>
@@ -310,20 +291,6 @@ export default function BugReportsPage() {
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                               {bug.device}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {new Date(bug.createdAt).toLocaleDateString()}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              {bug.screenshot && (
-                                <Image
-                                  src={bug.screenshot}
-                                  alt="Screenshot"
-                                  width={80}
-                                  height={48}
-                                  className="rounded shadow"
-                                />
-                              )}
                             </td>
                           </tr>
                         );

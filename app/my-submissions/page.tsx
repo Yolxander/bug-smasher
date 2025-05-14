@@ -3,80 +3,58 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Search, Bell, ChevronDown, Bug, CheckCircle, Clock, AlertTriangle } from "lucide-react";
+import { Search, Bell, ChevronDown } from "lucide-react";
 import { DashboardSidebar } from "@/components/DashboardSidebar";
 import { getSubmissions } from "../actions/submissions";
 import { Submission } from "../actions/submissions";
-import { useAuth } from "@/lib/auth-context";
-import { getProfileById, getCurrentProfile, Profile } from '../actions/profiles'
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000'
+import { useAuth } from "@/lib/auth-context"
 
 export default function MySubmissionsPage() {
-  const { user, profileId } = useAuth();
+  const { user, profileId } = useAuth()
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState("All");
   const [priority, setPriority] = useState("All");
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
-  const [assignees, setAssignees] = useState<Record<string, { name: string; avatar: string }>>({});
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchSubmissions = async () => {
-      if (!profileId) return;
-
       try {
+        setLoading(true);
         const data = await getSubmissions();
-        // Filter submissions to only show those assigned to the current user
-        const userSubmissions = data.filter(submission => submission.assignee_id === profileId);
-        setSubmissions(userSubmissions);
-
-        // Fetch assignee profiles
-        const assigneeIds = [...new Set(userSubmissions.map((sub: Submission) => sub.assignee_id))];
-        const profiles = await Promise.all(
-          assigneeIds.map(async (id) => {
-            try {
-              const profile = await getProfileById(id);
-              if (!profile) throw new Error('Failed to fetch profile');
-              return profile;
-            } catch (error) {
-              console.error('Error fetching profile:', error);
-              return null;
-            }
-          })
-        );
-
-        const assigneeMap = profiles.reduce((acc, profile) => {
-          if (!profile) return acc;
-          return {
-            ...acc,
-            [profile.id]: {
-              name: profile.full_name || 'Unknown',
-              avatar: profile.avatar_url || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80'
-            }
-          };
-        }, {});
-        setAssignees(assigneeMap);
+        if (!data) {
+          setError('Failed to fetch submissions');
+          return;
+        }
+        // Filter submissions where assignee_id matches the user's ID
+        const mySubmissions = data.filter(sub => sub.assignee_id === user?.id);
+        console.log('User ID:', user?.id);
+        console.log('Filtered Submissions:', mySubmissions);
+        setSubmissions(mySubmissions);
       } catch (error) {
-        console.error('Error fetching submissions:', error);
+        setError('Failed to fetch submissions');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchSubmissions();
-  }, [profileId]);
+    if (user?.id) {
+      fetchSubmissions();
+    }
+  }, [user?.id]);
 
   const statusOptions = ["All", "Open", "In Progress", "Resolved"];
   const priorityOptions = ["All", "High", "Medium", "Low"];
 
-  const filteredBugs = submissions.filter((bug) => {
-    const matchesStatus = status === "All" || bug.status === status;
-    const matchesPriority = priority === "All" || bug.priority === priority;
+  const filteredSubmissions = submissions.filter((submission) => {
+    if (!submission) return false;
+    const matchesStatus = status === "All" || submission.status === status;
+    const matchesPriority = priority === "All" || submission.priority === priority;
     const matchesSearch =
-      bug.title.toLowerCase().includes(search.toLowerCase()) ||
-      bug.description.toLowerCase().includes(search.toLowerCase());
+      submission.title?.toLowerCase().includes(search.toLowerCase()) ||
+      submission.description?.toLowerCase().includes(search.toLowerCase());
     return matchesStatus && matchesPriority && matchesSearch;
   });
 
@@ -87,10 +65,10 @@ export default function MySubmissionsPage() {
   };
 
   const selectAll = () => {
-    if (selected.length === filteredBugs.length) {
+    if (selected.length === filteredSubmissions.length) {
       setSelected([]);
     } else {
-      setSelected(filteredBugs.map((bug) => bug.id));
+      setSelected(filteredSubmissions.map((submission) => submission.id));
     }
   };
 
@@ -113,11 +91,11 @@ export default function MySubmissionsPage() {
         <DashboardSidebar activePage="my-submissions" />
         <div className="flex-1">
           <header className="bg-white shadow-sm">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="mx-auto px-4 sm:px-6 lg:px-8">
               <div className="flex justify-between h-16">
                 <div className="flex">
                   <div className="flex-shrink-0 flex items-center">
-                    <h1 className="text-xl font-semibold">My Bug Reports</h1>
+                    <h1 className="text-xl font-semibold">My Submissions</h1>
                   </div>
                 </div>
                 <div className="flex items-center">
@@ -166,7 +144,7 @@ export default function MySubmissionsPage() {
                     <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                     <input
                       type="text"
-                      placeholder="Search bugs..."
+                      placeholder="Search submissions..."
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
                       className="w-full rounded-md border border-gray-200 pl-10 pr-4 py-2 text-sm bg-gray-50 focus:ring-2 focus:ring-black focus:outline-none"
@@ -206,7 +184,7 @@ export default function MySubmissionsPage() {
               </div>
             </div>
 
-            {/* Bug Reports Table */}
+            {/* Submissions Table */}
             <div className="bg-white rounded-xl shadow-sm overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
@@ -215,7 +193,7 @@ export default function MySubmissionsPage() {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         <input
                           type="checkbox"
-                          checked={selected.length === filteredBugs.length && filteredBugs.length > 0}
+                          checked={selected.length === filteredSubmissions.length && filteredSubmissions.length > 0}
                           onChange={selectAll}
                           className="rounded border-gray-300 text-black focus:ring-black"
                         />
@@ -223,78 +201,52 @@ export default function MySubmissionsPage() {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Priority</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assignee</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Device</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Screenshot</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {loading ? (
                       <tr>
-                        <td colSpan={8} className="px-6 py-4 text-center text-gray-500">
+                        <td colSpan={5} className="px-6 py-4 text-center text-gray-500">
                           Loading...
                         </td>
                       </tr>
-                    ) : filteredBugs.length === 0 ? (
+                    ) : filteredSubmissions.length === 0 ? (
                       <tr>
-                        <td colSpan={8} className="px-6 py-4 text-center text-gray-500">
-                          No bugs found.
+                        <td colSpan={5} className="px-6 py-4 text-center text-gray-500">
+                          No submissions found.
                         </td>
                       </tr>
                     ) : (
-                      filteredBugs.map((bug) => {
-                        const assignee = assignees[bug.assignee_id] || {
-                          name: 'Unknown',
-                          avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80'
-                        };
-
-                        return (
-                          <tr key={bug.id} className="hover:bg-gray-50">
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <input
-                                type="checkbox"
-                                checked={selected.includes(bug.id)}
-                                onChange={() => toggleSelect(bug.id)}
-                                className="rounded border-gray-300 text-black focus:ring-black"
-                              />
-                            </td>
-                            <td className="px-6 py-4">
-                              <div className="font-medium text-gray-900">{bug.title}</div>
-                              <div className="text-sm text-gray-500 line-clamp-1">{bug.description}</div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span className={`${getStatusColor(bug.status)}`}>{bug.status}</span>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span className={`${getStatusColor(bug.priority)}`}>{bug.priority}</span>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="text-sm font-medium text-gray-900">{assignee.name}</div>
-                              <div className="text-sm text-gray-500 line-clamp-1">{assignee.name}</div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="text-sm text-gray-500">{bug.device}</div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="text-sm text-gray-500">{new Date(bug.created_at).toLocaleDateString()}</div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              {bug.screenshot && (
-                                <div className="h-16 w-16 overflow-hidden rounded-md">
-                                  <Image
-                                    src={bug.screenshot}
-                                    alt={bug.title}
-                                    width={64}
-                                    height={64}
-                                    className="h-full w-full object-cover"
-                                  />
-                                </div>
-                              )}
-                            </td>
-                          </tr>
-                        );
-                      })
+                      filteredSubmissions.map((submission) => (
+                        <tr key={submission.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <input
+                              type="checkbox"
+                              checked={selected.includes(submission.id)}
+                              onChange={() => toggleSelect(submission.id)}
+                              className="rounded border-gray-300 text-black focus:ring-black"
+                            />
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="font-medium text-gray-900">{submission.title}</div>
+                            <div className="text-sm text-gray-500 line-clamp-1">{submission.description}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(submission.status)}`}>
+                              {submission.status}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(submission.priority)}`}>
+                              {submission.priority}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {submission.device}
+                          </td>
+                        </tr>
+                      ))
                     )}
                   </tbody>
                 </table>
