@@ -380,7 +380,7 @@ export default function QACompleteDetailsPage({ params }: { params: Promise<{ id
                     </div>
                     <div>
                       <h2 className="text-xl font-semibold text-gray-900">QA Item Details</h2>
-                      <p className="text-sm text-gray-500">Review and update item status</p>
+                      <p className="text-sm text-gray-500">{selectedItem.identifier}</p>
                     </div>
                   </div>
                   <button
@@ -395,71 +395,99 @@ export default function QACompleteDetailsPage({ params }: { params: Promise<{ id
 
               <div className="flex-1 overflow-y-auto">
                 <div className="px-6 py-6 space-y-8">
-                  {/* Item Details */}
-                  <div className="bg-gray-50 rounded-lg p-6">
-                    <h3 className="text-base font-semibold text-gray-900 mb-4">Item Details</h3>
-                    <div className="space-y-6">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Identifier</label>
-                        <div className="text-sm text-gray-900 bg-white px-3 py-2 rounded-md border border-gray-200 font-mono">{selectedItem.identifier}</div>
+                  {/* Item Details Accordion */}
+                  <div className="bg-gray-50 rounded-lg overflow-hidden">
+                    <button
+                      onClick={() => setExpandedItems(prev => {
+                        const newSet = new Set(prev);
+                        if (newSet.has(selectedItem.id)) {
+                          newSet.delete(selectedItem.id);
+                        } else {
+                          newSet.add(selectedItem.id);
+                        }
+                        return newSet;
+                      })}
+                      className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-100 transition-colors"
+                    >
+                      <div className="flex items-center space-x-3">
+                        <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center">
+                          <Info className="h-5 w-5 text-indigo-600" />
+                        </div>
+                        <div>
+                          <h3 className="text-base font-semibold text-gray-900">Item Details</h3>
+                          <p className="text-sm text-gray-500">View item specifications</p>
+                        </div>
                       </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                        <div className="text-sm text-gray-900 bg-white px-3 py-2 rounded-md border border-gray-200 font-mono">{selectedItem.item_text}</div>
+                      <ChevronRight 
+                        className={`h-5 w-5 text-gray-400 transition-transform ${
+                          expandedItems.has(selectedItem.id) ? 'rotate-90' : ''
+                        }`}
+                      />
+                    </button>
+                    {expandedItems.has(selectedItem.id) && (
+                      <div className="px-6 pb-6 space-y-6">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                          <div className="text-sm text-gray-900 bg-white px-3 py-2 rounded-md border border-gray-200 font-mono">{selectedItem.item_text}</div>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                          <div className="text-sm text-gray-900 bg-white px-3 py-2 rounded-md border border-gray-200 font-mono">{selectedItem.item_type}</div>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Required</label>
+                          <div className="text-sm text-gray-900 bg-white px-3 py-2 rounded-md border border-gray-200 font-mono">{selectedItem.is_required ? 'Yes' : 'No'}</div>
+                        </div>
                       </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
-                        <div className="text-sm text-gray-900 bg-white px-3 py-2 rounded-md border border-gray-200 font-mono">{selectedItem.item_type}</div>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Required</label>
-                        <div className="text-sm text-gray-900 bg-white px-3 py-2 rounded-md border border-gray-200 font-mono">{selectedItem.is_required ? 'Yes' : 'No'}</div>
-                      </div>
-                    </div>
+                    )}
                   </div>
 
-                  {/* Status Update */}
-                  <div className="bg-white rounded-lg border border-gray-200 p-6">
-                    <div className="flex items-center space-x-3 mb-4">
-                      <div className="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center">
-                        <Save className="h-5 w-5 text-purple-600" />
-                      </div>
-                      <div>
-                        <h3 className="text-base font-semibold text-gray-900">Status Update</h3>
-                        <p className="text-sm text-gray-500">Current state and next steps</p>
+                  {/* Status Update - Full Width */}
+                  <div className="bg-white rounded-lg border border-gray-200">
+                    <div className="px-6 py-4 border-b border-gray-200">
+                      <div className="flex items-center space-x-3">
+                        <div className="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center">
+                          <Save className="h-5 w-5 text-purple-600" />
+                        </div>
+                        <div>
+                          <h3 className="text-base font-semibold text-gray-900">Status Update</h3>
+                          <p className="text-sm text-gray-500">Current state and next steps</p>
+                        </div>
                       </div>
                     </div>
-                    <div className="flex gap-2">
-                      <button 
-                        onClick={() => updateItemStatus(selectedItem.id, 'passed')}
-                        className={`flex-1 px-3 py-2 rounded-md text-sm font-semibold transition-colors ${
-                          selectedItem.status === 'passed' 
-                            ? 'bg-green-100 text-green-700 ring-2 ring-green-500 ring-offset-2' 
-                            : 'bg-gray-100 text-gray-700 hover:bg-green-50'
-                        }`}
-                      >
-                        Passed
-                      </button>
-                      <button 
-                        onClick={() => updateItemStatus(selectedItem.id, 'failed')}
-                        className={`flex-1 px-3 py-2 rounded-md text-sm font-semibold transition-colors ${
-                          selectedItem.status === 'failed' 
-                            ? 'bg-red-100 text-red-700 ring-2 ring-red-500 ring-offset-2' 
-                            : 'bg-gray-100 text-gray-700 hover:bg-red-50'
-                        }`}
-                      >
-                        Fail
-                      </button>
-                      <button 
-                        onClick={() => updateItemStatus(selectedItem.id, 'pending')}
-                        className={`flex-1 px-3 py-2 rounded-md text-sm font-semibold transition-colors ${
-                          selectedItem.status === 'pending' 
-                            ? 'bg-gray-100 text-gray-700 ring-2 ring-gray-500 ring-offset-2' 
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-50'
-                        }`}
-                      >
-                        Pending
-                      </button>
+                    <div className="p-6">
+                      <div className="grid grid-cols-3 gap-4">
+                        <button 
+                          onClick={() => updateItemStatus(selectedItem.id, 'passed')}
+                          className={`px-4 py-3 rounded-md text-sm font-semibold transition-colors ${
+                            selectedItem.status === 'passed' 
+                              ? 'bg-green-100 text-green-700 ring-2 ring-green-500 ring-offset-2' 
+                              : 'bg-gray-100 text-gray-700 hover:bg-green-50'
+                          }`}
+                        >
+                          Passed
+                        </button>
+                        <button 
+                          onClick={() => updateItemStatus(selectedItem.id, 'failed')}
+                          className={`px-4 py-3 rounded-md text-sm font-semibold transition-colors ${
+                            selectedItem.status === 'failed' 
+                              ? 'bg-red-100 text-red-700 ring-2 ring-red-500 ring-offset-2' 
+                              : 'bg-gray-100 text-gray-700 hover:bg-red-50'
+                          }`}
+                        >
+                          Fail
+                        </button>
+                        <button 
+                          onClick={() => updateItemStatus(selectedItem.id, 'pending')}
+                          className={`px-4 py-3 rounded-md text-sm font-semibold transition-colors ${
+                            selectedItem.status === 'pending' 
+                              ? 'bg-gray-100 text-gray-700 ring-2 ring-gray-500 ring-offset-2' 
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-50'
+                          }`}
+                        >
+                          Pending
+                        </button>
+                      </div>
                     </div>
                   </div>
 
@@ -470,8 +498,8 @@ export default function QACompleteDetailsPage({ params }: { params: Promise<{ id
                         <AlertCircle className="h-5 w-5 text-blue-600" />
                       </div>
                       <div>
-                        <h3 className="text-base font-semibold text-gray-900">Response</h3>
-                        <p className="text-sm text-gray-500">Your detailed answer or findings</p>
+                        <h3 className="text-base font-semibold text-gray-900">Answer</h3>
+                        <p className="text-sm text-gray-500">Your response to this item</p>
                       </div>
                     </div>
                     <div className="mt-1">
@@ -490,11 +518,7 @@ export default function QACompleteDetailsPage({ params }: { params: Promise<{ id
                             setChecklist(prev => prev ? { ...prev, items: updatedItems } : null);
                           }
                         }}
-                        placeholder="Enter your detailed response, including:
-- Test results
-- Observations
-- Screenshots or references
-- Additional context"
+                        placeholder="Enter your answer..."
                       />
                     </div>
                   </div>
@@ -507,7 +531,7 @@ export default function QACompleteDetailsPage({ params }: { params: Promise<{ id
                           <AlertTriangle className="h-5 w-5 text-red-600" />
                         </div>
                         <div>
-                          <h3 className="text-base font-semibold text-gray-900">Failure Reason</h3>
+                          <h3 className="text-base font-semibold text-gray-900">Reason for Failure</h3>
                           <p className="text-sm text-gray-500">Explain why this item failed</p>
                         </div>
                       </div>
@@ -527,47 +551,8 @@ export default function QACompleteDetailsPage({ params }: { params: Promise<{ id
                               setChecklist(prev => prev ? { ...prev, items: updatedItems } : null);
                             }
                           }}
-                          placeholder="Describe the failure, including:
-- What went wrong
-- Steps to reproduce
-- Expected vs actual behavior
-- Impact on functionality"
+                          placeholder="Explain why this item failed..."
                         />
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Connected Bugs */}
-                  {selectedItem.bugs && selectedItem.bugs.length > 0 && (
-                    <div className="bg-white rounded-lg border border-gray-200 p-6">
-                      <div className="flex items-center space-x-3 mb-4">
-                        <div className="h-8 w-8 rounded-full bg-orange-100 flex items-center justify-center">
-                          <Bug className="h-5 w-5 text-orange-600" />
-                        </div>
-                        <div>
-                          <h3 className="text-base font-semibold text-gray-900">Connected Bugs</h3>
-                          <p className="text-sm text-gray-500">Related bug reports</p>
-                        </div>
-                      </div>
-                      <div className="space-y-3">
-                        {selectedItem.bugs.map((bug) => (
-                          <div key={bug.id} className="bg-gray-50 rounded-md p-3 border border-gray-200">
-                            <h4 className="font-medium text-gray-900 mb-1">{bug.title}</h4>
-                            <p className="text-sm text-gray-600 mb-2">{bug.description}</p>
-                            <div className="flex items-center gap-2 text-xs">
-                              <span className={`px-2 py-1 rounded-full ${
-                                bug.status === 'Open' ? 'bg-yellow-100 text-yellow-800' :
-                                bug.status === 'In Progress' ? 'bg-blue-100 text-blue-800' :
-                                'bg-green-100 text-green-800'
-                              }`}>
-                                {bug.status}
-                              </span>
-                              <span className="px-2 py-1 rounded-full bg-gray-100 text-gray-800">
-                                {bug.priority}
-                              </span>
-                            </div>
-                          </div>
-                        ))}
                       </div>
                     </div>
                   )}
@@ -592,7 +577,7 @@ export default function QACompleteDetailsPage({ params }: { params: Promise<{ id
                     <Save className="h-4 w-4 mr-2" />
                     {saving ? 'Saving...' : 'Save Changes'}
                   </button>
-                
+                  {selectedItem.status === 'failed' && (
                     <button
                       onClick={handleBugReport}
                       className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
@@ -600,14 +585,8 @@ export default function QACompleteDetailsPage({ params }: { params: Promise<{ id
                       <Bug className="h-4 w-4 mr-2" />
                       Report Bug
                     </button>
-                  
+                  )}
                 </div>
-                {saveError && (
-                  <p className="mt-2 text-sm text-red-600">{saveError}</p>
-                )}
-                {saveSuccess && (
-                  <p className="mt-2 text-sm text-green-600">Changes saved successfully!</p>
-                )}
               </div>
             </div>
           </div>
