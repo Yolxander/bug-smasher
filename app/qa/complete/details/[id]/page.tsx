@@ -2,7 +2,7 @@
 
 import { useAuth } from '@/lib/auth-context'
 import { DashboardSidebar } from "@/components/DashboardSidebar"
-import { ArrowRight, Clock, Users, Save, ChevronRight, CheckCircle, XCircle, AlertTriangle, Info, Paperclip, Bug, X } from "lucide-react"
+import { ArrowRight, Clock, Users, Save, ChevronRight, CheckCircle, XCircle, AlertTriangle, Info, Paperclip, Bug, X, AlertCircle } from "lucide-react"
 import { useEffect, useState, use } from 'react'
 import { useRouter } from "next/navigation"
 import { getQaChecklist, QaChecklist, updateChecklistItem } from '@/app/actions/qaChecklistActions'
@@ -365,178 +365,251 @@ export default function QACompleteDetailsPage({ params }: { params: Promise<{ id
     };
 
     return (
-      <div className="fixed inset-0 z-50 flex">
-        {/* Overlay */}
-        <div 
-          className="fixed inset-0 bg-black/50 transition-opacity"
-          onClick={() => setSelectedItem(null)}
-        />
-
-        {/* Sidebar */}
-        <div className="fixed right-0 top-0 h-full w-full max-w-lg bg-white shadow-xl">
-          {/* Header */}
-          <div className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-200 bg-white px-6 py-4">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-gray-400">{selectedItem.identifier}</span>
-              <h2 className="text-lg font-semibold text-gray-900">{selectedItem.item_text}</h2>
-            </div>
-            <button
-              onClick={() => setSelectedItem(null)}
-              className="rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-500"
-            >
-              <X className="h-5 w-5" />
-            </button>
-          </div>
-
-          {/* Content */}
-          <div className="p-6 space-y-6">
-            {/* Status update */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-              <div className="flex gap-2">
-                <button 
-                  onClick={() => updateItemStatus(selectedItem.id, 'passed')}
-                  className={`px-3 py-1.5 rounded-md text-sm font-semibold transition-colors ${
-                    selectedItem.status === 'passed' 
-                      ? 'bg-green-100 text-green-700 ring-2 ring-green-500 ring-offset-2' 
-                      : 'bg-gray-100 text-gray-700 hover:bg-green-50'
-                  }`}
-                >
-                  Passed
-                </button>
-                <button 
-                  onClick={() => updateItemStatus(selectedItem.id, 'failed')}
-                  className={`px-3 py-1.5 rounded-md text-sm font-semibold transition-colors ${
-                    selectedItem.status === 'failed' 
-                      ? 'bg-red-100 text-red-700 ring-2 ring-red-500 ring-offset-2' 
-                      : 'bg-gray-100 text-gray-700 hover:bg-red-50'
-                  }`}
-                >
-                  Fail
-                </button>
-                <button 
-                  onClick={() => updateItemStatus(selectedItem.id, 'pending')}
-                  className={`px-3 py-1.5 rounded-md text-sm font-semibold transition-colors ${
-                    selectedItem.status === 'pending' 
-                      ? 'bg-gray-100 text-gray-700 ring-2 ring-gray-500 ring-offset-2' 
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  Pending
-                </button>
-              </div>
-            </div>
-
-          
-
-            {/* Answer/response */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Answer</label>
-              <textarea
-                className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:outline-none transition-colors duration-200"
-                rows={4}
-                value={selectedItem.answer || selectedItem.notes || ''}
-                onChange={(e) => {
-                  const newValue = e.target.value;
-                  setSelectedItem(prev => prev ? { ...prev, notes: newValue, answer: newValue } : null);
-                  
-                  if (checklist) {
-                    const updatedItems = checklist.items.map(item => 
-                      item.id === selectedItem.id ? { ...item, notes: newValue, answer: newValue } : item
-                    );
-                    setChecklist(prev => prev ? { ...prev, items: updatedItems } : null);
-                  }
-                }}
-                placeholder="Enter your answer..."
-              />
-            </div>
-
-            {/* Failure reason - only show when status is failed */}
-            {selectedItem.status === 'failed' && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Reason for Failure</label>
-                <textarea
-                  className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:outline-none transition-colors duration-200"
-                  rows={4}
-                  value={selectedItem.failureReason || selectedItem.failure_reason || ''}
-                  onChange={(e) => {
-                    const newValue = e.target.value;
-                    setSelectedItem(prev => prev ? { ...prev, failureReason: newValue, failure_reason: newValue } : null);
-                    
-                    if (checklist) {
-                      const updatedItems = checklist.items.map(item => 
-                        item.id === selectedItem.id ? { ...item, failureReason: newValue, failure_reason: newValue } : item
-                      );
-                      setChecklist(prev => prev ? { ...prev, items: updatedItems } : null);
-                    }
-                  }}
-                  placeholder="Explain why this item failed..."
-                />
-              </div>
-            )}
-
-            {/* Save button */}
-            <div className="sticky bottom-0 bg-white border-t border-gray-200 p-4">
-              <div className="flex gap-2">
-                <button
-                  onClick={handleSave}
-                  disabled={saving}
-                  className={`flex-1 rounded-md px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors ${
-                    saving 
-                      ? 'bg-indigo-400 cursor-not-allowed' 
-                      : 'bg-indigo-600 hover:bg-indigo-700'
-                  }`}
-                >
-                  {saving ? 'Saving...' : 'Save Changes'}
-                </button>
-                {selectedItem.status === 'failed' && (
-                  <button
-                    onClick={handleBugReport}
-                    className="flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-600 hover:text-red-600 bg-gray-100 hover:bg-gray-200 rounded-md shadow-sm transition-colors"
-                    title="Report a bug for this item"
-                  >
-                    <Bug className="h-4 w-4" />
-                    <span className="hidden sm:inline">Report Bug</span>
-                  </button>
-                )}
-              </div>
-              {saveError && (
-                <p className="mt-2 text-sm text-red-600">{saveError}</p>
-              )}
-              {saveSuccess && (
-                <p className="mt-2 text-sm text-green-600">Changes saved successfully!</p>
-              )}
-            </div>
-
-             {/* Connected Bug Information */}
-             {selectedItem.bugs && selectedItem.bugs.length > 0 && (
-              <div className="bg-red-50 rounded-lg p-4 border border-red-100">
-                <h3 className="text-sm font-semibold text-red-800 mb-2 flex items-center gap-2">
-                  <Bug className="h-4 w-4" />
-                  Connected Bug Report
-                </h3>
-                <div className="space-y-3">
-                  {selectedItem.bugs.map((bug) => (
-                    <div key={bug.id} className="bg-white rounded-md p-3 border border-red-200">
-                      <h4 className="font-medium text-gray-900 mb-1">{bug.title}</h4>
-                      <p className="text-sm text-gray-600 mb-2">{bug.description}</p>
-                      <div className="flex items-center gap-2 text-xs text-gray-500">
-                        <span className={`px-2 py-1 rounded-full ${
-                          bug.status === 'Open' ? 'bg-yellow-100 text-yellow-800' :
-                          bug.status === 'In Progress' ? 'bg-blue-100 text-blue-800' :
-                          'bg-green-100 text-green-800'
-                        }`}>
-                          {bug.status}
-                        </span>
-                        <span className="px-2 py-1 rounded-full bg-gray-100">
-                          {bug.priority}
-                        </span>
+      <div className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm transition-opacity">
+        <div className="fixed inset-y-0 right-0 pl-10 max-w-full flex">
+          <div className="w-screen max-w-2xl">
+            <div className="h-full flex flex-col bg-white shadow-2xl">
+              {/* Header */}
+              <div className="px-6 py-5 border-b border-gray-200 bg-gray-50">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="flex-shrink-0">
+                      <div className="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center">
+                        <CheckCircle className="h-6 w-6 text-indigo-600" />
                       </div>
                     </div>
-                  ))}
+                    <div>
+                      <h2 className="text-xl font-semibold text-gray-900">QA Item Details</h2>
+                      <p className="text-sm text-gray-500">Review and update item status</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="rounded-full p-2 text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    onClick={() => setSelectedItem(null)}
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
                 </div>
               </div>
-            )}
+
+              <div className="flex-1 overflow-y-auto">
+                <div className="px-6 py-6 space-y-8">
+                  {/* Item Details */}
+                  <div className="bg-gray-50 rounded-lg p-6">
+                    <h3 className="text-base font-semibold text-gray-900 mb-4">Item Details</h3>
+                    <div className="space-y-6">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Identifier</label>
+                        <div className="text-sm text-gray-900 bg-white px-3 py-2 rounded-md border border-gray-200 font-mono">{selectedItem.identifier}</div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                        <div className="text-sm text-gray-900 bg-white px-3 py-2 rounded-md border border-gray-200 font-mono">{selectedItem.item_text}</div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                        <div className="text-sm text-gray-900 bg-white px-3 py-2 rounded-md border border-gray-200 font-mono">{selectedItem.item_type}</div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Required</label>
+                        <div className="text-sm text-gray-900 bg-white px-3 py-2 rounded-md border border-gray-200 font-mono">{selectedItem.is_required ? 'Yes' : 'No'}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Status Update */}
+                  <div className="bg-white rounded-lg border border-gray-200 p-6">
+                    <div className="flex items-center space-x-3 mb-4">
+                      <div className="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center">
+                        <Save className="h-5 w-5 text-purple-600" />
+                      </div>
+                      <div>
+                        <h3 className="text-base font-semibold text-gray-900">Status Update</h3>
+                        <p className="text-sm text-gray-500">Current state and next steps</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => updateItemStatus(selectedItem.id, 'passed')}
+                        className={`flex-1 px-3 py-2 rounded-md text-sm font-semibold transition-colors ${
+                          selectedItem.status === 'passed' 
+                            ? 'bg-green-100 text-green-700 ring-2 ring-green-500 ring-offset-2' 
+                            : 'bg-gray-100 text-gray-700 hover:bg-green-50'
+                        }`}
+                      >
+                        Passed
+                      </button>
+                      <button 
+                        onClick={() => updateItemStatus(selectedItem.id, 'failed')}
+                        className={`flex-1 px-3 py-2 rounded-md text-sm font-semibold transition-colors ${
+                          selectedItem.status === 'failed' 
+                            ? 'bg-red-100 text-red-700 ring-2 ring-red-500 ring-offset-2' 
+                            : 'bg-gray-100 text-gray-700 hover:bg-red-50'
+                        }`}
+                      >
+                        Fail
+                      </button>
+                      <button 
+                        onClick={() => updateItemStatus(selectedItem.id, 'pending')}
+                        className={`flex-1 px-3 py-2 rounded-md text-sm font-semibold transition-colors ${
+                          selectedItem.status === 'pending' 
+                            ? 'bg-gray-100 text-gray-700 ring-2 ring-gray-500 ring-offset-2' 
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-50'
+                        }`}
+                      >
+                        Pending
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Answer/Response */}
+                  <div className="bg-white rounded-lg border border-gray-200 p-6">
+                    <div className="flex items-center space-x-3 mb-4">
+                      <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
+                        <AlertCircle className="h-5 w-5 text-blue-600" />
+                      </div>
+                      <div>
+                        <h3 className="text-base font-semibold text-gray-900">Response</h3>
+                        <p className="text-sm text-gray-500">Your detailed answer or findings</p>
+                      </div>
+                    </div>
+                    <div className="mt-1">
+                      <textarea
+                        className="font-mono shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                        rows={4}
+                        value={selectedItem.answer || selectedItem.notes || ''}
+                        onChange={(e) => {
+                          const newValue = e.target.value;
+                          setSelectedItem(prev => prev ? { ...prev, notes: newValue, answer: newValue } : null);
+                          
+                          if (checklist) {
+                            const updatedItems = checklist.items.map(item => 
+                              item.id === selectedItem.id ? { ...item, notes: newValue, answer: newValue } : item
+                            );
+                            setChecklist(prev => prev ? { ...prev, items: updatedItems } : null);
+                          }
+                        }}
+                        placeholder="Enter your detailed response, including:
+- Test results
+- Observations
+- Screenshots or references
+- Additional context"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Failure Reason */}
+                  {selectedItem.status === 'failed' && (
+                    <div className="bg-white rounded-lg border border-gray-200 p-6">
+                      <div className="flex items-center space-x-3 mb-4">
+                        <div className="h-8 w-8 rounded-full bg-red-100 flex items-center justify-center">
+                          <AlertTriangle className="h-5 w-5 text-red-600" />
+                        </div>
+                        <div>
+                          <h3 className="text-base font-semibold text-gray-900">Failure Reason</h3>
+                          <p className="text-sm text-gray-500">Explain why this item failed</p>
+                        </div>
+                      </div>
+                      <div className="mt-1">
+                        <textarea
+                          className="font-mono shadow-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                          rows={4}
+                          value={selectedItem.failureReason || selectedItem.failure_reason || ''}
+                          onChange={(e) => {
+                            const newValue = e.target.value;
+                            setSelectedItem(prev => prev ? { ...prev, failureReason: newValue, failure_reason: newValue } : null);
+                            
+                            if (checklist) {
+                              const updatedItems = checklist.items.map(item => 
+                                item.id === selectedItem.id ? { ...item, failureReason: newValue, failure_reason: newValue } : item
+                              );
+                              setChecklist(prev => prev ? { ...prev, items: updatedItems } : null);
+                            }
+                          }}
+                          placeholder="Describe the failure, including:
+- What went wrong
+- Steps to reproduce
+- Expected vs actual behavior
+- Impact on functionality"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Connected Bugs */}
+                  {selectedItem.bugs && selectedItem.bugs.length > 0 && (
+                    <div className="bg-white rounded-lg border border-gray-200 p-6">
+                      <div className="flex items-center space-x-3 mb-4">
+                        <div className="h-8 w-8 rounded-full bg-orange-100 flex items-center justify-center">
+                          <Bug className="h-5 w-5 text-orange-600" />
+                        </div>
+                        <div>
+                          <h3 className="text-base font-semibold text-gray-900">Connected Bugs</h3>
+                          <p className="text-sm text-gray-500">Related bug reports</p>
+                        </div>
+                      </div>
+                      <div className="space-y-3">
+                        {selectedItem.bugs.map((bug) => (
+                          <div key={bug.id} className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                            <h4 className="font-medium text-gray-900 mb-1">{bug.title}</h4>
+                            <p className="text-sm text-gray-600 mb-2">{bug.description}</p>
+                            <div className="flex items-center gap-2 text-xs">
+                              <span className={`px-2 py-1 rounded-full ${
+                                bug.status === 'Open' ? 'bg-yellow-100 text-yellow-800' :
+                                bug.status === 'In Progress' ? 'bg-blue-100 text-blue-800' :
+                                'bg-green-100 text-green-800'
+                              }`}>
+                                {bug.status}
+                              </span>
+                              <span className="px-2 py-1 rounded-full bg-gray-100 text-gray-800">
+                                {bug.priority}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex-shrink-0 px-6 py-4 border-t border-gray-200 bg-gray-50">
+                <div className="flex justify-end space-x-3">
+                  <button
+                    type="button"
+                    className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    onClick={() => setSelectedItem(null)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    onClick={handleSave}
+                    disabled={saving}
+                  >
+                    <Save className="h-4 w-4 mr-2" />
+                    {saving ? 'Saving...' : 'Save Changes'}
+                  </button>
+                
+                    <button
+                      onClick={handleBugReport}
+                      className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                    >
+                      <Bug className="h-4 w-4 mr-2" />
+                      Report Bug
+                    </button>
+                  
+                </div>
+                {saveError && (
+                  <p className="mt-2 text-sm text-red-600">{saveError}</p>
+                )}
+                {saveSuccess && (
+                  <p className="mt-2 text-sm text-green-600">Changes saved successfully!</p>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
