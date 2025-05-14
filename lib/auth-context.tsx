@@ -124,9 +124,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setProfileId(userData.profile.id)
         localStorage.setItem('profileId', userData.profile.id)
         localStorage.setItem('profile', JSON.stringify(userData.profile))
+
+        // Check onboarding status and redirect accordingly
+        if (userData.profile.onboarding_completed === false) {
+          console.log('Onboarding not completed, redirecting to onboarding page')
+          window.location.href = '/onboarding'
+          return
+        }
       }
 
-      router.push('/')
+      console.log('Onboarding completed or no profile, redirecting to home')
+      window.location.href = '/'
     } catch (error) {
       console.error('Login error:', error)
       setError(error instanceof Error ? error.message : 'Login failed')
@@ -225,18 +233,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Clear user data and token from localStorage
       localStorage.removeItem('user')
       localStorage.removeItem('token')
+      localStorage.removeItem('profileId')
+      localStorage.removeItem('profile')
       setUser(null)
       setProfileId(null)
-      router.push('/auth/login')
+      window.location.href = '/auth/login'
     } catch (error) {
       console.error('Logout error:', error)
       setError(error instanceof Error ? error.message : 'Logout failed')
       // Even if the server request fails, we should still clear local data
       localStorage.removeItem('user')
       localStorage.removeItem('token')
+      localStorage.removeItem('profileId')
+      localStorage.removeItem('profile')
       setUser(null)
       setProfileId(null)
-      router.push('/auth/login')
+      window.location.href = '/auth/login'
     } finally {
       setLoading(false)
     }

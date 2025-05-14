@@ -15,6 +15,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import Image from "next/image"
 import { ArrowRight, ArrowLeft, Bug, Target, Users, Zap, X } from "lucide-react"
+import { getCurrentProfile } from "../actions/profiles"
 
 const onboardingSchema = z.object({
   full_name: z.string().min(1, "Full name is required"),
@@ -78,9 +79,15 @@ export default function OnboardingPage() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (profileId) {
-      router.push("/")
+    const checkProfile = async () => {
+      if (profileId) {
+        const profile = await getCurrentProfile()
+        if (profile && profile.onboarding_completed) {
+          router.push("/")
+        }
+      }
     }
+    checkProfile()
   }, [profileId, router])
 
   const form = useForm<z.infer<typeof onboardingSchema>>({
