@@ -1,52 +1,79 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Bell, ChevronDown, Mail, Plus } from "lucide-react";
 import { DashboardSidebar } from "@/components/DashboardSidebar";
-
-// Mock data for team members
-const teamMembers = [
-  {
-    id: 1,
-    name: "Sarah Johnson",
-    role: "QA Lead",
-    email: "sarah@example.com",
-    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
-    status: "Active",
-    lastActive: "2 hours ago",
-  },
-  {
-    id: 2,
-    name: "Michael Chen",
-    role: "Developer",
-    email: "michael@example.com",
-    avatar: "https://images.unsplash.com/photo-1519244703995-f4e0f30006d5?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
-    status: "Active",
-    lastActive: "5 minutes ago",
-  },
-  {
-    id: 3,
-    name: "Emily Rodriguez",
-    role: "Product Manager",
-    email: "emily@example.com",
-    avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
-    status: "Away",
-    lastActive: "1 day ago",
-  },
-  {
-    id: 4,
-    name: "David Kim",
-    role: "Designer",
-    email: "david@example.com",
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
-    status: "Active",
-    lastActive: "30 minutes ago",
-  },
-];
+import { getTeamsByMemberId, TeamWithMembers } from "../actions/team";
+import { useAuth } from "@/lib/auth-context";
 
 export default function TeamPage() {
+  const { user } = useAuth();
+  const [teams, setTeams] = useState<TeamWithMembers[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchTeams = async () => {
+      console.log('Current user:', user);
+      
+      if (!user?.id) {
+        console.log('No user ID found');
+        setLoading(false);
+        return;
+      }
+      
+      try {
+        setLoading(true);
+        console.log('Fetching teams for user ID:', user.id);
+        const data = await getTeamsByMemberId(user.id);
+        console.log('Teams data received:', data);
+        
+        if (data) {
+          setTeams(data);
+        } else {
+          setTeams([]);
+        }
+      } catch (err) {
+        console.error('Error fetching teams:', err);
+        setError('Failed to fetch teams');
+        setTeams([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTeams();
+  }, [user?.id]);
+
+  // Log the current state
+  console.log('Current state:', { teams, loading, error });
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading teams...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Log when rendering the teams
+  console.log('Rendering teams:', teams);
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="flex">
@@ -99,79 +126,84 @@ export default function TeamPage() {
 
           <main className="flex-1 p-8">
             <div className="max-w-7xl mx-auto">
-              <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Team Member
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Role
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Status
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Last Active
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Actions
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {teamMembers.map((member) => (
-                        <tr key={member.id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                              <div className="flex-shrink-0 h-10 w-10">
-                                <Image
-                                  className="h-10 w-10 rounded-full"
-                                  src={member.avatar}
-                                  alt={member.name}
-                                  width={40}
-                                  height={40}
-                                />
-                              </div>
-                              <div className="ml-4">
-                                <div className="text-sm font-medium text-gray-900">{member.name}</div>
-                                <div className="text-sm text-gray-500">{member.email}</div>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900">{member.role}</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span
-                              className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                member.status === "Active"
-                                  ? "bg-green-100 text-green-800"
-                                  : "bg-yellow-100 text-yellow-800"
-                              }`}
-                            >
-                              {member.status}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {member.lastActive}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            <button className="text-indigo-600 hover:text-indigo-900 mr-4">
-                              <Mail className="h-5 w-5" />
-                            </button>
-                            <button className="text-gray-600 hover:text-gray-900">
-                              <ChevronDown className="h-5 w-5" />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+              {teams && teams.length > 0 ? (
+                teams.map((team) => (
+                  <div key={team.id} className="mb-8">
+                    <h2 className="text-lg font-semibold mb-4">{team.name}</h2>
+                    <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Team Member
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Role
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Status
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Actions
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-gray-200">
+                            {team.members && team.members.map((member) => (
+                              <tr key={member.id} className="hover:bg-gray-50">
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <div className="flex items-center">
+                                    <div className="flex-shrink-0 h-10 w-10">
+                                      <Image
+                                        className="h-10 w-10 rounded-full"
+                                        src={`https://ui-avatars.com/api/?name=${encodeURIComponent(member.user.name)}&background=random`}
+                                        alt={member.user.name}
+                                        width={40}
+                                        height={40}
+                                      />
+                                    </div>
+                                    <div className="ml-4">
+                                      <div className="text-sm font-medium text-gray-900">{member.user.name}</div>
+                                      <div className="text-sm text-gray-500">{member.user.email}</div>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <div className="text-sm text-gray-900">{member.role}</div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <span
+                                    className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                      member.status === "active"
+                                        ? "bg-green-100 text-green-800"
+                                        : "bg-yellow-100 text-yellow-800"
+                                    }`}
+                                  >
+                                    {member.status}
+                                  </span>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                  <button className="text-indigo-600 hover:text-indigo-900 mr-4">
+                                    <Mail className="h-5 w-5" />
+                                  </button>
+                                  <button className="text-gray-600 hover:text-gray-900">
+                                    <ChevronDown className="h-5 w-5" />
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">No teams found</p>
                 </div>
-              </div>
+              )}
             </div>
           </main>
         </div>
