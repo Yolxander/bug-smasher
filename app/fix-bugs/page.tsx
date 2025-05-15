@@ -428,11 +428,11 @@ export default function FixBugsPage() {
                           </div>
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Steps to Reproduce</label>
-                            <div className="text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded-md border border-gray-200 font-mono whitespace-pre-wrap">{selectedBug.stepsToReproduce}</div>
+                            <div className="text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded-md border border-gray-200 font-mono whitespace-pre-wrap">{selectedBug.steps_to_reproduce}</div>
                           </div>
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Expected Behavior</label>
-                            <div className="text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded-md border border-gray-200 font-mono">{selectedBug.expectedBehavior}</div>
+                            <div className="text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded-md border border-gray-200 font-mono">{selectedBug.expected_behavior}</div>
                           </div>
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Actual Behavior</label>

@@ -7,9 +7,9 @@ export type Submission = {
   id: string;
   title: string;
   description: string;
-  stepsToReproduce: string;
-  expectedBehavior: string;
-  actualBehavior: string;
+  steps_to_reproduce: string;
+  expected_behavior: string;
+  actual_behavior: string;
   device: string;
   browser: string;
   os: string;
