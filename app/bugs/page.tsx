@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Search, Bell, ChevronDown, Bug, CheckCircle, Clock, AlertTriangle } from "lucide-react";
+import { Search, Bell, ChevronDown, Bug, CheckCircle, Clock, AlertTriangle, Plus } from "lucide-react";
 import { DashboardSidebar } from "@/components/DashboardSidebar";
 import { getSubmissions } from "../actions/submissions";
 import { Submission } from "../actions/submissions";
@@ -119,7 +119,7 @@ export default function BugReportsPage() {
         <DashboardSidebar activePage="bugs" />
         <div className="flex-1">
           <header className="bg-white shadow-sm">
-            <div className=" mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="flex justify-between h-16">
                 <div className="flex">
                   <div className="flex-shrink-0 flex items-center">
@@ -132,6 +132,7 @@ export default function BugReportsPage() {
                       href="/submit"
                       className="relative inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                     >
+                      <Plus className="h-4 w-4 mr-2" />
                       Report New Bug
                     </Link>
                   </div>

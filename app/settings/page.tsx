@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { Bell, ChevronDown, Settings, User, Lock, BellRing, Palette, Globe } from "lucide-react";
 import { DashboardSidebar } from "@/components/DashboardSidebar";
+import { useAuth } from "@/lib/auth-context";
 
 type SettingType = "toggle" | "select" | "link";
 
@@ -85,55 +86,11 @@ const settingsSections: SettingsSection[] = [
       },
     ],
   },
-  {
-    id: 3,
-    title: "Appearance",
-    icon: <Palette className="h-5 w-5 text-purple-500" />,
-    description: "Customize the look and feel of the application",
-    settings: [
-      {
-        id: 7,
-        name: "Theme",
-        description: "Choose between light and dark mode",
-        type: "select",
-        value: "light",
-        options: ["light", "dark", "system"],
-      },
-      {
-        id: 8,
-        name: "Language",
-        description: "Select your preferred language",
-        type: "select",
-        value: "en",
-        options: ["en", "es", "fr", "de"],
-      },
-    ],
-  },
-  {
-    id: 4,
-    title: "Privacy & Security",
-    icon: <Lock className="h-5 w-5 text-red-500" />,
-    description: "Manage your privacy and security settings",
-    settings: [
-      {
-        id: 9,
-        name: "Data Collection",
-        description: "Control what data we collect about your usage",
-        type: "toggle",
-        value: true,
-      },
-      {
-        id: 10,
-        name: "Cookie Preferences",
-        description: "Manage your cookie settings",
-        type: "link",
-        action: "#",
-      },
-    ],
-  },
+
 ];
 
 export default function SettingsPage() {
+  const { user } = useAuth();
   const [settings, setSettings] = useState<SettingsSection[]>(settingsSections);
 
   const handleToggle = (sectionId: number, settingId: number) => {
@@ -196,8 +153,8 @@ export default function SettingsPage() {
                           <span className="sr-only">Open user menu</span>
                           <img
                             className="h-8 w-8 rounded-full"
-                            src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
-                            alt=""
+                            src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=random`}
+                            alt="User avatar"
                           />
                           <ChevronDown className="ml-1 h-4 w-4 text-gray-400" />
                         </button>

@@ -198,7 +198,7 @@ export function DashboardSidebar({ activePage }: { activePage: string }) {
                   <span className="ml-3">{child.label}</span>
                 </Link>
               ))}
-            </div>
+            </div> 
           )}
         </div>
       )
