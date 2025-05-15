@@ -329,9 +329,10 @@ export default function OnboardingPage() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="developer">Developer</SelectItem>
-                          <SelectItem value="qa">QA Engineer</SelectItem>
-                          <SelectItem value="product_manager">Product Manager</SelectItem>
-                          <SelectItem value="designer">Designer</SelectItem>
+                          <SelectItem value="admin">Admin</SelectItem>
+<SelectItem value="user">User</SelectItem>
+<SelectItem value="manager">Manager</SelectItem>
+
                         </SelectContent>
                       </Select>
                       {form.formState.errors.role && (
