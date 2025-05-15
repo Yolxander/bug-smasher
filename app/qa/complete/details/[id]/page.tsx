@@ -3,7 +3,7 @@
 import { useAuth } from '@/lib/auth-context'
 import { DashboardSidebar } from "@/components/DashboardSidebar"
 import { ArrowRight, Clock, Users, Save, ChevronRight, CheckCircle, XCircle, AlertTriangle, Info, Paperclip, Bug, X, AlertCircle } from "lucide-react"
-import { useEffect, useState, use } from 'react'
+import { useEffect, useState, use, useRef } from 'react'
 import { useRouter } from "next/navigation"
 import { getQaChecklist, QaChecklist, updateChecklistItem } from '@/app/actions/qaChecklistActions'
 
@@ -57,18 +57,12 @@ export default function QACompleteDetailsPage({ params }: { params: Promise<{ id
   const [showDetails, setShowDetails] = useState(false)
   const [selectedItem, setSelectedItem] = useState<ChecklistItem | null>(null)
   const [attachment, setAttachment] = useState<File | null>(null)
-  const [localNotes, setLocalNotes] = useState('')
+  const answerInputRef = useRef<HTMLTextAreaElement>(null);
+  const failureReasonRef = useRef<HTMLTextAreaElement>(null);
 
   // Unwrap params using React.use()
   const unwrappedParams = use(params)
   const checklistId = parseInt(unwrappedParams.id)
-
-  // Update localNotes when selectedItem changes
-  useEffect(() => {
-    if (selectedItem) {
-      setLocalNotes(selectedItem.notes || '')
-    }
-  }, [selectedItem])
 
   useEffect(() => {
     const fetchChecklist = async () => {
@@ -252,24 +246,18 @@ export default function QACompleteDetailsPage({ params }: { params: Promise<{ id
         is_required: selectedItem.is_required,
         order_number: selectedItem.order_number,
         status: selectedItem.status,
-        answer: selectedItem.notes,
-        failure_reason: selectedItem.failureReason
+        answer: answerInputRef.current?.value || '',
+        failure_reason: failureReasonRef.current?.value || ''
       });
 
-      // Update the checklist items after successful save
-      const updatedItems = checklist.items.map(item => 
-        item.id === selectedItem.id ? { ...item, ...updatedItem, notes: selectedItem.notes } : item
-      );
-      
-      setChecklist(prev => {
-        if (!prev) return null;
-        return {
-          ...prev,
-          items: updatedItems
-        };
-      });
+      // Fetch fresh data from the server
+      const freshData = await getQaChecklist(checklistId);
+      const items = 'items' in freshData && Array.isArray((freshData as any).items) ? (freshData as any).items : [];
+      setChecklist({ ...freshData, items });
       
       setSaveSuccess(true);
+      // Close the drawer after successful save
+      setSelectedItem(null);
       // Reset success message after 2 seconds
       setTimeout(() => setSaveSuccess(false), 2000);
     } catch (error) {
@@ -358,6 +346,16 @@ export default function QACompleteDetailsPage({ params }: { params: Promise<{ id
   // Right sidebar (drawer) for item details
   const ItemSidebar = () => {
     if (!selectedItem) return null;
+
+    // Set the input values when the component mounts or selectedItem changes
+    useEffect(() => {
+      if (answerInputRef.current) {
+        answerInputRef.current.value = selectedItem.answer || '';
+      }
+      if (failureReasonRef.current) {
+        failureReasonRef.current.value = selectedItem.failure_reason || selectedItem.failureReason || '';
+      }
+    }, [selectedItem]);
 
     const handleBugReport = () => {
       const encodedItem = encodeURIComponent(selectedItem.identifier || '');
@@ -504,27 +502,16 @@ export default function QACompleteDetailsPage({ params }: { params: Promise<{ id
                     </div>
                     <div className="mt-1">
                       <textarea
-                        className="font-mono shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                        ref={answerInputRef}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                         rows={4}
-                        value={selectedItem.answer || selectedItem.notes || ''}
-                        onChange={(e) => {
-                          const newValue = e.target.value;
-                          setSelectedItem(prev => prev ? { ...prev, notes: newValue, answer: newValue } : null);
-                          
-                          if (checklist) {
-                            const updatedItems = checklist.items.map(item => 
-                              item.id === selectedItem.id ? { ...item, notes: newValue, answer: newValue } : item
-                            );
-                            setChecklist(prev => prev ? { ...prev, items: updatedItems } : null);
-                          }
-                        }}
                         placeholder="Enter your answer..."
                       />
                     </div>
                   </div>
 
                   {/* Failure Reason */}
-                  {selectedItem.status === 'failed' && (
+                  {selectedItem?.status === 'failed' && (
                     <div className="bg-white rounded-lg border border-gray-200 p-6">
                       <div className="flex items-center space-x-3 mb-4">
                         <div className="h-8 w-8 rounded-full bg-red-100 flex items-center justify-center">
@@ -537,20 +524,9 @@ export default function QACompleteDetailsPage({ params }: { params: Promise<{ id
                       </div>
                       <div className="mt-1">
                         <textarea
-                          className="font-mono shadow-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                          ref={failureReasonRef}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 sm:text-sm"
                           rows={4}
-                          value={selectedItem.failureReason || selectedItem.failure_reason || ''}
-                          onChange={(e) => {
-                            const newValue = e.target.value;
-                            setSelectedItem(prev => prev ? { ...prev, failureReason: newValue, failure_reason: newValue } : null);
-                            
-                            if (checklist) {
-                              const updatedItems = checklist.items.map(item => 
-                                item.id === selectedItem.id ? { ...item, failureReason: newValue, failure_reason: newValue } : item
-                              );
-                              setChecklist(prev => prev ? { ...prev, items: updatedItems } : null);
-                            }
-                          }}
                           placeholder="Explain why this item failed..."
                         />
                       </div>
@@ -577,7 +553,7 @@ export default function QACompleteDetailsPage({ params }: { params: Promise<{ id
                     <Save className="h-4 w-4 mr-2" />
                     {saving ? 'Saving...' : 'Save Changes'}
                   </button>
-                  {selectedItem.status === 'failed' && (
+                  
                     <button
                       onClick={handleBugReport}
                       className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
@@ -585,7 +561,7 @@ export default function QACompleteDetailsPage({ params }: { params: Promise<{ id
                       <Bug className="h-4 w-4 mr-2" />
                       Report Bug
                     </button>
-                  )}
+                  
                 </div>
               </div>
             </div>
@@ -617,7 +593,7 @@ export default function QACompleteDetailsPage({ params }: { params: Promise<{ id
                 onClick={() => setSelectedItem(item)}
               >
                 <div className="flex items-center justify-between">
-                  <div>
+                  <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-xs font-semibold text-gray-400">{item.identifier}</span>
                       <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
@@ -626,9 +602,9 @@ export default function QACompleteDetailsPage({ params }: { params: Promise<{ id
                         'bg-red-100 text-red-600'
                       }`}>{col.title}</span>
                     </div>
-                    <div className="text-base font-medium text-gray-900 truncate">{item.item_text}</div>
+                    <div className="text-base font-medium text-gray-900 line-clamp-2">{item.item_text}</div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 ml-4 flex-shrink-0">
                     {getStatusIcon(item.status || 'pending')}
                   </div>
                 </div>
@@ -657,8 +633,8 @@ export default function QACompleteDetailsPage({ params }: { params: Promise<{ id
           >
             <div className="flex items-center gap-4 flex-1 min-w-0">
               {getStatusIcon(item.status || 'pending')}
-              <div className="min-w-0">
-                <div className="font-medium text-gray-900 truncate text-base group-hover:text-indigo-700 transition-colors">{item.item_text}</div>
+              <div className="min-w-0 flex-1">
+                <div className="font-medium text-gray-900 line-clamp-2 text-base group-hover:text-indigo-700 transition-colors">{item.item_text}</div>
                 <div className="mt-2 grid grid-cols-2 md:grid-cols-3 gap-2 text-xs text-gray-500">
                   <div><span className="font-semibold">Type:</span> {item.item_type}</div>
                   <div><span className="font-semibold">Required:</span> {item.is_required ? <span className="text-red-500">Yes</span> : 'No'}</div>
@@ -666,7 +642,7 @@ export default function QACompleteDetailsPage({ params }: { params: Promise<{ id
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-2 md:gap-4">
+            <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
               <span className={`text-xs font-bold px-3 py-1.5 rounded-full shadow-sm border ${item.status === 'passed' ? 'bg-green-100 text-green-700 border-green-200' : item.status === 'failed' ? 'bg-red-100 text-red-700 border-red-200' : item.status === 'in_progress' ? 'bg-blue-100 text-blue-700 border-blue-200' : 'bg-gray-100 text-gray-700 border-gray-200'}`}>{(item.status || 'Pending').toUpperCase()}</span>
             </div>
           </div>
