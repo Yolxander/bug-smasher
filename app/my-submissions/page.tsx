@@ -28,9 +28,20 @@ export default function MySubmissionsPage() {
           setError('Failed to fetch submissions');
           return;
         }
-        // Filter submissions where assignee_id matches the user's ID
-        const mySubmissions = data.filter(sub => sub.assignee_id === user?.id);
+        console.log('All Submissions:', data);
         console.log('User ID:', user?.id);
+        // Filter submissions where either reported_by or assignee_id matches the user's ID
+        const mySubmissions = data.filter(sub => {
+          console.log('Checking submission:', {
+            id: sub.id,
+            reported_by: sub.reported_by,
+            assignee_id: sub.assignee_id,
+            user_id: user?.id,
+            matches_reported: sub.reported_by === user?.id,
+            matches_assignee: sub.assignee_id === user?.id
+          });
+          return sub.reported_by === user?.id || sub.assignee_id === user?.id;
+        });
         console.log('Filtered Submissions:', mySubmissions);
         setSubmissions(mySubmissions);
       } catch (error) {

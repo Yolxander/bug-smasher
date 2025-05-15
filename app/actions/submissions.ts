@@ -16,6 +16,7 @@ export type Submission = {
   status: string;
   priority: string;
   assignee_id: string;
+  reported_by: string;
   project: {
     id: string;
     name: string;
