@@ -41,7 +41,7 @@ export default function BugReportsPage() {
             ...acc,
             [submission.assignee_id]: {
               name: submission.assignee.name || 'Unknown',
-              avatar: submission.assignee.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80'
+              avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(submission.assignee.name || 'Unknown')}&background=random`
             }
           };
         }, {});
@@ -147,10 +147,12 @@ export default function BugReportsPage() {
                           id="user-menu-button"
                         >
                           <span className="sr-only">Open user menu</span>
-                          <img
+                          <Image
                             className="h-8 w-8 rounded-full"
-                            src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
-                            alt=""
+                            src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=random`}
+                            alt={user?.name || 'User'}
+                            width={32}
+                            height={32}
                           />
                           <ChevronDown className="ml-1 h-4 w-4 text-gray-400" />
                         </button>
@@ -250,7 +252,7 @@ export default function BugReportsPage() {
                       filteredBugs.map((bug) => {
                         const assignee = assignees[bug.assignee_id] || {
                           name: 'Unknown',
-                          avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80'
+                          avatar: `https://ui-avatars.com/api/?name=Unknown&background=random`
                         };
 
                         return (

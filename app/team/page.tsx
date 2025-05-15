@@ -16,19 +16,14 @@ export default function TeamPage() {
 
   useEffect(() => {
     const fetchTeams = async () => {
-      console.log('Current user:', user);
-      
       if (!user?.id) {
-        console.log('No user ID found');
         setLoading(false);
         return;
       }
       
       try {
         setLoading(true);
-        console.log('Fetching teams for user ID:', user.id);
         const data = await getTeamsByMemberId(user.id);
-        console.log('Teams data received:', data);
         
         if (data) {
           setTeams(data);
@@ -36,7 +31,6 @@ export default function TeamPage() {
           setTeams([]);
         }
       } catch (err) {
-        console.error('Error fetching teams:', err);
         setError('Failed to fetch teams');
         setTeams([]);
       } finally {
@@ -46,9 +40,6 @@ export default function TeamPage() {
 
     fetchTeams();
   }, [user?.id]);
-
-  // Log the current state
-  console.log('Current state:', { teams, loading, error });
 
   if (loading) {
     return (
@@ -70,9 +61,6 @@ export default function TeamPage() {
       </div>
     );
   }
-
-  // Log when rendering the teams
-  console.log('Rendering teams:', teams);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -151,7 +139,7 @@ export default function TeamPage() {
                           </thead>
                           <tbody className="bg-white divide-y divide-gray-200">
                             {team.members && team.members.map((member) => (
-                              <tr key={member.id} className="hover:bg-gray-50">
+                              <tr key={member.id} className="hover:bg-gray-50">re
                                 <td className="px-6 py-4 whitespace-nowrap">
                                   <div className="flex items-center">
                                     <div className="flex-shrink-0 h-10 w-10">

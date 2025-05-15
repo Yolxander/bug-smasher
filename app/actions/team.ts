@@ -420,9 +420,6 @@ export async function getTeamsByMemberId(memberId: string): Promise<TeamWithMemb
       throw new Error('No authentication token found')
     }
 
-    console.log('Fetching teams for member ID:', memberId);
-    console.log('API URL:', `${API_URL}/api/teams/member/${memberId}`);
-
     const response = await fetch(`${API_URL}/api/teams/member/${memberId}`, {
       headers: {
         'Accept': 'application/json',
@@ -431,24 +428,14 @@ export async function getTeamsByMemberId(memberId: string): Promise<TeamWithMemb
       credentials: 'include',
     })
 
-    console.log('Response status:', response.status);
-
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Error response:', errorText);
       throw new Error('Failed to fetch teams by member')
     }
 
     const data = await response.json()
-    console.log('Raw response data:', data);
-    
-    // Handle both array and object responses
     const teams = Array.isArray(data) ? data : (data.data || []);
-    console.log('Processed teams data:', teams);
-    
     return teams;
   } catch (error) {
-    console.error('Error fetching teams by member:', error)
     toast({
       title: "Error",
       description: "Failed to fetch teams by member",
