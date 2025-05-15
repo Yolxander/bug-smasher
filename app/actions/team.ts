@@ -6,8 +6,7 @@ export type Team = {
   id: string;
   name: string;
   description: string;
-  created_at: string;
-  updated_at: string;
+  status: string;
   members: TeamMember[];
 };
 
@@ -18,6 +17,11 @@ export type TeamMember = {
   avatar: string;
   email: string;
   status: string;
+  user: {
+    id: string;
+    name: string;
+    email: string;
+  };
   projects: {
     id: string;
     name: string;

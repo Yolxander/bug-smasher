@@ -9,10 +9,17 @@ import { createBug } from "../actions/bugs";
 import { toast } from "@/components/ui/use-toast";
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "../contexts/AuthContext";
+import { getTeams, Team, getTeamMembers, TeamMember } from "../actions/team";
+import { getAssignees, Assignee } from "../actions/assignees";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
 
 export default function SubmitBugPage() {
-  const [currentStep, setCurrentStep] = useState("details");
+  const [currentStep, setCurrentStep] = useState<number>(1);
   const [loading, setLoading] = useState(false);
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [assignees, setAssignees] = useState<Assignee[]>([]);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const { user } = useAuth();
   const searchParams = useSearchParams();
   
@@ -26,7 +33,37 @@ export default function SubmitBugPage() {
   const rawItemParam = searchParams.get("item");
   const itemIdentifier = rawItemParam ? decodeURIComponent(rawItemParam) : '';
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    title: string;
+    description: string;
+    stepsToReproduce: string;
+    expectedBehavior: string;
+    actualBehavior: string;
+    device: string;
+    browser: string;
+    os: string;
+    status: string;
+    priority: string;
+    team_id: string;
+    assignee_id: string;
+    team: {
+      id: string;
+      name: string;
+      description: string;
+      status: string;
+    };
+    assignee: {
+      id: string;
+      name: string;
+      avatar: string;
+    };
+    project: {
+      id: string;
+      name: string;
+    };
+    url: string;
+    screenshot: File | string | null;
+  }>({
     title: "",
     description: "",
     stepsToReproduce: "",
@@ -35,19 +72,27 @@ export default function SubmitBugPage() {
     device: "",
     browser: "",
     os: "",
-    priority: "Medium",
     status: "Open",
-    screenshot: "",
+    priority: "Medium",
+    team_id: "",
+    assignee_id: "",
+    team: {
+      id: "",
+      name: "",
+      description: "",
+      status: ""
+    },
     assignee: {
-      id: "1",
-      name: "You",
-      avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
+      id: "",
+      name: "",
+      avatar: ""
     },
     project: {
       id: "1",
       name: "Clever Project"
     },
-    url: typeof window !== "undefined" ? window.location.href : "https://staging.bugsmasher.com/projects/123"
+    url: typeof window !== "undefined" ? window.location.href : "https://staging.bugsmasher.com/projects/123",
+    screenshot: null as File | string | null
   });
 
   useEffect(() => {
@@ -85,94 +130,205 @@ export default function SubmitBugPage() {
 
       setFormData(prev => ({
         ...prev,
-        device,
-        os,
-        browser
+        device: prev.device || device,
+        os: prev.os || os,
+        browser: prev.browser || browser
       }));
     }
   }, []);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [teamsData, assigneesData] = await Promise.all([
+          getTeams(),
+          getAssignees()
+        ]);
+        setTeams(teamsData);
+        setAssignees(assigneesData);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch teams and assignees",
+          variant: "destructive",
+        });
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const handleInputChange = async (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    
+    if (name === 'team_id') {
+      const selectedTeam = teams.find(team => team.id === value);
+      setFormData(prev => ({
+        ...prev,
+        team_id: value,
+        team: selectedTeam ? {
+          id: selectedTeam.id,
+          name: selectedTeam.name,
+          description: selectedTeam.description,
+          status: selectedTeam.status
+        } : {
+          id: "",
+          name: "",
+          description: "",
+          status: ""
+        },
+        // Reset assignee when team changes
+        assignee_id: "",
+        assignee: {
+          id: "",
+          name: "",
+          avatar: ""
+        }
+      }));
+
+      // Fetch team members when a team is selected
+      if (value) {
+        try {
+          const members = await getTeamMembers(value);
+          setTeamMembers(members);
+        } catch (error) {
+          console.error('Error fetching team members:', error);
+          toast({
+            title: "Error",
+            description: "Failed to fetch team members",
+            variant: "destructive",
+          });
+        }
+      } else {
+        setTeamMembers([]);
+      }
+    } else if (name === 'assignee_id') {
+      const selectedAssignee = assignees.find(assignee => assignee.id === value);
+      setFormData(prev => ({
+        ...prev,
+        assignee_id: value,
+        assignee: selectedAssignee ? {
+          id: selectedAssignee.id,
+          name: selectedAssignee.name,
+          avatar: selectedAssignee.avatar
+        } : {
+          id: "",
+          name: "",
+          avatar: ""
+        }
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (currentStep !== "environment") {
-      nextStep();
-      return;
-    }
-    
-    if (!user) {
-      toast({
-        title: "Error",
-        description: "You must be logged in to submit a bug report",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setLoading(true);
+
     try {
-      const bugData = {
-        title: formData.title,
-        description: formData.description,
-        steps_to_reproduce: formData.stepsToReproduce,
-        expected_behavior: formData.expectedBehavior,
-        actual_behavior: formData.actualBehavior,
-        environment: {
-          device: formData.device,
-          browser: formData.browser,
-          os: formData.os
-        },
-        priority: formData.priority,
-        status: formData.status,
-        screenshot: formData.screenshot,
-        assignee_id: formData.assignee.id,
-        project_id: formData.project.id,
-        url: formData.url,
-        checklist_item_id: checklistItemId || undefined,
-        reported_by: user.id,
-        relatedItem: itemIdentifier || undefined
-      };
+      // Use FormData for multipart/form-data
+      const form = new FormData();
+      form.append('title', formData.title);
+      form.append('description', formData.description);
+      form.append('steps_to_reproduce', formData.stepsToReproduce);
+      form.append('expected_behavior', formData.expectedBehavior);
+      form.append('actual_behavior', formData.actualBehavior);
+      form.append('device', formData.device || 'Unknown');
+      form.append('browser', formData.browser || 'Unknown');
+      form.append('os', formData.os || 'Unknown');
+      form.append('status', formData.status);
+      form.append('priority', formData.priority);
+      form.append('team_id', formData.team_id);
+      form.append('assignee_id', formData.assignee_id);
+      form.append('project_id', formData.project.id);
+      form.append('url', formData.url);
+      if (user?.id) form.append('reported_by', String(user.id));
+      if (checklistItemId) form.append('checklist_item_id', checklistItemId);
+      if (itemIdentifier) form.append('relatedItem', itemIdentifier);
+      // Attach screenshot if present and is a file
+      if (formData.screenshot && typeof formData.screenshot !== 'string') {
+        form.append('screenshot', formData.screenshot);
+      } else if (formData.screenshot && typeof formData.screenshot === 'string') {
+        // If screenshot is a base64 string, convert to Blob
+        const arr = (formData.screenshot as string).split(',');
+        if (arr && arr.length === 2) {
+          const mimeMatch = arr[0].match(/:(.*?);/);
+          if (mimeMatch) {
+            const mime = mimeMatch[1];
+            const bstr = atob(arr[1]);
+            let n = bstr.length;
+            const u8arr = new Uint8Array(n);
+            while (n--) {
+              u8arr[n] = bstr.charCodeAt(n);
+            }
+            const file = new Blob([u8arr], { type: mime });
+            form.append('screenshot', file, 'screenshot.png');
+          }
+        }
+      }
 
-      await createBug(bugData);
-      toast({
-        title: "Success",
-        description: "Bug report submitted successfully",
+      // Use fetch directly for multipart/form-data
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/api/bugs`, {
+        method: 'POST',
+        headers: {
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+          // Remove Content-Type header to let the browser set it automatically with the boundary
+        },
+        body: form
       });
 
-      // Reset form and go back to first step
-      setFormData({
-        title: "",
-        description: "",
-        stepsToReproduce: "",
-        expectedBehavior: "",
-        actualBehavior: "",
-        device: "",
-        browser: "",
-        os: "",
-        priority: "Medium",
-        status: "Open",
-        screenshot: "",
-        assignee: {
-          id: "1",
-          name: "You",
-          avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
-        },
-        project: {
-          id: "1",
-          name: "Clever Project"
-        },
-        url: typeof window !== "undefined" ? window.location.href : "https://staging.bugsmasher.com/projects/123"
-      });
-      setCurrentStep("details");
+      if (response.ok) {
+        toast({
+          title: "Success",
+          description: "Bug report submitted successfully",
+        });
+        setFormData({
+          title: "",
+          description: "",
+          stepsToReproduce: "",
+          expectedBehavior: "",
+          actualBehavior: "",
+          device: "",
+          browser: "",
+          os: "",
+          status: "Open",
+          priority: "Medium",
+          team_id: "",
+          assignee_id: "",
+          team: {
+            id: "",
+            name: "",
+            description: "",
+            status: "active"
+          },
+          assignee: {
+            id: "",
+            name: "",
+            avatar: ""
+          },
+          project: {
+            id: "",
+            name: ""
+          },
+          url: "",
+          screenshot: null as File | string | null
+        });
+        setCurrentStep(1);
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to submit bug report');
+      }
     } catch (error) {
-      console.error('Error submitting bug:', error);
+      console.error("Error submitting bug:", error);
       toast({
         title: "Error",
-        description: "Failed to submit bug report. Please try again.",
+        description: "Failed to submit bug report",
         variant: "destructive",
       });
     } finally {
@@ -181,35 +337,21 @@ export default function SubmitBugPage() {
   };
 
   const nextStep = () => {
-    const currentIndex = steps.findIndex(step => step.id === currentStep);
-    if (currentIndex < steps.length - 1) {
-      setCurrentStep(steps[currentIndex + 1].id);
+    if (currentStep < 3) {
+      setCurrentStep(currentStep + 1);
     }
   };
 
   const prevStep = () => {
-    const currentIndex = steps.findIndex(step => step.id === currentStep);
-    if (currentIndex > 0) {
-      setCurrentStep(steps[currentIndex - 1].id);
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
     }
   };
 
   const steps = [
-    {
-      id: "details",
-      name: "Bug Details",
-      description: "Describe the bug you encountered",
-    },
-    {
-      id: "reproduction",
-      name: "Reproduction Steps",
-      description: "How to reproduce the issue",
-    },
-    {
-      id: "environment",
-      name: "Environment",
-      description: "Device and browser information",
-    },
+    { id: 1, name: "Details", description: "Basic information about the bug" },
+    { id: 2, name: "Reproduction", description: "Steps to reproduce the bug" },
+    { id: 3, name: "Environment", description: "System and browser information" }
   ];
 
   if (!user) {
@@ -290,8 +432,8 @@ export default function SubmitBugPage() {
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-6">
-                {currentStep === "details" && (
-                  <div className="bg-white rounded-xl shadow-sm p-6 space-y-6">
+                {currentStep === 1 && (
+                  <div className="space-y-6">
                     <div>
                       <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
                         Bug Title
@@ -342,8 +484,8 @@ export default function SubmitBugPage() {
                   </div>
                 )}
 
-                {currentStep === "reproduction" && (
-                  <div className="bg-white rounded-xl shadow-sm p-6 space-y-6">
+                {currentStep === 2 && (
+                  <div className="space-y-6">
                     <div>
                       <label htmlFor="expectedBehavior" className="block text-sm font-medium text-gray-700 mb-1">
                         Expected Behavior
@@ -388,11 +530,7 @@ export default function SubmitBugPage() {
                         onChange={(e) => {
                           const file = e.target.files?.[0];
                           if (file) {
-                            const reader = new FileReader();
-                            reader.onloadend = () => {
-                              setFormData((prev) => ({ ...prev, screenshot: reader.result as string }));
-                            };
-                            reader.readAsDataURL(file);
+                            setFormData((prev) => ({ ...prev, screenshot: file }));
                           }
                         }}
                         className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm bg-gray-50 focus:ring-2 focus:ring-black focus:outline-none"
@@ -401,8 +539,8 @@ export default function SubmitBugPage() {
                   </div>
                 )}
 
-                {currentStep === "environment" && (
-                  <div className="bg-white rounded-xl shadow-sm p-6 space-y-6">
+                {currentStep === 3 && (
+                  <div className="space-y-6">
                     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                       <div>
                         <label htmlFor="device" className="block text-sm font-medium text-gray-700 mb-1">
@@ -469,6 +607,53 @@ export default function SubmitBugPage() {
                           <option value="High">High</option>
                         </select>
                       </div>
+
+                      <div className="mb-6">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Assign to Team
+                        </label>
+                        <select
+                          name="team_id"
+                          value={formData.team_id}
+                          onChange={handleInputChange}
+                          className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm bg-gray-50 focus:ring-2 focus:ring-black focus:outline-none"
+                        >
+                          <option value="">Select a team</option>
+                          {teams.map((team) => (
+                            <option key={team.id} value={team.id}>
+                              {team.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="mb-6">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Assign to User
+                        </label>
+                        <select
+                          name="assignee_id"
+                          value={formData.assignee_id}
+                          onChange={handleInputChange}
+                          className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm bg-gray-50 focus:ring-2 focus:ring-black focus:outline-none"
+                        >
+                          <option value="">Select a user</option>
+                          {formData.team_id
+                            ? teamMembers.map((member) => (
+                                <option key={member.id} value={member.id}>
+                                  {member.user?.name || member.name}
+                                </option>
+                              ))
+                            : assignees.map((assignee) => (
+                                <option key={assignee.id} value={assignee.id}>
+                                  {assignee.name}
+                                </option>
+                              ))}
+                        </select>
+                        {formData.team_id && teamMembers.length === 0 && (
+                          <p className="mt-1 text-sm text-gray-500">No users available in this team</p>
+                        )}
+                      </div>
                     </div>
                   </div>
                 )}
@@ -477,7 +662,7 @@ export default function SubmitBugPage() {
                   <button
                     type="button"
                     onClick={prevStep}
-                    disabled={currentStep === "details"}
+                    disabled={currentStep === 1}
                     className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Previous
@@ -485,11 +670,11 @@ export default function SubmitBugPage() {
 
                   <button
                     type="button"
-                    onClick={currentStep === "environment" ? handleSubmit : nextStep}
+                    onClick={currentStep === 3 ? handleSubmit : nextStep}
                     disabled={loading}
                     className="px-4 py-2 text-sm font-medium text-white bg-black border border-transparent rounded-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {loading ? "Submitting..." : currentStep === "environment" ? "Submit Bug Report" : "Next"}
+                    {loading ? "Submitting..." : currentStep === 3 ? "Submit Bug Report" : "Next"}
                   </button>
                 </div>
               </form>

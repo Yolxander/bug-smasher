@@ -29,6 +29,12 @@ export type Submission = {
     name: string;
     avatar: string;
   };
+  team: {
+    id: string;
+    name: string;
+    description: string;
+    status: string;
+  };
   qa_list_item_id: string | null;
   fixes: Array<{
     id: number;
