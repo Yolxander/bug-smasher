@@ -224,7 +224,7 @@ export function DashboardSidebar({ activePage }: { activePage: string }) {
   }
 
   return (
-    <div className="w-[232px] h-screen flex flex-col rounded-l-3xl shadow-md border-r border-gray-100">
+    <div className="w-[232px] min-h-screen flex flex-col rounded-l-3xl shadow-md border-r border-gray-100">
       <div className="p-6 flex justify-start rounded-lg">
         <Image src="/logo.png" alt="Bug Smasher Logo" width={60} height={60} className="mx-auto rounded-lg" />
       </div>
