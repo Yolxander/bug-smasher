@@ -150,4 +150,92 @@ export async function completeOnboarding(data: {
     console.error('Error in completeOnboarding:', error)
     throw error
   }
+}
+
+export interface UserProfile {
+  id: number;
+  full_name: string;
+  role: string;
+  avatar_url: string;
+  bio: string;
+  onboarding_completed: boolean;
+}
+
+export interface User {
+  id: number;
+  name: string;
+  email: string;
+  profile: UserProfile;
+}
+
+export async function getUsers(): Promise<User[]> {
+  try {
+    // First try to get the users from localStorage
+    const storedUsers = localStorage.getItem('users')
+    if (storedUsers) {
+      return JSON.parse(storedUsers)
+    }
+
+    // Get the token from localStorage
+    const token = localStorage.getItem('token')
+    if (!token) {
+      throw new Error('No authentication token found')
+    }
+
+    // If not in localStorage, try to get it from the API
+    const response = await fetch(`${API_URL}/api/users`, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        'X-Requested-With': 'XMLHttpRequest'
+      },
+      credentials: 'include',
+    })
+
+    if (!response.ok) {
+      const errorData = await response.text()
+      console.error('Server response:', {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorData
+      })
+
+      if (response.status === 401) {
+        // Clear invalid token
+        localStorage.removeItem('token')
+        localStorage.removeItem('user')
+        window.location.href = '/login'
+        throw new Error('Session expired. Please log in again.')
+      }
+
+      throw new Error(`Failed to fetch users: ${response.statusText}`)
+    }
+
+    const data = await response.json()
+    
+    // Handle different response structures
+    let users: User[] = []
+    if (data && typeof data === 'object') {
+      // If data is wrapped in a data property
+      if (data.data && Array.isArray(data.data)) {
+        users = data.data
+      }
+      // If data is an array directly
+      else if (Array.isArray(data)) {
+        users = data
+      }
+    }
+    
+    // Store the users in localStorage for future use
+    if (users.length > 0) {
+      localStorage.setItem('users', JSON.stringify(users))
+    }
+
+    return users
+  } catch (error) {
+    console.error('Error fetching users:', error)
+    return []
+  }
 } 

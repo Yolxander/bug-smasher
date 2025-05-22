@@ -2,10 +2,11 @@
 
 import { useAuth } from '@/lib/auth-context'
 import { DashboardSidebar } from "@/components/DashboardSidebar"
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from "next/navigation"
 import { CheckSquare, Users, ListChecks, ArrowRight, ArrowLeft, Plus, X, Globe, Calendar, FileText, Eye } from 'lucide-react'
 import { createQaChecklist, addChecklistItem, QaChecklistItem } from '@/app/actions/qaChecklistActions'
+import { getUsers, User } from '@/app/actions/profiles'
 
 interface TeamMember {
   id: string
@@ -128,14 +129,27 @@ export default function SubmitQAPage() {
     'Mobile', 'Desktop', 'API', 'Database', 'Frontend',
     'Backend', 'Testing', 'Documentation'
   ])
+  const [availableTeamMembers, setAvailableTeamMembers] = useState<User[]>([])
+  const [isLoadingUsers, setIsLoadingUsers] = useState(false)
 
-  // Mock team members data
-  const availableTeamMembers: TeamMember[] = [
-    { id: '1', name: 'John Doe', role: 'QA Engineer', avatar: '/placeholder.svg' },
-    { id: '2', name: 'Jane Smith', role: 'Developer', avatar: '/placeholder.svg' },
-    { id: '3', name: 'Mike Johnson', role: 'Product Manager', avatar: '/placeholder.svg' },
-    { id: '4', name: 'Sarah Wilson', role: 'QA Lead', avatar: '/placeholder.svg' },
-  ]
+  useEffect(() => {
+    const fetchUsers = async () => {
+      setIsLoadingUsers(true)
+      try {
+        const users = await getUsers()
+        // Filter out the current user from available team members
+        const filteredUsers = users.filter(u => u.id.toString() !== user?.id.toString())
+        setAvailableTeamMembers(filteredUsers)
+      } catch (error) {
+        console.error('Failed to fetch users:', error)
+        // TODO: Add proper error handling/notification
+      } finally {
+        setIsLoadingUsers(false)
+      }
+    }
+
+    fetchUsers()
+  }, [user?.id])
 
   const steps = [
     { number: 1, title: 'Basic Information', icon: ListChecks },
@@ -213,15 +227,15 @@ export default function SubmitQAPage() {
     }))
   }
 
-  const toggleTeamMember = (member: TeamMember) => {
+  const toggleTeamMember = (member: User) => {
     setProject(prev => {
-      const isAssigned = prev.assignments.some(a => a.user_id === member.id)
+      const isAssigned = prev.assignments.some(a => a.user_id === member.id.toString())
       return {
         ...prev,
         assignments: isAssigned
-          ? prev.assignments.filter(a => a.user_id !== member.id)
+          ? prev.assignments.filter(a => a.user_id !== member.id.toString())
           : [...prev.assignments, {
-              user_id: member.id,
+              user_id: member.id.toString(),
               due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Default to 1 week from now
               notes: '',
               status: 'pending'
@@ -507,69 +521,85 @@ export default function SubmitQAPage() {
               <Users className="h-5 w-5 text-gray-500" />
               <h3 className="text-lg font-medium text-gray-900">Assign Team Members</h3>
             </div>
-            <div className="grid grid-cols-1 gap-4">
-              {availableTeamMembers.map((member) => {
-                const assignment = project.assignments.find(a => a.user_id === member.id)
-                return (
-                  <div
-                    key={member.id}
-                    className={`p-4 rounded-lg border ${
-                      assignment ? 'border-indigo-600 bg-indigo-50' : 'border-gray-200'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3 mb-4">
-                      <img
-                        src={member.avatar}
-                        alt={member.name}
-                        className="h-8 w-8 rounded-full"
-                      />
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-900">{member.name}</p>
-                        <p className="text-xs text-gray-500">{member.role}</p>
+            {isLoadingUsers ? (
+              <div className="text-center py-8 text-gray-500">
+                Loading team members...
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-4">
+                {availableTeamMembers.map((member) => {
+                  const assignment = project.assignments.find(a => a.user_id === member.id.toString())
+                  const profile = member.profile || {
+                    full_name: member.name,
+                    role: 'User',
+                    avatar_url: '/placeholder.svg'
+                  }
+                  return (
+                    <div
+                      key={member.id}
+                      className={`p-4 rounded-lg border ${
+                        assignment ? 'border-indigo-600 bg-indigo-50' : 'border-gray-200'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3 mb-4">
+                        <img
+                          src={profile.avatar_url || '/placeholder.svg'}
+                          alt={profile.full_name || member.name}
+                          className="h-8 w-8 rounded-full"
+                        />
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-gray-900">{profile.full_name || member.name}</p>
+                          <p className="text-xs text-gray-500">{profile.role || 'User'}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => toggleTeamMember(member)}
+                          className={`px-3 py-1 rounded-md text-sm font-medium ${
+                            assignment
+                              ? 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          {assignment ? 'Assigned' : 'Assign'}
+                        </button>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => toggleTeamMember(member)}
-                        className={`px-3 py-1 rounded-md text-sm font-medium ${
-                          assignment
-                            ? 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
-                      >
-                        {assignment ? 'Assigned' : 'Assign'}
-                      </button>
+                      {assignment && (
+                        <div className="space-y-4 pl-11">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Due Date
+                            </label>
+                            <input
+                              type="date"
+                              value={assignment.due_date}
+                              onChange={(e) => updateAssignment(member.id.toString(), 'due_date', e.target.value)}
+                              className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm bg-gray-50 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Notes
+                            </label>
+                            <textarea
+                              value={assignment.notes}
+                              onChange={(e) => updateAssignment(member.id.toString(), 'notes', e.target.value)}
+                              rows={2}
+                              className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm bg-gray-50 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                              placeholder="Enter assignment notes"
+                            />
+                          </div>
+                        </div>
+                      )}
                     </div>
-                    {assignment && (
-                      <div className="space-y-4 pl-11">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Due Date
-                          </label>
-                          <input
-                            type="date"
-                            value={assignment.due_date}
-                            onChange={(e) => updateAssignment(member.id, 'due_date', e.target.value)}
-                            className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm bg-gray-50 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Notes
-                          </label>
-                          <textarea
-                            value={assignment.notes}
-                            onChange={(e) => updateAssignment(member.id, 'notes', e.target.value)}
-                            rows={2}
-                            className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm bg-gray-50 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                            placeholder="Enter assignment notes"
-                          />
-                        </div>
-                      </div>
-                    )}
+                  )
+                })}
+                {availableTeamMembers.length === 0 && (
+                  <div className="text-center py-8 text-gray-500">
+                    No team members available.
                   </div>
-                )
-              })}
-            </div>
+                )}
+              </div>
+            )}
           </div>
         )
 
@@ -656,18 +686,23 @@ export default function SubmitQAPage() {
               <div className="bg-gray-50 rounded-lg p-4">
                 <div className="space-y-4">
                   {project.assignments.map((assignment) => {
-                    const member = availableTeamMembers.find(m => m.id === assignment.user_id)
+                    const member = availableTeamMembers.find(m => m.id.toString() === assignment.user_id)
                     if (!member) return null
+                    const profile = member.profile || {
+                      full_name: member.name,
+                      role: 'User',
+                      avatar_url: '/placeholder.svg'
+                    }
                     return (
                       <div key={assignment.user_id} className="flex items-center gap-3">
                         <img
-                          src={member.avatar}
-                          alt={member.name}
+                          src={profile.avatar_url || '/placeholder.svg'}
+                          alt={profile.full_name || member.name}
                           className="h-8 w-8 rounded-full"
                         />
                         <div className="flex-1">
-                          <p className="text-sm font-medium text-gray-900">{member.name}</p>
-                          <p className="text-xs text-gray-500">{member.role}</p>
+                          <p className="text-sm font-medium text-gray-900">{profile.full_name || member.name}</p>
+                          <p className="text-xs text-gray-500">{profile.role || 'User'}</p>
                         </div>
                         <div className="text-right">
                           <p className="text-sm text-gray-900">Due: {new Date(assignment.due_date).toLocaleDateString()}</p>
