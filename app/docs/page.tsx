@@ -160,7 +160,7 @@ export default function DocsPage() {
                       <h2 className="text-xl font-semibold">Checklist Items and Bug Relationship</h2>
                     </div>
                     <p className="text-gray-600">Learn how bugs are linked to checklist items and managed</p>
-                  </div>
+                </div>
                 </DialogTrigger>
                 <DialogContent className="max-w-3xl">
                   <DialogHeader>
@@ -185,7 +185,7 @@ export default function DocsPage() {
                       <li>Priority and status</li>
                       <li>Assignment to team members</li>
                     </ul>
-                  </div>
+                      </div>
                 </DialogContent>
               </Dialog>
 
@@ -236,9 +236,9 @@ export default function DocsPage() {
                     <div className="flex items-center gap-2 mb-4">
                       <Users className="h-5 w-5 text-indigo-500" />
                       <h2 className="text-xl font-semibold">Team Page Functionality</h2>
-                    </div>
+                </div>
                     <p className="text-gray-600">Explore team management features and capabilities</p>
-                  </div>
+              </div>
                 </DialogTrigger>
                 <DialogContent className="max-w-3xl">
                   <DialogHeader>
@@ -262,7 +262,7 @@ export default function DocsPage() {
                       <li>View team member statistics (bugs assigned/resolved)</li>
                       <li>Manage team memberships (if they have appropriate permissions)</li>
                     </ul>
-                  </div>
+            </div>
                 </DialogContent>
               </Dialog>
 
@@ -275,7 +275,7 @@ export default function DocsPage() {
                       <h2 className="text-xl font-semibold">Team Assignment Flow</h2>
                     </div>
                     <p className="text-gray-600">Learn how items are assigned to teams and members</p>
-                  </div>
+                      </div>
                 </DialogTrigger>
                 <DialogContent className="max-w-3xl">
                   <DialogHeader>
@@ -292,7 +292,7 @@ export default function DocsPage() {
                       <li>The assignment is tracked with status and timestamps</li>
                       <li>Team members can be notified of new assignments</li>
                     </ul>
-                  </div>
+                      </div>
                 </DialogContent>
               </Dialog>
 
@@ -333,7 +333,7 @@ export default function DocsPage() {
                       <li>Update bug status</li>
                       <li>Add comments and solutions</li>
                       <li>Track bug resolution progress</li>
-                    </ul>
+                      </ul>
                   </div>
                 </DialogContent>
               </Dialog>
@@ -406,7 +406,7 @@ export default function DocsPage() {
                   </div>
                 </DialogContent>
               </Dialog>
-            </div>
+              </div>
 
             <div className="bg-blue-50 rounded-xl p-6 mt-8">
               <p className="text-blue-800">
